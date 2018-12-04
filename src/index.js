@@ -6,7 +6,7 @@ const path = require('path');
 const { Git } = require('@financial-times/tooling-helpers').git;
 const runProcess = require('./lib/run-process');
 
-(async () => {
+(async function main () {
 
     assert(process.argv[2], 'First argument must be a workspace directory');
     assert(process.argv[3], 'Second argument must be a path to the transformation directory');
@@ -20,26 +20,33 @@ const runProcess = require('./lib/run-process');
         throw new Error('No targets specified');
     }
 
+    const transformationName = transformationPath.split('/').filter((value) => value).pop();
     const fullTransformationPath = path.resolve(`${process.cwd()}/${transformationPath}`);
     const transformationConfig = require(fullTransformationPath);
+
+    const gitBranchName = `transformation-${transformationName}`;
 
     console.log(`-- Workspace directory: ${workspaceDirectory}`);
     console.log(`-- Transformation: ${transformationConfig.name}`);
     console.log(`-- Target(s):\n\n   ${targets.join('\n   ')}`);
 
     for (let repository of targets) {
-
         console.log('\n===\n');
-        console.log(`-- Cloning repository: ${repository}`);
+
+        console.log(`-- Cloning repository locally: ${repository}`);
 
         const repositoryName = repository.split('/').pop();
         const cloneDirectory = `${workspaceDirectory}/${repositoryName}`;
 
         const git = new Git();
-        const gitRepo = await git.clone({ repository, directory: cloneDirectory });
 
-        console.log(`-- Repository cloned to ${cloneDirectory}`);
-        console.log(`-- Running transformation against clone of repository: ${repositoryName} (${cloneDirectory})\n`);
+        const gitRepo = await git.clone({ repository, directory: cloneDirectory });
+        console.log(`-- Repository '${repositoryName}' cloned locally to ${cloneDirectory}`);
+
+        await gitRepo.createBranchAndCheckout({ branch: gitBranchName });
+        console.log(`-- Created and checked out new branch in local repository: ${gitBranchName}`);
+
+        console.log(`-- Running transformation against local repository...\n`);
 
         try {
             const contextForTransformation = {
@@ -53,7 +60,6 @@ const runProcess = require('./lib/run-process');
             };
 
             const processOutput  = await runProcess(
-                // TODO: Allow this to work with one-liner commands
                 `${fullTransformationPath}/${transformationConfig.command}`,
                 {
                     cwd: gitRepo.workingDirectory,
@@ -66,6 +72,8 @@ const runProcess = require('./lib/run-process');
             console.error(new Error(`Error running transformation for '${repository}': ${err.message}`));
         }
 
+        console.log(`-- Pushing branch ${gitBranchName} to remote 'origin'`);
+        await gitRepo.pushCurrentBranchToRemote();
     }
 
 })();
