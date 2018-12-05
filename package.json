@@ -9,6 +9,6 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@financial-times/tooling-helpers": "Financial-Times/tooling-helpers#git-helper-basics"
+    "@financial-times/tooling-helpers": "Financial-Times/tooling-helpers"
   }
 }
