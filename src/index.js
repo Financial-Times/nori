@@ -59,8 +59,15 @@ const runProcess = require('./lib/run-process');
                 ...contextForTransformation
             };
 
+            let command = transformationConfig.command;
+
+            const isRelativeScriptPath = (command.substring(0, 1) === './');
+            if (isRelativeScriptPath) {
+                command = path.resolve(`${fullTransformationPath}/${command}`);
+            }
+
             const processOutput  = await runProcess(
-                `${fullTransformationPath}/${transformationConfig.command}`,
+                command,
                 {
                     cwd: gitRepo.workingDirectory,
                     env: transformationCommandEnv
@@ -68,12 +75,13 @@ const runProcess = require('./lib/run-process');
             );
 
             console.log(processOutput);
+
+            console.log(`-- Pushing branch ${gitBranchName} to remote 'origin'`);
+            await gitRepo.pushCurrentBranchToRemote();
+
         } catch (err) {
             console.error(new Error(`Error running transformation for '${repository}': ${err.message}`));
         }
-
-        console.log(`-- Pushing branch ${gitBranchName} to remote 'origin'`);
-        await gitRepo.pushCurrentBranchToRemote();
     }
 
 })();
