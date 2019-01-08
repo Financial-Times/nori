@@ -13,7 +13,7 @@ const runProcess = require('./lib/run-process');
     assert(process.argv[4], 'Third argument must be targets - if multiple, must be comma separated');
 
     const workspaceDirectory = process.argv[2];
-    const transformationPath = process.argv[3];
+    const transformationPath = path.resolve(process.argv[3]);
 
     let targets = (process.argv[4]) ? process.argv[4].split(',') : [];
     targets = targets.filter((value) => value);
@@ -22,13 +22,12 @@ const runProcess = require('./lib/run-process');
     }
 
     const transformationName = transformationPath.split('/').filter((value) => value).pop();
-    const fullTransformationPath = path.resolve(`${process.cwd()}/${transformationPath}`);
-    const transformationConfig = require(fullTransformationPath);
+    const transformationConfig = require(transformationPath);
 
     let command = transformationConfig.command;
     const isRelativeScriptPath = (command.substring(0, 2) === './');
     if (isRelativeScriptPath) {
-        command = path.resolve(`${fullTransformationPath}/${command}`);
+        command = `${transformationPath}/${command}`;
     }
 
     const gitBranchName = `transformation-${transformationName}`;
