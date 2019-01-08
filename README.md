@@ -12,12 +12,17 @@ writing transformations you should collect them together in a separate repositor
 
 ## CLI usage
 
+TODO: Document need for `GITHUB_TOKEN` - see https://github.com/Financial-Times/next/issues/295
+
 ```bash
 npx Financial-Times/transformation-runner \
     /tmp/workspace \
     path-to-your-transformations/transformation-directory \
-    https://github.com/organization/repsitory-1,https://github.com/organization/repsitory-2
+    https://github.com/organization/repository-1,https://github.com/organization/repository-2
 ```
+
+**Note:** `npx` is loading the transformation runner package from GitHub as it
+is not published on `npm`.
 
 Options to the transformation-runner CLI tool are positional:
 
@@ -45,3 +50,9 @@ A transformation has the responsibility to:
 - Make changes to the files in a local clone of a git repository
 - Add those changes to git
 - Commit those changes to git
+
+The main benefit of this approach is that transformations do not _need_ the
+transformation runner for you to be able to run them. As in most cases a
+transformation will contain a script that makes changes, this script can be
+run standalone. This makes development, debugging and one-off runs of a
+transformation much simpler.
