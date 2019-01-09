@@ -15,14 +15,11 @@ writing transformations you should collect them together in a separate repositor
 TODO: Document need for `GITHUB_TOKEN` - see https://github.com/Financial-Times/next/issues/295
 
 ```bash
-npx Financial-Times/transformation-runner \
+npx github:Financial-Times/transformation-runner \
     /tmp/workspace \
     path-to-your-transformations/transformation-directory \
     https://github.com/organization/repository-1,https://github.com/organization/repository-2
 ```
-
-**Note:** `npx` is loading the transformation runner package from GitHub as it
-is not published on `npm`.
 
 Options to the transformation-runner CLI tool are positional:
 
