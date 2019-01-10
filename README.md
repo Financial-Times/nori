@@ -33,6 +33,14 @@ you want to run.
 ([documentation](https://manpages.ubuntu.com/manpages/en/man1/mktemp.1.html)).
 Instead of `/tmp/workspace` in the example above, you could use `$(mktemp -d)`.
 
+## Transformation command environment variables
+
+When the transformation-runner runs the command for a transformation, it makes the following environment variables available (in addition to the ones already present in the shell that you're executing the runner under):
+
+- `TRANSFORMATION_RUNNER_RUNNING` - Can be used to determine if the command is being run by the transformation-runner (always has a value of `true`)
+- `TRANSFORMATION_RUNNER_TARGET` - Full remote URL of the git repository that the transformation command is being run against
+- `TRANSFORMATION_RUNNER_TARGET_NAME` - The name of the git repository that the transformation command is being run against
+
 ## Separation of concerns
 
 The `transformation-runner` CLI is responsible for:
