@@ -3,7 +3,7 @@
 const assert = require('assert');
 const path = require('path');
 
-const { Git } = require('@financial-times/tooling-helpers').git;
+const { Git } = require('@financial-times/tooling-helpers');
 const runProcess = require('./lib/run-process');
 
 (async function main () {
@@ -11,6 +11,7 @@ const runProcess = require('./lib/run-process');
     assert(process.argv[2], 'First argument must be a workspace directory');
     assert(process.argv[3], 'Second argument must be a path to the transformation directory');
     assert(process.argv[4], 'Third argument must be targets - if multiple, must be comma separated');
+    assert(process.argv[5], 'Fourth argument must be a GitHub personal access token');
 
     const workspaceDirectory = process.argv[2];
     const transformationPath = path.resolve(process.argv[3]);
@@ -20,6 +21,8 @@ const runProcess = require('./lib/run-process');
     if (targets.length === 0) {
         throw new Error('No targets specified');
     }
+
+    const githubPersonalAccessToken = process.argv[5];
 
     const transformationName = transformationPath.split('/').filter((value) => value).pop();
     const transformationConfig = require(transformationPath);
@@ -42,7 +45,12 @@ const runProcess = require('./lib/run-process');
         const repositoryName = repository.split('/').pop();
         const cloneDirectory = `${workspaceDirectory}/${repositoryName}`;
 
-        const git = new Git();
+        const git = new Git({
+            credentials: {
+                type: Git.CREDENTIAL_TYPE_GITHUB_OAUTH,
+                token: githubPersonalAccessToken
+            }
+        });
 
         try {
             console.log(`-- Cloning repository locally: ${repository}`);
