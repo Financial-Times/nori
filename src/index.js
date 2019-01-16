@@ -1,20 +1,34 @@
 #!/usr/bin/env node
 
 const assert = require('assert');
+const fs = require('fs');
 const path = require('path');
 
 const { Git } = require('@financial-times/tooling-helpers');
 const runProcess = require('./lib/run-process');
 
-(async function main () {
+async function main () {
 
-    assert(process.argv[2], 'First argument must be a workspace directory');
-    assert(process.argv[3], 'Second argument must be a path to the transformation directory');
+    assert(process.argv[2], 'First argument must be a path to a workspace directory');
+    assert(process.argv[3], 'Second argument must be a path to a transformation script');
     assert(process.argv[4], 'Third argument must be targets - if multiple, must be comma separated');
-    assert(process.argv[5], 'Fourth argument must be a GitHub personal access token');
+    assert(process.argv[5], 'Fourth argument must be a name for the git branch to create');
+    assert(process.argv[6], 'Fifth argument must be a GitHub personal access token');
 
-    const workspaceDirectory = process.argv[2];
-    const transformationPath = path.resolve(process.argv[3]);
+    const workspacePath = path.resolve(process.argv[2]);
+    const workspacePathExists = fs.existsSync(workspacePath);
+    assert(workspacePathExists, `Workspace directory path does not exist: ${workspacePath}`);
+    const workspacePathIsDirectory = fs.lstatSync(workspacePath).isDirectory();
+    assert(workspacePathIsDirectory, `Workspace directory path is not a directory: ${workspacePath}`);
+
+    const transformationScriptPath = path.resolve(process.argv[3]);
+    const transformationScriptExists = fs.existsSync(transformationScriptPath);
+    assert(transformationScriptExists, `Transformation script does not exist: ${transformationScriptPath}`);
+    try {
+        fs.accessSync(transformationScriptPath, fs.constants.X_OK);
+    } catch (err) {
+        assert(false, `Transformation script is not executable (try \`chmod +x\`): ${transformationScriptPath}`);
+    }
 
     let targets = (process.argv[4]) ? process.argv[4].split(',') : [];
     targets = targets.filter((value) => value);
@@ -22,28 +36,18 @@ const runProcess = require('./lib/run-process');
         throw new Error('No targets specified');
     }
 
-    const githubPersonalAccessToken = process.argv[5];
+    const gitBranchName = process.argv[5];
+    const githubPersonalAccessToken = process.argv[6];
 
-    const transformationName = transformationPath.split('/').filter((value) => value).pop();
-    const transformationConfig = require(transformationPath);
-
-    let command = transformationConfig.command;
-    const isRelativeScriptPath = (command.substring(0, 2) === './');
-    if (isRelativeScriptPath) {
-        command = `${transformationPath}/${command}`;
-    }
-
-    const gitBranchName = `transformation-${transformationName}`;
-
-    console.log(`-- Workspace directory: ${workspaceDirectory}`);
-    console.log(`-- Transformation: ${transformationConfig.name}`);
+    console.log(`-- Workspace directory: ${workspacePath}`);
+    console.log(`-- Transformation script: ${transformationScriptPath}`);
     console.log(`-- Target(s):\n\n   ${targets.join('\n   ')}`);
 
     for (let repository of targets) {
         console.log('\n===\n');
 
         const repositoryName = repository.split('/').pop();
-        const cloneDirectory = `${workspaceDirectory}/${repositoryName}`;
+        const cloneDirectory = `${workspacePath}/${repositoryName}`;
 
         const git = new Git({
             credentials: {
@@ -74,7 +78,7 @@ const runProcess = require('./lib/run-process');
             console.log(`-- Running transformation against local repository...\n`);
 
             const transformationOutput  = await runProcess(
-                command,
+                transformationScriptPath,
                 {
                     cwd: gitRepo.workingDirectory,
                     env: transformationCommandEnv
@@ -91,4 +95,6 @@ const runProcess = require('./lib/run-process');
         }
     }
 
-})();
+}
+
+main();
