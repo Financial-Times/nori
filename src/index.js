@@ -9,8 +9,8 @@ const runProcess = require('./lib/run-process');
 
 async function main () {
 
-    assert(process.argv[2], 'First argument must be a path to a workspace directory');
-    assert(process.argv[3], 'Second argument must be a path to a transformation script');
+    assert(process.argv[2], 'First argument must be the path to a workspace directory');
+    assert(process.argv[3], 'Second argument must be the path to a script');
     assert(process.argv[4], 'Third argument must be targets - if multiple, must be comma separated');
     assert(process.argv[5], 'Fourth argument must be a name for the git branch to create');
     assert(process.argv[6], 'Fifth argument must be a GitHub personal access token');
@@ -21,13 +21,13 @@ async function main () {
     const workspacePathIsDirectory = fs.lstatSync(workspacePath).isDirectory();
     assert(workspacePathIsDirectory, `Workspace directory path is not a directory: ${workspacePath}`);
 
-    const transformationScriptPath = path.resolve(process.argv[3]);
-    const transformationScriptExists = fs.existsSync(transformationScriptPath);
-    assert(transformationScriptExists, `Transformation script does not exist: ${transformationScriptPath}`);
+    const scriptPath = path.resolve(process.argv[3]);
+    const scriptExists = fs.existsSync(scriptPath);
+    assert(scriptExists, `Script does not exist: ${scriptPath}`);
     try {
-        fs.accessSync(transformationScriptPath, fs.constants.X_OK);
+        fs.accessSync(scriptPath, fs.constants.X_OK);
     } catch (err) {
-        assert(false, `Transformation script is not executable (try \`chmod +x\`): ${transformationScriptPath}`);
+        assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`);
     }
 
     let targets = (process.argv[4]) ? process.argv[4].split(',') : [];
@@ -40,7 +40,7 @@ async function main () {
     const githubPersonalAccessToken = process.argv[6];
 
     console.log(`-- Workspace directory: ${workspacePath}`);
-    console.log(`-- Transformation script: ${transformationScriptPath}`);
+    console.log(`-- Script: ${scriptPath}`);
     console.log(`-- Target(s):\n\n   ${targets.join('\n   ')}`);
 
     for (let repository of targets) {
@@ -64,34 +64,34 @@ async function main () {
             await gitRepo.createBranchAndCheckout({ branch: gitBranchName });
             console.log(`-- Created and checked out new branch in local repository: ${gitBranchName}`);
 
-            const contextForTransformation = {
+            const contextForScript = {
                 TRANSFORMATION_RUNNER_RUNNING: true,
                 TRANSFORMATION_RUNNER_TARGET: repository,
                 TRANSFORMATION_RUNNER_TARGET_NAME: repositoryName,
             };
 
-            const transformationCommandEnv = {
+            const scriptEnv = {
                 ...process.env,
-                ...contextForTransformation
+                ...contextForScript
             };
 
-            console.log(`-- Running transformation against local repository...\n`);
+            console.log(`-- Running script against local repository...\n`);
 
-            const transformationOutput  = await runProcess(
-                transformationScriptPath,
+            const scriptOutput  = await runProcess(
+                scriptPath,
                 {
                     cwd: gitRepo.workingDirectory,
-                    env: transformationCommandEnv
+                    env: scriptEnv
                 }
             );
 
-            console.log(transformationOutput);
+            console.log(scriptOutput);
 
             console.log(`-- Pushing branch ${gitBranchName} to remote 'origin'`);
             await gitRepo.pushCurrentBranchToRemote();
 
         } catch (err) {
-            console.error(new Error(`Error running transformation for '${repository}': ${err.message}`));
+            console.error(new Error(`Error running script for '${repository}': ${err.message}`));
         }
     }
 
