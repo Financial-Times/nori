@@ -9,6 +9,7 @@
   "author": "",
   "license": "MIT",
   "dependencies": {
-    "@financial-times/tooling-helpers": "Financial-Times/tooling-helpers"
+    "@financial-times/tooling-helpers": "Financial-Times/tooling-helpers",
+    "yargs": "^12.0.5"
   }
 }
