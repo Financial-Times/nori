@@ -73,9 +73,14 @@ const handler = async ({ workspace, script, targets, branch, token }) => {
         throw new Error('No targets specified')
     }
 
+    targets = targets.split(',').filter((value) => value);
+    if (targets.length === 0) {
+        throw new Error('No targets specified');
+    }
+
     console.log(`-- Workspace directory: ${workspace}`);
     console.log(`-- Script: ${script}`);
-    console.log(`-- Target(s):\n\n   ${targets.split(',').join('\n   ')}`);
+    console.log(`-- Target(s):\n\n   ${targets.join('\n   ')}`);
 
     for (let repository of targets) {
         console.log('\n===\n');
@@ -112,7 +117,7 @@ const handler = async ({ workspace, script, targets, branch, token }) => {
             console.log(`-- Running script against local repository...\n`);
 
             const scriptOutput  = await runProcess(
-                scriptPath,
+                script,
                 {
                     cwd: gitRepo.workingDirectory,
                     env: scriptEnv
