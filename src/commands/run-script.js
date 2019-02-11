@@ -2,6 +2,7 @@
 
 const assert = require('assert');
 const fs = require('fs');
+const path = require('path');
 
 const { Git } = require('@financial-times/tooling-helpers');
 const runProcess = require('../lib/run-process');
@@ -60,28 +61,30 @@ const handler = async ({ workspace, script, targets, branch, token }) => {
         throw new Error('No targets specified');
     }
 
-    const workspacePathExists = fs.existsSync(workspace);
-    assert(workspacePathExists, `Workspace directory path does not exist: ${workspace}`);
-    const workspacePathIsDirectory = fs.lstatSync(workspace).isDirectory();
-    assert(workspacePathIsDirectory, `Workspace directory path is not a directory: ${workspace}`);
+    const workspacePath = path.resolve(workspace);
+    const workspacePathExists = fs.existsSync(workspacePath);
+    assert(workspacePathExists, `Workspace directory path does not exist: ${workspacePath}`);
+    const workspacePathIsDirectory = fs.lstatSync(workspacePath).isDirectory();
+    assert(workspacePathIsDirectory, `Workspace directory path is not a directory: ${workspacePath}`);
 
-    const scriptExists = fs.existsSync(script);
-    assert(scriptExists, `Script does not exist: ${script}`);
+    const scriptPath = path.resolve(script);
+    const scriptExists = fs.existsSync(scriptPath);
+    assert(scriptExists, `Script does not exist: ${scriptPath}`);
     try {
-        fs.accessSync(script, fs.constants.X_OK);
+        fs.accessSync(scriptPath, fs.constants.X_OK);
     } catch (err) {
-        assert(false, `Script is not executable (try \`chmod +x\`): ${script}`);
+        assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`);
     }
 
-    console.log(`-- Workspace directory: ${workspace}`);
-    console.log(`-- Script: ${script}`);
+    console.log(`-- Workspace directory: ${workspacePath}`);
+    console.log(`-- Script: ${scriptPath}`);
     console.log(`-- Target(s):\n\n   ${targets.join('\n   ')}`);
 
     for (let repository of targets) {
         console.log('\n===\n');
 
-        const repositoryName = repository.split('/').pop();
-        const cloneDirectory = `${workspace}/${repositoryName}`;
+        const repositoryName = repository.split('/').pop().replace('.git', '');
+        const cloneDirectory = `${workspacePath}/${repositoryName}`;
 
         const git = new Git({
             credentials: {
@@ -112,7 +115,7 @@ const handler = async ({ workspace, script, targets, branch, token }) => {
             console.log(`-- Running script against local repository...\n`);
 
             const scriptOutput  = await runProcess(
-                script,
+                scriptPath,
                 {
                     cwd: gitRepo.workingDirectory,
                     env: scriptEnv
