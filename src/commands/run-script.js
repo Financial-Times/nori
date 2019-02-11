@@ -4,7 +4,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 
-const { Git } = require('@financial-times/tooling-helpers');
+const { git } = require('@financial-times/tooling-helpers');
 const runProcess = require('../lib/run-process');
 
 /**
@@ -86,19 +86,15 @@ const handler = async ({ workspace, script, targets, branch, token }) => {
         const repositoryName = repository.split('/').pop().replace('.git', '');
         const cloneDirectory = `${workspacePath}/${repositoryName}`;
 
-        const git = new Git({
-            credentials: {
-                type: Git.CREDENTIAL_TYPE_GITHUB_OAUTH,
-                token
-            }
-        });
+        git.defaults({ workingDirectory: cloneDirectory });
 
         try {
             console.log(`-- Cloning repository locally: ${repository}`);
-            const gitRepo = await git.clone({ repository, directory: cloneDirectory });
+            await git.clone({ origin: 'origin', repository });
             console.log(`-- Repository '${repositoryName}' cloned locally to ${cloneDirectory}`);
 
-            await gitRepo.createBranchAndCheckout({ branch });
+            await git.createBranch({ name: branch });
+            await git.checkoutBranch({ name: branch });
             console.log(`-- Created and checked out new branch in local repository: ${branch}`);
 
             const contextForScript = {
@@ -117,7 +113,7 @@ const handler = async ({ workspace, script, targets, branch, token }) => {
             const scriptOutput  = await runProcess(
                 scriptPath,
                 {
-                    cwd: gitRepo.workingDirectory,
+                    cwd: cloneDirectory,
                     env: scriptEnv
                 }
             );
@@ -125,7 +121,7 @@ const handler = async ({ workspace, script, targets, branch, token }) => {
             console.log(scriptOutput);
 
             console.log(`-- Pushing branch ${branch} to remote 'origin'`);
-            await gitRepo.pushCurrentBranchToRemote();
+            await git.push({ repository: 'origin', refspec: branch });
 
         } catch (error) {
             console.error(new Error(`Error running script for '${repository}': ${error.message}`));
