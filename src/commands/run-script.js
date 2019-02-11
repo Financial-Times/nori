@@ -27,9 +27,9 @@ const builder = (yargs) => {
             type: 'string'
         })
         .option('targets', {
-            describe: 'Target repositories - if multiple, must be comma separated',
+            describe: 'Target repositories (separate multiple targets with a space)',
             demandOption: true,
-            type: 'string'
+            type: 'array'
         })
         .option('branch', {
             alias: 'b',
@@ -56,6 +56,10 @@ const builder = (yargs) => {
  */
 const handler = async ({ workspace, script, targets, branch, token }) => {
 
+    if (targets.length === 0) {
+        throw new Error('No targets specified');
+    }
+
     const workspacePathExists = fs.existsSync(workspace);
     assert(workspacePathExists, `Workspace directory path does not exist: ${workspace}`);
     const workspacePathIsDirectory = fs.lstatSync(workspace).isDirectory();
@@ -67,15 +71,6 @@ const handler = async ({ workspace, script, targets, branch, token }) => {
         fs.accessSync(script, fs.constants.X_OK);
     } catch (err) {
         assert(false, `Script is not executable (try \`chmod +x\`): ${script}`);
-    }
-
-    if (!targets) {
-        throw new Error('No targets specified')
-    }
-
-    targets = targets.split(',').filter((value) => value);
-    if (targets.length === 0) {
-        throw new Error('No targets specified');
     }
 
     console.log(`-- Workspace directory: ${workspace}`);
