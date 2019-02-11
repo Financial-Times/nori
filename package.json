@@ -10,5 +10,8 @@
   "license": "MIT",
   "dependencies": {
     "@financial-times/tooling-helpers": "Financial-Times/tooling-helpers"
+  },
+  "engines": {
+    "node": "10.15.0"
   }
 }
