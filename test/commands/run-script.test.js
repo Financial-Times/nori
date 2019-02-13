@@ -109,19 +109,19 @@ test('errors when `script` is not executable', async () => {
 });
 
 // TODO: Add this when we have a proper logger
-// test('runs script', async () => {
-//     mockFs({
-//         hello: {},
-//         'transformation.js': mockFs.file({
-//             mode: 0o0777,
-//             content: 'Some transformation script'
-//         })
-//     });
-//     await runScript.handler({
-//         targets: ['git@github.com:Financial-Times/next-search-page'],
-//         workspace: 'hello',
-//         script: 'transformation.js'
-//     });
+test.skip('runs script', async () => {
+    mockFs({
+        hello: {},
+        'transformation.js': mockFs.file({
+            mode: 0o0777,
+            content: 'Some transformation script'
+        })
+    });
+    await runScript.handler({
+        targets: ['git@github.com:Financial-Times/next-search-page'],
+        workspace: 'hello',
+        script: 'transformation.js'
+    });
 
-//     expect(git.defaults).toBeCalled();
-// });
+    expect(git.defaults).toBeCalled();
+});
