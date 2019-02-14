@@ -3,8 +3,7 @@ const mockFs = require('mock-fs');
 
 const runScript = require('../../src/commands/run-script');
 
-jest.mock('@financial-times/tooling-helpers');
-const { git } = require('@financial-times/tooling-helpers');
+const { git } = require('@financial-times/git');
 
 const mockConsoleWarn = jest
     .spyOn(console, 'warn')

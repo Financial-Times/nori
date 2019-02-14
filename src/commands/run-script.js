@@ -4,7 +4,7 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 
-const { git } = require('@financial-times/tooling-helpers');
+const { git } = require('@financial-times/git');
 const runProcess = require('../lib/run-process');
 
 /**
