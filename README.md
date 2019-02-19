@@ -18,32 +18,34 @@ together in their own separate repository.
 
 > :information_source: This project is awaiting a [new name](https://github.com/Financial-Times/transformation-runner/issues/2).
 
-## CLI usage
+## Usage
 
 ```bash
-npx github:Financial-Times/transformation-runner \
-    /tmp/workspace \
-    directory/path-to/a-transformation-script.js \
-    https://github.com/organization/repository-1,https://github.com/organization/repository-2 \
-    some-branch-name \
-    $GITHUB_PERSONAL_ACCESS_TOKEN
+npx github:Financial-Times/transformation-runner run-script [OPTIONS]
 ```
 
-Options to the CLI are positional:
+## CLI options
 
-1. Workspace path - directory that you want the git repositories cloned to.
-2. Script path - executable script that you want to be run against each repository.
-3. Targets - a string of one or multiple https URLs for git repositories
-   (if multiple, must be comma separated).
-4. Git branch name - name for the git branch that you want to be created in each
-   repository.
-5. GitHub personal access token - this token must have all `repo` scopes. See the
-   [`git` tooling helper documentation](https://github.com/Financial-Times/tooling-helpers/blob/master/README.md#git)
-   (which this CLI tool uses to work with git).
+```
+npx github:Financial-Times/transformation-runner run-script --help
+transformation-runner run-script
 
-**Tip:** `mktemp` is handy for generating a temporary, throwaway directory
+Run a script against repositories
+
+Options:
+  --version        Show version number                                 [boolean]
+  --help           Show help                                           [boolean]
+  --workspace, -w  Path to a workspace directory             [string] [required]
+  --script, -s     Path to a script                          [string] [required]
+  --targets        Target repositories (separate multiple targets with a space)
+                                                              [array] [required]
+  --branch, -b     Name for the git branch to create         [string] [required]
+  --token          GitHub Personal Access Token (must have all repo scopes)
+                                                             [string] [required]
+```
+
+**Tip:** `$(mktemp -d)` is handy for generating a temporary, throwaway directory
 ([documentation](https://manpages.ubuntu.com/manpages/en/man1/mktemp.1.html)).
-Instead of `/tmp/workspace` in the example above, you could use `$(mktemp -d)`.
 
 ## Environment variables
 
