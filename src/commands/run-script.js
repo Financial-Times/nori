@@ -37,12 +37,7 @@ const builder = (yargs) => {
             describe: 'Name for the git branch to create',
             demandOption: true,
             type: 'string'
-        })
-        .option('token', {
-            describe: 'GitHub Personal Access Token (must have all repo scopes)',
-            demandOption: true,
-            type: 'string'
-        })
+        });
 };
 
 /**
@@ -53,9 +48,8 @@ const builder = (yargs) => {
  * @param {string} argv.script
  * @param {string} argv.targets
  * @param {string} argv.branch
- * @param {string} argv.token
  */
-const handler = async ({ workspace, script, targets, branch, token }) => {
+const handler = async ({ workspace, script, targets, branch }) => {
 
     if (targets.length === 0) {
         throw new Error('No targets specified');
