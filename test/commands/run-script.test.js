@@ -1,16 +1,18 @@
 const yargs = require('yargs');
-const mockFs = require('mock-fs');
+const {fs, vol} = require('memfs');
 
 const runScript = require('../../src/commands/run-script');
 
 const git = require('@financial-times/git');
+
+jest.mock('fs', () => require('memfs').fs);
 
 const mockConsoleWarn = jest
     .spyOn(console, 'warn')
     .mockImplementation(message => message);
 
 afterEach(() => {
-    mockFs.restore();
+    vol.reset();
     jest.clearAllMocks();
 });
 
@@ -57,7 +59,7 @@ test('errors when `workspace` directory does not exist', async () => {
 });
 
 test('errors when `workspace` is not a directory', async () => {
-    mockFs({
+    vol.fromJSON({
         hello: 'some file contents'
     });
     await expect(
@@ -69,7 +71,7 @@ test('errors when `workspace` is not a directory', async () => {
 });
 
 test('errors when `script` is empty', async () => {
-    mockFs({
+    vol.fromJSON({
         hello: {}
     });
     await expect(
@@ -81,7 +83,7 @@ test('errors when `script` is empty', async () => {
 });
 
 test('errors when `script` does not exist', async () => {
-    mockFs({
+    vol.fromJSON({
         hello: {}
     });
     await expect(
@@ -93,11 +95,13 @@ test('errors when `script` does not exist', async () => {
     ).rejects.toThrowError(/script does not exist/i);
 });
 
-test('errors when `script` is not executable', async () => {
-    mockFs({
+// memfs does not currently implement permissions :/
+test.skip('errors when `script` is not executable', async () => {
+    vol.fromJSON({
         hello: {},
         'transformation.js': 'Some transformation script'
     });
+    fs.chmodSync('transformation.js', 0o666);
     await expect(
         runScript.handler({
             targets: ['git@github.com:Financial-Times/next-search-page'],
@@ -107,14 +111,10 @@ test('errors when `script` is not executable', async () => {
     ).rejects.toThrowError(/script is not executable/i);
 });
 
-// TODO: Add this when we have a proper logger
-test.skip('runs script', async () => {
-    mockFs({
+test('runs script', async () => {
+    vol.fromJSON({
         hello: {},
-        'transformation.js': mockFs.file({
-            mode: 0o0777,
-            content: 'Some transformation script'
-        })
+        'transformation.js': 'Some transformation script'
     });
     await runScript.handler({
         targets: ['git@github.com:Financial-Times/next-search-page'],
