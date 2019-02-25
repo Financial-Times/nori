@@ -11,7 +11,7 @@ const mockConsoleWarn = jest
     .spyOn(console, 'warn')
     .mockImplementation(message => message);
 
-const mockFsAccessSync = jest.spyOn(fs, 'accessSync');
+const mockFsAccess = jest.spyOn(fs.promises, 'accessSync');
 
 afterEach(() => {
     vol.reset();
@@ -103,7 +103,7 @@ test('errors when `script` is not executable', async () => {
         'transformation.js': 'Some transformation script'
     });
     // memfs does not currently implement permissions, so directly mock fs.accessSync
-    mockFsAccessSync.mockImplementationOnce(file => {
+    mockFsAccess.mockImplementationOnce(async file => {
         throw new Error(`Error: EACCES: permission denied, access '${file}'`);
     });
     await expect(
@@ -120,7 +120,7 @@ test('runs script', async () => {
         hello: {},
         'transformation.js': 'Some transformation script'
     });
-    mockFsAccessSync.mockReturnValueOnce(undefined);
+    mockFsAccess.mockResolvedValueOnce(undefined);
     await runScript.handler({
         targets: ['git@github.com:Financial-Times/next-search-page'],
         workspace: 'hello',
