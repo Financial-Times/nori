@@ -1,4 +1,4 @@
-# 🏃 transformation-runner CLI tool
+# 🏃 Transformation Runner CLI tool
 
 > A CLI tool for applying file changes to many git repositories
 
@@ -15,8 +15,6 @@ Example use cases:
 Scripts for making changes should _not_ be stored in this repository. If you find
 yourself writing scripts to be run with this tool you should collect them
 together in their own separate repository.
-
-> :information_source: This project is awaiting a [new name](https://github.com/Financial-Times/transformation-runner/issues/2).
 
 ## Usage
 
