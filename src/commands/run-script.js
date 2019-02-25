@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const assert = require('assert');
-const fs = require('fs');
+const {promises: fs, constants} = require('fs');
 const path = require('path');
 
 const git = require('@financial-times/git');
@@ -62,19 +62,20 @@ const handler = async ({ workspace, script, targets, branch, token }) => {
     }
 
     const workspacePath = path.resolve(workspace);
-    const workspacePathExists = fs.existsSync(workspacePath);
-    assert(workspacePathExists, `Workspace directory path does not exist: ${workspacePath}`);
-    const workspacePathIsDirectory = fs.lstatSync(workspacePath).isDirectory();
+    await fs.access(workspacePath).catch(
+        () => assert(false, `Workspace directory path does not exist: ${workspacePath}`)
+    );
+    const workspacePathIsDirectory = (await fs.lstat(workspacePath)).isDirectory();
     assert(workspacePathIsDirectory, `Workspace directory path is not a directory: ${workspacePath}`);
 
     const scriptPath = path.resolve(script);
-    const scriptExists = fs.existsSync(scriptPath);
-    assert(scriptExists, `Script does not exist: ${scriptPath}`);
-    try {
-        fs.accessSync(scriptPath, fs.constants.X_OK);
-    } catch (err) {
-        assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`);
-    }
+    await fs.access(scriptPath).catch(
+        () => assert(false, `Script does not exist: ${scriptPath}`)
+    );
+
+    await fs.access(scriptPath, constants.X_OK).catch(
+        () => assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`)
+    );
 
     console.log(`-- Workspace directory: ${workspacePath}`);
     console.log(`-- Script: ${scriptPath}`);
