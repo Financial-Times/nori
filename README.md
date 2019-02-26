@@ -38,8 +38,6 @@ Options:
   --targets        Target repositories (separate multiple targets with a space)
                                                               [array] [required]
   --branch, -b     Name for the git branch to create         [string] [required]
-  --token          GitHub Personal Access Token (must have all repo scopes)
-                                                             [string] [required]
 ```
 
 **Tip:** `$(mktemp -d)` is handy for generating a temporary, throwaway directory
