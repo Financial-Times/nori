@@ -61,6 +61,7 @@ const handler = async ({ workspace, script, targets, branch }) => {
         throw new Error('No targets specified');
     }
 
+    // TODO use a central dotfile location, don't ask for workspace
     const workspacePath = path.resolve(workspace);
     await fsAccess(workspacePath).catch(
         () => assert(false, `Workspace directory path does not exist: ${workspacePath}`)
@@ -77,10 +78,14 @@ const handler = async ({ workspace, script, targets, branch }) => {
         () => assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`)
     );
 
+    // TODO konmari logging
     console.log(`-- Workspace directory: ${workspacePath}`);
     console.log(`-- Script: ${scriptPath}`);
     console.log(`-- Target(s):\n\n   ${targets.join('\n   ')}`);
 
+    const branches = [];
+
+    // TODO parallel
     for (let repository of targets) {
         console.log('\n===\n');
 
@@ -91,6 +96,7 @@ const handler = async ({ workspace, script, targets, branch }) => {
 
         try {
             console.log(`-- Cloning repository locally: ${repository}`);
+            // TODO don't clone if folder exists, instead check origin and pull
             await git.clone({ origin: 'origin', repository });
             console.log(`-- Repository '${repositoryName}' cloned locally to ${cloneDirectory}`);
 
@@ -121,12 +127,17 @@ const handler = async ({ workspace, script, targets, branch }) => {
 
             console.log(scriptOutput);
 
+            // TODO don't push if no changes
             console.log(`-- Pushing branch ${branch} to remote 'origin'`);
             await git.push({ repository: 'origin', refspec: branch });
 
+            branches.push(branch);
         } catch (error) {
             console.error(new Error(`Error running script for '${repository}': ${error.message}`));
+            throw error;
         }
+
+        return branches;
     }
 };
 

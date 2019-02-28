@@ -3,6 +3,13 @@
 const {prompt} = require('enquirer');
 const isUrl = require('is-url');
 const got = require('got');
+const {handler: runScript} = require('./run-script');
+const fs = require('fs');
+const util = require('util');
+const path = require('path');
+
+const exists = (...args) => util.promisify(fs.access)(...args).then(() => true, () => false);
+const readFile = (...args) => util.promisify(fs.readFile)(...args);
 
 /**
  * yargs builder function.
@@ -31,11 +38,29 @@ const operations = [
         get: async ({url, token, topic}) => {
             return (await got(url, {
                 json: true,
-                headers: {
+                headers: token && {
                     authorization: `Bearer ${token}`
                 },
                 query: {topic}
             })).body.repositories
+        }
+    },
+    {
+        name: 'file',
+        message: 'get a list of repos from a file',
+        input: 'start',
+        output: 'repos',
+        prompt: () => prompt({
+            name: 'file',
+            type: 'text',
+            validate: async input => (await exists(path.resolve(input))) || 'Please enter a path to a text file containing a line-separated list of repositories'
+        }),
+        get: async ({file}) => {
+            const contents = await readFile(file, 'utf8');
+            return contents.split('\n').map(line => {
+                const [owner, name] = line.split('/');
+                return {owner, name};
+            });
         }
     },
     /* { // ebi isn't yet usable outside of the CLI
@@ -61,8 +86,20 @@ const operations = [
         name: 'run-script',
         input: 'repos',
         output: 'branches',
-        prompt: () => prompt({}),
-        get: () => {},
+        prompt: () => prompt({
+            type: 'form',
+            name: 'script',
+            choices: [
+                {name: 'workspace'},
+                {name: 'script'},
+                {name: 'branch'},
+            ]
+        }),
+        get: ({script}, {repos}) => {
+            return runScript(Object.assign({
+                targets: repos.map(({name, owner}) => `git@github.com:${owner}/${name}`)
+            }, script));
+        },
     },
     {
         name: 'prs',
@@ -117,7 +154,7 @@ const handler = async () => {
         type = choice.output;
 
         const payload = await choice.prompt();
-        steps.push({type, payload});
+        steps.push({name: thing, payload});
         
         data[type] = await choice.get(payload, data);
     }
