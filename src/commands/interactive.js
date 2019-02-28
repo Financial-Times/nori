@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 
 const {prompt} = require('enquirer');
+const isUrl = require('is-url');
+const got = require('got');
 
 /**
  * yargs builder function.
@@ -12,10 +14,25 @@ const builder = () => {};
 const operations = [
     {
         name: 'tako',
+        message: 'get a list of repos from a tako instance',
         input: 'start',
         output: 'repos',
-        prompt: () => prompt({}),
-        get: () => {}
+        prompt: () => prompt([{
+            name: 'url',
+            validate: input => isUrl(input) || 'Please enter a valid URL',
+            type: 'text',
+        }, {
+            name: 'token',
+            type: 'text',
+        }]),
+        get: async ({url, token}) => {
+            return (await got(url, {
+                json: true,
+                headers: {
+                    authorization: `Bearer ${token}`
+                }
+            })).body.repositories
+        }
     },
     {
         name: 'ebi',
@@ -76,8 +93,9 @@ const handler = async () => {
             name: 'thing',
             message: 'what do',
             type: 'select',
-            choices: operations.map(({name, input}) => ({
+            choices: operations.map(({name, message, input}) => ({
                 name,
+                message,
                 disabled: (!input || input === type) ? false : ''
             })),
         });
