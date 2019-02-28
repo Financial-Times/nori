@@ -72,15 +72,17 @@ const handler = async () => {
     const data = {};
 
     while(type !== 'done') {
-        const choices = operations.filter(({input}) => !input || input === type);
         const {thing} = await prompt({
             name: 'thing',
             message: 'what do',
             type: 'select',
-            choices: choices.map(({name}) => ({name})),
+            choices: operations.map(({name, input}) => ({
+                name,
+                disabled: (!input || input === type) ? false : ''
+            })),
         });
 
-        const choice = choices.find(({name}) => name === thing);
+        const choice = operations.find(({name}) => name === thing);
         type = choice.output;
 
         const payload = await choice.prompt();
