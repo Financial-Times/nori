@@ -18,6 +18,7 @@
   "license": "MIT",
   "dependencies": {
     "@financial-times/git": "^1.0.0",
+    "@financial-times/github": "^1.0.0",
     "ebi": "^1.1.0",
     "enquirer": "^2.3.0",
     "got": "^9.6.0",

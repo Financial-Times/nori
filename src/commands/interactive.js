@@ -10,6 +10,10 @@ const path = require('path');
 
 const exists = (...args) => util.promisify(fs.access)(...args).then(() => true, () => false);
 const readFile = (...args) => util.promisify(fs.readFile)(...args);
+const writeFile = (...args) => util.promisify(fs.writeFile)(...args);
+const readdir = (...args) => util.promisify(fs.readdir)(...args);
+
+const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
 /**
  * yargs builder function.
@@ -110,7 +114,7 @@ const operations = [
     {
         name: 'project',
         input: 'prs',
-        output: false,
+        output: 'project',
         prompt: () => prompt({}),
         get: () => {},
     },
@@ -134,8 +138,38 @@ const operations = [
  */
 const handler = async () => {
     let type = 'start';
-    const steps = [];
-    const data = {};
+    let steps = [];
+    let data = {};
+    let resume = 'new';
+    let run
+
+    const previousRuns = (await readdir(workspacePath)).filter(
+        file => file.endsWith('.json')
+    );
+
+    if(previousRuns.length) {
+        ({resume} = await prompt({
+            name: 'resume',
+            type: 'select',
+            choices: previousRuns.concat(
+                {name: 'new'}
+            ),
+        }));
+    }
+
+    if(resume === 'new') {
+        const {name} = await prompt({
+            name: 'name',
+            type: 'text',
+        });
+
+        run = path.join(workspacePath, name + '.json');
+    } else {
+        run = path.join(workspacePath, resume);
+        ({steps, data, type} = JSON.parse(
+            await readFile(run, 'utf8')
+        ));
+    }
 
     while(type !== 'done') {
         const {thing} = await prompt({
@@ -156,6 +190,13 @@ const handler = async () => {
         steps.push({name: thing, payload});
         
         data[type] = await choice.get(payload, data);
+
+        if(type !== 'done') {
+            await writeFile(
+                run,
+                JSON.stringify({steps, data, type}, null, 2)
+            );
+        }
     }
 
     console.log(steps, data);
