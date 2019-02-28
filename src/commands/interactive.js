@@ -90,7 +90,6 @@ const operations = [
             type: 'form',
             name: 'script',
             choices: [
-                {name: 'workspace'},
                 {name: 'script'},
                 {name: 'branch'},
             ]

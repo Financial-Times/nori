@@ -6,12 +6,12 @@ const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
 const util = require('util');
-
+const mkdirp = util.promisify(require('mkdirp'));
 const git = require('@financial-times/git');
+
 const runProcess = require('../lib/run-process');
 
-const fsAccess = util.promisify((...args) => fs.access(...args));
-const fsLstat = util.promisify((...args) => fs.lstat(...args));
+const exists = (...args) => fs.access(...args).then(() => true, () => false);
 
 /**
  * yargs builder function.
@@ -21,12 +21,6 @@ const fsLstat = util.promisify((...args) => fs.lstat(...args));
 const builder = (yargs) => {
 
     return yargs
-        .option('workspace', {
-            alias: 'w',
-            describe: 'Path to a workspace directory',
-            demandOption: true,
-            type: 'string'
-        })
         .option('script', {
             alias: 's',
             describe: 'Path to a script',
@@ -46,6 +40,8 @@ const builder = (yargs) => {
         });
 };
 
+const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
+
 /**
  * yargs handler function.
  *
@@ -61,25 +57,17 @@ const handler = async ({ workspace, script, targets, branch }) => {
         throw new Error('No targets specified');
     }
 
-    // TODO use a central dotfile location, don't ask for workspace
-    const workspacePath = path.resolve(workspace);
-    await fsAccess(workspacePath).catch(
-        () => assert(false, `Workspace directory path does not exist: ${workspacePath}`)
-    );
-    const workspacePathIsDirectory = (await fsLstat(workspacePath)).isDirectory();
-    assert(workspacePathIsDirectory, `Workspace directory path is not a directory: ${workspacePath}`);
+    if(!(await exists(scriptPath))) {
+        assert(false, `Script does not exist: ${scriptPath}`);
+    }
 
-    const scriptPath = path.resolve(script);
-    await fsAccess(scriptPath).catch(
-        () => assert(false, `Script does not exist: ${scriptPath}`)
-    );
+    if(!(await exists(scriptPath, constants.X_OK))) {
+        assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`);
+    }
 
-    await fsAccess(scriptPath, fs.constants.X_OK).catch(
-        () => assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`)
-    );
+    await mkdirp(workspacePath);
 
     // TODO konmari logging
-    console.log(`-- Workspace directory: ${workspacePath}`);
     console.log(`-- Script: ${scriptPath}`);
     console.log(`-- Target(s):\n\n   ${targets.join('\n   ')}`);
 
@@ -90,15 +78,21 @@ const handler = async ({ workspace, script, targets, branch }) => {
         console.log('\n===\n');
 
         const repositoryName = repository.split('/').pop().replace('.git', '');
-        const cloneDirectory = `${workspacePath}/${repositoryName}`;
+        const cloneDirectory = path.join(workspacePath, repositoryName);
 
         git.defaults({ workingDirectory: cloneDirectory });
 
         try {
-            console.log(`-- Cloning repository locally: ${repository}`);
-            // TODO don't clone if folder exists, instead check origin and pull
-            await git.clone({ origin: 'origin', repository });
-            console.log(`-- Repository '${repositoryName}' cloned locally to ${cloneDirectory}`);
+            if(await exists(cloneDirectory)) {
+                console.log(`-- Updating local clone: ${repository}`);
+                await git.checkoutBranch({ name: 'master' });
+                // TODO reset & pull
+                console.log(`-- Repository '${repositoryName}' updated in ${cloneDirectory}`);
+            } else {
+                console.log(`-- Cloning repository locally: ${repository}`);
+                await git.clone({ origin: 'origin', repository });
+                console.log(`-- Repository '${repositoryName}' cloned locally to ${cloneDirectory}`);
+            }
 
             await git.createBranch({ name: branch });
             await git.checkoutBranch({ name: branch });

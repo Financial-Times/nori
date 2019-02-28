@@ -57,27 +57,6 @@ test('errors when `targets` is an empty array', async () => {
     ).rejects.toThrowError(/no targets specified/i);
 });
 
-test('errors when `workspace` directory does not exist', async () => {
-    await expect(
-        runScript.handler({
-            targets: ['git@github.com:Financial-Times/next-search-page'],
-            workspace: 'hello'
-        })
-    ).rejects.toThrowError(/path does not exist/i);
-});
-
-test('errors when `workspace` is not a directory', async () => {
-    vol.fromJSON({
-        hello: 'some file contents'
-    });
-    await expect(
-        runScript.handler({
-            targets: ['git@github.com:Financial-Times/next-search-page'],
-            workspace: 'hello'
-        })
-    ).rejects.toThrowError(/path is not a directory/i);
-});
-
 test('errors when `script` is empty', async () => {
     vol.fromJSON({
         hello: {}
