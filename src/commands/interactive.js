@@ -24,26 +24,39 @@ const operations = [
         }, {
             name: 'token',
             type: 'text',
+        }, {
+            name: 'topic',
+            type: 'text',
         }]),
-        get: async ({url, token}) => {
+        get: async ({url, token, topic}) => {
             return (await got(url, {
                 json: true,
                 headers: {
                     authorization: `Bearer ${token}`
-                }
+                },
+                query: {topic}
             })).body.repositories
         }
     },
-    {
+    /* { // ebi isn't yet usable outside of the CLI
         name: 'ebi',
         input: 'repos',
         output: 'repos',
-        prompt: () => prompt({
+        prompt: () => prompt([{
+            name: 'type',
+            type: 'select',
+            choices: Object.keys(ebi),
+        }, {
             name: 'query',
-            type: 'text'
-        }),
-        get: () => {},
-    },
+            type: 'text',
+        }]),
+        get: ({type, query}, {repos}) => {
+            const ebiCommand = ebi[type];
+            const yargs = ebiCommand.builder(subYargs(query.split(/ +/)));
+            console.log(yargs.argv);
+            return repos;
+        },
+    }, */
     {
         name: 'run-script',
         input: 'repos',
