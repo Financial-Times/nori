@@ -250,7 +250,7 @@ const handler = async () => {
             })).concat([
                 {role: 'separator'},
                 {name: 'preview'},
-                {name: 'done'}
+                {name: 'done', hint: `your work is autosaved as ${path.basename(run)}`}
             ]),
         });
 
