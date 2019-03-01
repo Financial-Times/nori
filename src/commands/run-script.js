@@ -11,7 +11,7 @@ const git = require('@financial-times/git');
 
 const runProcess = require('../lib/run-process');
 
-const exists = (...args) => fs.access(...args).then(() => true, () => false);
+const exists = (...args) => util.promisify(fs.access)(...args).then(() => true, () => false);
 
 /**
  * yargs builder function.
@@ -61,7 +61,7 @@ const handler = async ({ workspace, script, targets, branch }) => {
         assert(false, `Script does not exist: ${scriptPath}`);
     }
 
-    if(!(await exists(scriptPath, constants.X_OK))) {
+    if(!(await exists(scriptPath, fs.constants.X_OK))) {
         assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`);
     }
 

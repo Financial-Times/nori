@@ -7,9 +7,13 @@ const {handler: runScript} = require('./run-script');
 const fs = require('fs');
 const util = require('util');
 const path = require('path');
+
+const oldConsoleError = console.error;
+console.error = () => {};
 const github = require('@financial-times/github')({
     personalAccessToken: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
 });
+console.error = oldConsoleError;
 
 const exists = (...args) => util.promisify(fs.access)(...args).then(() => true, () => false);
 const readFile = (...args) => util.promisify(fs.readFile)(...args);
@@ -26,6 +30,7 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
 - noop scripts
 - richer previews
 - messaging & help
+- sorting & editing list of replays
 */
 
 /**
