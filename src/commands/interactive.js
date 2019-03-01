@@ -189,20 +189,6 @@ const operations = [
 
             return project;
         },
-    },
-    {
-        name: 'preview',
-        input: false,
-        output: false,
-        prompt: () => {},
-        get: (_, data) => console.log(data),
-    },
-    {
-        name: 'done',
-        input: false,
-        output: 'done',
-        prompt: () => prompt({}),
-        get: () => {},
     }
 ];
 
@@ -250,7 +236,7 @@ const handler = async () => {
         ));
     }
 
-    while(type !== 'done') {
+    while(true) {
         const header = shortPreviews.map(format => format(data)).filter(Boolean).join(' ∙ ');
         const {thing} = await prompt({
             name: 'thing',
@@ -261,20 +247,28 @@ const handler = async () => {
                 name,
                 message,
                 disabled: (!input || input === type) ? false : ''
-            })),
+            })).concat([
+                {role: 'separator'},
+                {name: 'preview'},
+                {name: 'done'}
+            ]),
         });
 
-        const choice = operations.find(({name}) => name === thing);
-        const payload = await choice.prompt();
-        const stepData = await choice.get(payload, data);
+        if(thing === 'done') {
+            break;
+        } else if(thing === 'preview') {
+            console.log(data);
+        } else {
+            const choice = operations.find(({name}) => name === thing);
+            const payload = await choice.prompt();
+            const stepData = await choice.get(payload, data);
 
-        if(choice.output) {
-            steps.push({name: thing, payload});
-            type = choice.output;
-            data[type] = stepData;
-        }
+            if(choice.output) {
+                steps.push({name: thing, payload});
+                type = choice.output;
+                data[type] = stepData;
+            }
 
-        if(type !== 'done') {
             await writeFile(
                 run,
                 JSON.stringify({steps, data, type}, null, 2)
