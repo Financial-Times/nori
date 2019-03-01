@@ -7,6 +7,9 @@ const {handler: runScript} = require('./run-script');
 const fs = require('fs');
 const util = require('util');
 const path = require('path');
+const github = require('@financial-times/github')({
+    personalAccessToken: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
+});
 
 const exists = (...args) => util.promisify(fs.access)(...args).then(() => true, () => false);
 const readFile = (...args) => util.promisify(fs.readFile)(...args);
@@ -108,8 +111,31 @@ const operations = [
         name: 'prs',
         input: 'branches',
         output: 'prs',
-        prompt: () => prompt({}),
-        get: () => {},
+        prompt: () => prompt({
+            type: 'form',
+            name: 'templates',
+            choices: [
+                {name: 'title'},
+                {name: 'body'},
+            ]
+        }),
+        get: ({templates: {title, body}}, {repos, branches}) => {
+            const titleTemplate = new Function('repo', 'branch', `return \`${title}\``);
+            const bodyTemplate = new Function('repo', 'branch', `return \`${body}\``);
+
+            // TODO what if not all the repos had a branch created
+            return Promise.all(branches.map((branch, index) => {
+                const repo = repos[index];
+                return github.createPullRequest({
+                    owner: repo.owner,
+                    repo: repo.name,
+                    head: branch,
+                    base: 'master',
+                    title: titleTemplate(repo, branch),
+                    body: bodyTemplate(repo, branch)
+                })
+            }))
+        },
     },
     {
         name: 'project',
@@ -117,6 +143,13 @@ const operations = [
         output: 'project',
         prompt: () => prompt({}),
         get: () => {},
+    },
+    {
+        name: 'preview',
+        input: false,
+        output: false,
+        prompt: () => {},
+        get: (_, data) => console.log(data),
     },
     {
         name: 'done',
@@ -184,12 +217,14 @@ const handler = async () => {
         });
 
         const choice = operations.find(({name}) => name === thing);
-        type = choice.output;
-
         const payload = await choice.prompt();
-        steps.push({name: thing, payload});
-        
-        data[type] = await choice.get(payload, data);
+        const stepData = await choice.get(payload, data);
+
+        if(choice.output) {
+            steps.push({name: thing, payload});
+            type = choice.output;
+            data[type] = stepData;
+        }
 
         if(type !== 'done') {
             await writeFile(
