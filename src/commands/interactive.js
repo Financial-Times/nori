@@ -141,8 +141,30 @@ const operations = [
         name: 'project',
         input: 'prs',
         output: 'project',
-        prompt: () => prompt({}),
-        get: () => {},
+        prompt: () => prompt({
+            name: 'projectData',
+            type: 'form',
+            choices: [
+                {name: 'name'},
+                {name: 'org'}
+            ]
+        }),
+        get: async ({projectData}, {prs}) => {
+            const project = await github.createProject(projectData);
+            const todoColumn = await github.createProjectColumn({project_id: project.id, name: 'To do'});
+            await github.createProjectColumn({project_id: project.id, name: 'In progress'});
+            await github.createProjectColumn({project_id: project.id, name: 'Done'});
+
+            await Promise.all(
+                prs.map(pr => github.createPullRequestCard({
+                    column_id: todoColumn.id,
+                    content_id: pr.id,
+                    content_type: 'PullRequest'
+                }))
+            );
+
+            return project;
+        },
     },
     {
         name: 'preview',
@@ -233,8 +255,6 @@ const handler = async () => {
             );
         }
     }
-
-    console.log(steps, data);
 };
 
 /**
