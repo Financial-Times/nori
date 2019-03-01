@@ -130,9 +130,9 @@ const handler = async ({ workspace, script, targets, branch }) => {
             console.error(new Error(`Error running script for '${repository}': ${error.message}`));
             throw error;
         }
-
-        return branches;
     }
+
+    return branches;
 };
 
 /**

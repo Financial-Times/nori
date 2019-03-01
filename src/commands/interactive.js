@@ -87,9 +87,11 @@ const operations = [
         get: async ({file}) => {
             const contents = await readFile(file, 'utf8');
             return contents.split('\n').map(line => {
+                if(!line) return;
+
                 const [owner, name] = line.split('/');
                 return {owner, name};
-            });
+            }).filter(Boolean);
         }
     },
     /* { // ebi isn't yet usable outside of the CLI
