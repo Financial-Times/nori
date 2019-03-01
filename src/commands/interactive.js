@@ -18,12 +18,29 @@ const readdir = (...args) => util.promisify(fs.readdir)(...args);
 
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
+/*TODO
+- undo
+- full replay
+- split into commands & refactor
+- ebi
+- noop scripts
+- richer previews
+- messaging & help
+*/
+
 /**
  * yargs builder function.
  *
  * @param {import('yargs/yargs').Yargs} yargs - Instance of yargs
  */
 const builder = () => {};
+
+const shortPreviews = [
+    ({repos}) => repos ? `${repos.length} repositor${repos.length > 1 ? 'ies' : 'y'}` : false,
+    ({branches}) => branches ? `${branches.length} branch${branches.length > 1 ? 'es' : ''}` : false,
+    ({prs}) => prs ? `${prs.length} pull request${prs.length > 1 ? 's' : ''}` : false,
+    ({project}) => project ? project.html_url : false,
+];
 
 const operations = [
     {
@@ -227,10 +244,12 @@ const handler = async () => {
     }
 
     while(type !== 'done') {
+        const header = shortPreviews.map(format => format(data)).filter(Boolean).join(' ∙ ');
         const {thing} = await prompt({
             name: 'thing',
             message: 'what do',
             type: 'select',
+            header,
             choices: operations.map(({name, message, input}) => ({
                 name,
                 message,
