@@ -7,6 +7,7 @@ const {handler: runScript} = require('./run-script');
 const fs = require('mz/fs');
 const util = require('util');
 const path = require('path');
+const relativeDate = require('tiny-relative-date');
 
 const github = require('@financial-times/github')({
     personalAccessToken: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
@@ -205,13 +206,28 @@ const handler = async () => {
         file => file.endsWith('.json')
     );
 
-    // const ages = 
+    const mtimes = await Promise.all(
+        previousRuns.map(run =>
+            fs.stat(
+                path.join(workspacePath, run)
+            ).then(stat => stat.mtime)
+        )
+    );
+
+    const sortedRuns = previousRuns.map(
+        (run, index) => ({run, modified: mtimes[index]})
+    ).sort(
+        ({modified: a}, {modified: b}) => b - a
+    );
 
     if(previousRuns.length) {
         ({resume} = await prompt({
             name: 'resume',
             type: 'select',
-            choices: previousRuns.concat(
+            choices: sortedRuns.map(
+                ({run, modified}) => `${run} (${relativeDate(modified)})`
+            ).concat(
+                {role: 'separator'},
                 {name: 'new'}
             ),
         }));
