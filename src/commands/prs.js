@@ -2,12 +2,12 @@ const {prompt} = require('enquirer');
 const github = require('@financial-times/github');
 
 exports.command = 'prs';
-exports.desc = 'create Github pull requests for the pushed branches';
+exports.desc = 'create Github pull requests for pushed branches';
 
-exports.input = 'branches';
+exports.input = ['repos', 'branches'];
 exports.output = 'prs';
 
-exports.prompt = () => prompt({
+exports.interactiveArguments = () => prompt({
 	type: 'form',
 	name: 'templates',
 	choices: [
@@ -16,7 +16,7 @@ exports.prompt = () => prompt({
 	]
 });
 
-exports.get = ({templates: {title, body}}, {repos, branches}) => {
+exports.handler = ({templates: {title, body}, repos, branches}) => {
 	const titleTemplate = new Function('repo', 'branch', `return \`${title}\``);
 	const bodyTemplate = new Function('repo', 'branch', `return \`${body}\``);
 

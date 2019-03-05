@@ -1,12 +1,13 @@
 const {prompt} = require('enquirer');
 const fs = require('mz/fs');
+const path = require('path');
 
 exports.command = 'file';
 exports.desc = 'get a list of repos from a file';
-exports.input = 'start';
+exports.input = [];
 exports.output = 'repos';
 
-exports.prompt = () => prompt({
+exports.interactiveArguments = () => prompt({
 	name: 'file',
 	type: 'text',
 	validate: async input => (
@@ -14,7 +15,7 @@ exports.prompt = () => prompt({
 	) || 'Please enter a path to a text file containing a line-separated list of repositories'
 });
 
-exports.get = async ({file}) => {
+exports.handler = async ({file}) => {
 	const contents = await fs.readFile(file, 'utf8');
 	return contents.split('\n').map(line => {
 		if(!line) return;

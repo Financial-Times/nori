@@ -17,6 +17,7 @@ const github = require('@financial-times/github')({
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
 /*TODO
+- take context data from input types
 - undo
 - full replay
 - noop scripts
@@ -53,7 +54,6 @@ const operations = [
 ];
 
 async function getResume() {
-    let type = 'start';
     let steps = [];
     let data = {};
     let resume = 'new';
@@ -82,7 +82,10 @@ async function getResume() {
             name: 'resume',
             type: 'select',
             choices: sortedRuns.map(
-                ({run, modified}) => `${run} (${relativeDate(modified)})`
+                ({run, modified}) => ({
+                    name: run,
+                    message: `${run} (${relativeDate(modified)})`,
+                })
             ).concat(
                 {role: 'separator'},
                 {name: 'edit'},
@@ -128,12 +131,12 @@ async function getResume() {
         run = path.join(workspacePath, name + '.json');
     } else {
         run = path.join(workspacePath, resume);
-        ({steps, data, type} = JSON.parse(
-            await readFile(run, 'utf8')
+        ({steps, data} = JSON.parse(
+            await fs.readFile(run, 'utf8')
         ));
     }
 
-    return {run, type, steps, data};
+    return {run, steps, data};
 }
 
 /**
@@ -146,7 +149,7 @@ async function getResume() {
  * @param {string} argv.branch
  */
 const handler = async () => {
-    const {run, type, steps, data} = await getResume();
+    const {run, steps, data} = await getResume();
 
     while(true) {
         const header = shortPreviews.map(format => format(data)).filter(Boolean).join(' ∙ ');
@@ -158,7 +161,9 @@ const handler = async () => {
             choices: operations.map(({command, desc, input}) => ({
                 name: command,
                 message: desc,
-                disabled: (!input || input === type) ? false : ''
+                disabled: (input.length === 0
+                    ? Object.keys(data).length === 0
+                    : input.every(type => type in data)) ? false : '',
             })).concat([
                 {role: 'separator'},
                 {name: 'preview'},
@@ -172,29 +177,33 @@ const handler = async () => {
             console.log(data);
         } else {
             const choice = operations.find(({command}) => command === thing);
-            const payload = await choice.prompt();
-            const stepData = await choice.get(payload, data);
+            const args = await choice.interactiveArguments();
+            const dataArgs = choice.input.reduce(
+                (args, type) => Object.assign(args, {
+                    [type]: data[type]
+                }),
+                {}
+            );
+            const stepData = await choice.handler(
+                Object.assign(dataArgs, args)
+            );
 
             if(choice.output) {
-                steps.push({name: thing, payload});
-                type = choice.output;
-                data[type] = stepData;
+                steps.push({name: thing, args});
+                data[choice.output] = stepData;
             }
 
             await fs.writeFile(
                 run,
-                JSON.stringify({steps, data, type}, null, 2)
+                JSON.stringify({steps, data}, null, 2)
             );
         }
     }
 };
 
-/**
- * @see https://github.com/yargs/yargs/blob/master/docs/advanced.md#providing-a-command-module
- */
 module.exports = {
 	command: ['*', 'interactive'],
-	desc: 'Interactively build steps of a transformation',
+	desc: 'interactively build steps of a transformation',
 	builder,
 	handler,
 };

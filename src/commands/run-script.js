@@ -8,6 +8,7 @@ const path = require('path');
 const util = require('util');
 const mkdirp = util.promisify(require('mkdirp'));
 const git = require('@financial-times/git');
+const {prompt} = require('enquirer');
 
 const runProcess = require('../lib/run-process');
 
@@ -23,8 +24,8 @@ exports.builder = yargs => yargs
         demandOption: true,
         type: 'string'
     })
-    .option('targets', {
-        describe: 'Target repositories (separate multiple targets with a space)',
+    .option('repos', {
+        describe: 'Target repositories (separate multiple repos with a space)',
         demandOption: true,
         type: 'array'
     })
@@ -35,14 +36,10 @@ exports.builder = yargs => yargs
         type: 'string'
     });
 
-exports.prompt = () => prompt({
-    type: 'form',
-    name: 'script',
-    choices: [
-        {name: 'script'},
-        {name: 'branch'},
-    ]
-});
+exports.interactiveArguments = () => prompt([
+    {type: 'text', name: 'script'},
+    {type: 'text', name: 'branch'},
+]);
 
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
@@ -51,12 +48,12 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
  *
  * @param {object} argv - argv parsed and filtered by yargs
  * @param {string} argv.script
- * @param {string} argv.targets
+ * @param {string} argv.repos
  * @param {string} argv.branch
  */
-exports.handler = async ({ script, targets, branch }) => {
-    if (targets.length === 0) {
-        throw new Error('No targets specified');
+exports.handler = async ({ script, repos, branch }) => {
+    if(repos.length === 0) {
+        throw new Error('No repos specified');
     }
 
     if(!(await fs.exists(scriptPath))) {
@@ -71,29 +68,29 @@ exports.handler = async ({ script, targets, branch }) => {
 
     // TODO konmari logging
     console.log(`-- Script: ${scriptPath}`);
-    console.log(`-- Target(s):\n\n   ${targets.join('\n   ')}`);
+    console.log(`-- Target(s):\n\n   ${repos.map(({name}) => name).join('\n   ')}`);
 
     const branches = [];
 
     // TODO parallel
-    for (let repository of targets) {
+    for (let repository of repos) {
         console.log('\n===\n');
 
-        const repositoryName = repository.split('/').pop().replace('.git', '');
-        const cloneDirectory = path.join(workspacePath, repositoryName);
+        const cloneDirectory = path.join(workspacePath, repository.name);
+        const remoteUrl = `git@github.com:${repository.owner}/${repository.name}.git`;
 
         git.defaults({ workingDirectory: cloneDirectory });
 
         try {
             if(await fs.exists(cloneDirectory)) {
-                console.log(`-- Updating local clone: ${repository}`);
+                console.log(`-- Updating local clone: ${repository.name}`);
                 await git.checkoutBranch({ name: 'master' });
                 // TODO reset & pull
-                console.log(`-- Repository '${repositoryName}' updated in ${cloneDirectory}`);
+                console.log(`-- Repository '${repository.name}' updated in ${cloneDirectory}`);
             } else {
-                console.log(`-- Cloning repository locally: ${repository}`);
-                await git.clone({ origin: 'origin', repository });
-                console.log(`-- Repository '${repositoryName}' cloned locally to ${cloneDirectory}`);
+                console.log(`-- Cloning repository locally: ${remoteUrl}`);
+                await git.clone({ origin: 'origin', repository: remoteUrl });
+                console.log(`-- Repository '${repository.name}' cloned locally to ${cloneDirectory}`);
             }
 
             await git.createBranch({ name: branch });
@@ -102,8 +99,8 @@ exports.handler = async ({ script, targets, branch }) => {
 
             const contextForScript = {
                 TRANSFORMATION_RUNNER_RUNNING: true,
-                TRANSFORMATION_RUNNER_TARGET: repository,
-                TRANSFORMATION_RUNNER_TARGET_NAME: repositoryName,
+                TRANSFORMATION_RUNNER_TARGET: remoteUrl,
+                TRANSFORMATION_RUNNER_TARGET_NAME: repository.name,
             };
 
             const scriptEnv = {
@@ -129,7 +126,7 @@ exports.handler = async ({ script, targets, branch }) => {
 
             branches.push(branch);
         } catch (error) {
-            console.error(new Error(`Error running script for '${repository}': ${error.message}`));
+            console.error(new Error(`Error running script for '${repository.name}': ${error.message}`));
             throw error;
         }
     }
@@ -139,11 +136,6 @@ exports.handler = async ({ script, targets, branch }) => {
 
 exports.command = 'run-script',
 exports.desc = 'clone repositories and run a script against them',
-exports.input = 'repos';
+exports.input = ['repos'];
 exports.output = 'branches';
 
-exports.get = ({script}, {repos}) => {
-    return exports.handler(Object.assign({
-        targets: repos.map(({name, owner}) => `git@github.com:${owner}/${name}`)
-    }, script));
-};

@@ -4,10 +4,10 @@ const isUrl = require('is-url');
 
 exports.command = 'tako';
 exports.desc = 'get a list of repos from a tako instance';
-exports.input = 'start';
+exports.input = [];
 exports.output = 'repos';
 
-exports.prompt = () => prompt([{
+exports.interactiveArguments = () => prompt([{
 	name: 'url',
 	validate: input => isUrl(input) || 'Please enter a valid URL',
 	type: 'text',
@@ -19,7 +19,7 @@ exports.prompt = () => prompt([{
 	type: 'text',
 }]);
 
-exports.get = ({url, token, topic}) => got(url, {
+exports.handler = ({url, token, topic}) => got(url, {
 	json: true,
 	headers: token && {
 		authorization: `Bearer ${token}`

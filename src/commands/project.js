@@ -3,10 +3,10 @@ const github = require('@financial-times/github');
 exports.command = 'project';
 exports.desc = 'Create a Github project board and attach the pull requests to it';
 
-exports.input = 'prs';
+exports.input = ['prs'];
 exports.output = 'project';
 
-exports.prompt = () => prompt({
+exports.interactiveArguments = () => prompt({
 	name: 'projectData',
 	type: 'form',
 	choices: [
@@ -15,7 +15,7 @@ exports.prompt = () => prompt({
 	]
 });
 
-exports.get = async ({projectData}, {prs}) => {
+exports.handler = async ({projectData, prs}) => {
 	const project = await github.createProject(projectData);
 	const todoColumn = await github.createProjectColumn({project_id: project.id, name: 'To do'});
 	await github.createProjectColumn({project_id: project.id, name: 'In progress'});
