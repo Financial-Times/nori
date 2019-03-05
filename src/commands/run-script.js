@@ -3,15 +3,13 @@
 /* eslint-disable no-console */
 
 const assert = require('assert');
-const fs = require('fs');
+const fs = require('mz/fs');
 const path = require('path');
 const util = require('util');
 const mkdirp = util.promisify(require('mkdirp'));
 const git = require('@financial-times/git');
 
 const runProcess = require('../lib/run-process');
-
-const exists = (...args) => util.promisify(fs.access)(...args).then(() => true, () => false);
 
 /**
  * yargs builder function.
@@ -57,11 +55,11 @@ const handler = async ({ workspace, script, targets, branch }) => {
         throw new Error('No targets specified');
     }
 
-    if(!(await exists(scriptPath))) {
+    if(!(await fs.exists(scriptPath))) {
         assert(false, `Script does not exist: ${scriptPath}`);
     }
 
-    if(!(await exists(scriptPath, fs.constants.X_OK))) {
+    if(!(await fs.exists(scriptPath, fs.constants.X_OK))) {
         assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`);
     }
 
@@ -83,7 +81,7 @@ const handler = async ({ workspace, script, targets, branch }) => {
         git.defaults({ workingDirectory: cloneDirectory });
 
         try {
-            if(await exists(cloneDirectory)) {
+            if(await fs.exists(cloneDirectory)) {
                 console.log(`-- Updating local clone: ${repository}`);
                 await git.checkoutBranch({ name: 'master' });
                 // TODO reset & pull

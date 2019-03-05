@@ -4,25 +4,18 @@ const {prompt} = require('enquirer');
 const isUrl = require('is-url');
 const got = require('got');
 const {handler: runScript} = require('./run-script');
-const fs = require('fs');
+const fs = require('mz/fs');
 const util = require('util');
 const path = require('path');
 
-const oldConsoleError = console.error;
-console.error = () => {};
 const github = require('@financial-times/github')({
     personalAccessToken: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
 });
-console.error = oldConsoleError;
-
-const exists = (...args) => util.promisify(fs.access)(...args).then(() => true, () => false);
-const readFile = (...args) => util.promisify(fs.readFile)(...args);
-const writeFile = (...args) => util.promisify(fs.writeFile)(...args);
-const readdir = (...args) => util.promisify(fs.readdir)(...args);
 
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
 /*TODO
+- sorting & editing list of replays
 - undo
 - full replay
 - split into commands & refactor
@@ -30,7 +23,7 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
 - noop scripts
 - richer previews
 - messaging & help
-- sorting & editing list of replays
+- open in browser (multiple input types?)
 */
 
 /**
@@ -82,10 +75,10 @@ const operations = [
         prompt: () => prompt({
             name: 'file',
             type: 'text',
-            validate: async input => (await exists(path.resolve(input))) || 'Please enter a path to a text file containing a line-separated list of repositories'
+            validate: async input => (await fs.exists(path.resolve(input))) || 'Please enter a path to a text file containing a line-separated list of repositories'
         }),
         get: async ({file}) => {
-            const contents = await readFile(file, 'utf8');
+            const contents = await fs.readFile(file, 'utf8');
             return contents.split('\n').map(line => {
                 if(!line) return;
 
@@ -208,9 +201,11 @@ const handler = async () => {
     let resume = 'new';
     let run
 
-    const previousRuns = (await readdir(workspacePath)).filter(
+    const previousRuns = (await fs.readdir(workspacePath)).filter(
         file => file.endsWith('.json')
     );
+
+    // const ages = 
 
     if(previousRuns.length) {
         ({resume} = await prompt({
@@ -269,7 +264,7 @@ const handler = async () => {
                 data[type] = stepData;
             }
 
-            await writeFile(
+            await fs.writeFile(
                 run,
                 JSON.stringify({steps, data, type}, null, 2)
             );
