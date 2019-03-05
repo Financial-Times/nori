@@ -19,13 +19,14 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
 /*TODO
 - undo
 - full replay
-- split into commands & refactor
-- ebi
 - noop scripts
 - richer previews
 - messaging & help
 - open in browser (multiple input types?)
 - better form field ux
+- better logging for async tasks
+- ebi
+- toposort operations by input & output
 */
 
 /**
@@ -43,148 +44,12 @@ const shortPreviews = [
 ];
 
 const operations = [
-    {
-        name: 'tako',
-        message: 'get a list of repos from a tako instance',
-        input: 'start',
-        output: 'repos',
-        prompt: () => prompt([{
-            name: 'url',
-            validate: input => isUrl(input) || 'Please enter a valid URL',
-            type: 'text',
-        }, {
-            name: 'token',
-            type: 'text',
-        }, {
-            name: 'topic',
-            type: 'text',
-        }]),
-        get: async ({url, token, topic}) => {
-            return (await got(url, {
-                json: true,
-                headers: token && {
-                    authorization: `Bearer ${token}`
-                },
-                query: {topic}
-            })).body.repositories
-        }
-    },
-    {
-        name: 'file',
-        message: 'get a list of repos from a file',
-        input: 'start',
-        output: 'repos',
-        prompt: () => prompt({
-            name: 'file',
-            type: 'text',
-            validate: async input => (await fs.exists(path.resolve(input))) || 'Please enter a path to a text file containing a line-separated list of repositories'
-        }),
-        get: async ({file}) => {
-            const contents = await fs.readFile(file, 'utf8');
-            return contents.split('\n').map(line => {
-                if(!line) return;
-
-                const [owner, name] = line.split('/');
-                return {owner, name};
-            }).filter(Boolean);
-        }
-    },
-    /* { // ebi isn't yet usable outside of the CLI
-        name: 'ebi',
-        input: 'repos',
-        output: 'repos',
-        prompt: () => prompt([{
-            name: 'type',
-            type: 'select',
-            choices: Object.keys(ebi),
-        }, {
-            name: 'query',
-            type: 'text',
-        }]),
-        get: ({type, query}, {repos}) => {
-            const ebiCommand = ebi[type];
-            const yargs = ebiCommand.builder(subYargs(query.split(/ +/)));
-            console.log(yargs.argv);
-            return repos;
-        },
-    }, */
-    {
-        name: 'run-script',
-        input: 'repos',
-        output: 'branches',
-        prompt: () => prompt({
-            type: 'form',
-            name: 'script',
-            choices: [
-                {name: 'script'},
-                {name: 'branch'},
-            ]
-        }),
-        get: ({script}, {repos}) => {
-            return runScript(Object.assign({
-                targets: repos.map(({name, owner}) => `git@github.com:${owner}/${name}`)
-            }, script));
-        },
-    },
-    {
-        name: 'prs',
-        input: 'branches',
-        output: 'prs',
-        prompt: () => prompt({
-            type: 'form',
-            name: 'templates',
-            choices: [
-                {name: 'title'},
-                {name: 'body'},
-            ]
-        }),
-        get: ({templates: {title, body}}, {repos, branches}) => {
-            const titleTemplate = new Function('repo', 'branch', `return \`${title}\``);
-            const bodyTemplate = new Function('repo', 'branch', `return \`${body}\``);
-
-            // TODO what if not all the repos had a branch created
-            return Promise.all(branches.map((branch, index) => {
-                const repo = repos[index];
-                return github.createPullRequest({
-                    owner: repo.owner,
-                    repo: repo.name,
-                    head: branch,
-                    base: 'master',
-                    title: titleTemplate(repo, branch),
-                    body: bodyTemplate(repo, branch)
-                })
-            }))
-        },
-    },
-    {
-        name: 'project',
-        input: 'prs',
-        output: 'project',
-        prompt: () => prompt({
-            name: 'projectData',
-            type: 'form',
-            choices: [
-                {name: 'name'},
-                {name: 'org'}
-            ]
-        }),
-        get: async ({projectData}, {prs}) => {
-            const project = await github.createProject(projectData);
-            const todoColumn = await github.createProjectColumn({project_id: project.id, name: 'To do'});
-            await github.createProjectColumn({project_id: project.id, name: 'In progress'});
-            await github.createProjectColumn({project_id: project.id, name: 'Done'});
-
-            await Promise.all(
-                prs.map(pr => github.createPullRequestCard({
-                    column_id: todoColumn.id,
-                    content_id: pr.id,
-                    content_type: 'PullRequest'
-                }))
-            );
-
-            return project;
-        },
-    }
+    require('./tako'),
+    require('./file'),
+    // require('./ebi'), // ebi isn't yet usable outside of the CLI
+    require('./run-script'),
+    require('./prs'),
+    require('./project'),
 ];
 
 async function getResume() {
@@ -290,9 +155,9 @@ const handler = async () => {
             message: 'what do',
             type: 'select',
             header,
-            choices: operations.map(({name, message, input}) => ({
-                name,
-                message,
+            choices: operations.map(({command, desc, input}) => ({
+                name: command,
+                message: desc,
                 disabled: (!input || input === type) ? false : ''
             })).concat([
                 {role: 'separator'},
@@ -306,7 +171,7 @@ const handler = async () => {
         } else if(thing === 'preview') {
             console.log(data);
         } else {
-            const choice = operations.find(({name}) => name === thing);
+            const choice = operations.find(({command}) => command === thing);
             const payload = await choice.prompt();
             const stepData = await choice.get(payload, data);
 

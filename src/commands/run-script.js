@@ -16,27 +16,33 @@ const runProcess = require('../lib/run-process');
  *
  * @param {import('yargs/yargs').Yargs} yargs - Instance of yargs
  */
-const builder = (yargs) => {
+exports.builder = yargs => yargs
+    .option('script', {
+        alias: 's',
+        describe: 'Path to a script',
+        demandOption: true,
+        type: 'string'
+    })
+    .option('targets', {
+        describe: 'Target repositories (separate multiple targets with a space)',
+        demandOption: true,
+        type: 'array'
+    })
+    .option('branch', {
+        alias: 'b',
+        describe: 'Name for the git branch to create',
+        demandOption: true,
+        type: 'string'
+    });
 
-    return yargs
-        .option('script', {
-            alias: 's',
-            describe: 'Path to a script',
-            demandOption: true,
-            type: 'string'
-        })
-        .option('targets', {
-            describe: 'Target repositories (separate multiple targets with a space)',
-            demandOption: true,
-            type: 'array'
-        })
-        .option('branch', {
-            alias: 'b',
-            describe: 'Name for the git branch to create',
-            demandOption: true,
-            type: 'string'
-        });
-};
+exports.prompt = () => prompt({
+    type: 'form',
+    name: 'script',
+    choices: [
+        {name: 'script'},
+        {name: 'branch'},
+    ]
+});
 
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
@@ -44,13 +50,11 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
  * yargs handler function.
  *
  * @param {object} argv - argv parsed and filtered by yargs
- * @param {string} argv.workspace
  * @param {string} argv.script
  * @param {string} argv.targets
  * @param {string} argv.branch
  */
-const handler = async ({ workspace, script, targets, branch }) => {
-
+exports.handler = async ({ script, targets, branch }) => {
     if (targets.length === 0) {
         throw new Error('No targets specified');
     }
@@ -133,12 +137,13 @@ const handler = async ({ workspace, script, targets, branch }) => {
     return branches;
 };
 
-/**
- * @see https://github.com/yargs/yargs/blob/master/docs/advanced.md#providing-a-command-module
- */
-module.exports = {
-	command: 'run-script',
-	desc: 'Run a script against repositories',
-	builder,
-	handler,
+exports.command = 'run-script',
+exports.desc = 'clone repositories and run a script against them',
+exports.input = 'repos';
+exports.output = 'branches';
+
+exports.get = ({script}, {repos}) => {
+    return exports.handler(Object.assign({
+        targets: repos.map(({name, owner}) => `git@github.com:${owner}/${name}`)
+    }, script));
 };
