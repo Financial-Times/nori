@@ -8,6 +8,7 @@ const fs = require('mz/fs');
 const util = require('util');
 const path = require('path');
 const relativeDate = require('tiny-relative-date');
+const toSentence = require('array-to-sentence');
 
 const github = require('@financial-times/github')({
     personalAccessToken: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
@@ -16,7 +17,6 @@ const github = require('@financial-times/github')({
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
 /*TODO
-- sorting & editing list of replays
 - undo
 - full replay
 - split into commands & refactor
@@ -25,6 +25,7 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
 - richer previews
 - messaging & help
 - open in browser (multiple input types?)
+- better form field ux
 */
 
 /**
@@ -186,21 +187,12 @@ const operations = [
     }
 ];
 
-/**
- * yargs handler function.
- *
- * @param {object} argv - argv parsed and filtered by yargs
- * @param {string} argv.workspace
- * @param {string} argv.script
- * @param {string} argv.targets
- * @param {string} argv.branch
- */
-const handler = async () => {
+async function getResume() {
     let type = 'start';
     let steps = [];
     let data = {};
     let resume = 'new';
-    let run
+    let run;
 
     const previousRuns = (await fs.readdir(workspacePath)).filter(
         file => file.endsWith('.json')
@@ -228,9 +220,38 @@ const handler = async () => {
                 ({run, modified}) => `${run} (${relativeDate(modified)})`
             ).concat(
                 {role: 'separator'},
+                {name: 'edit'},
                 {name: 'new'}
             ),
         }));
+    }
+
+    if(resume === 'edit') {
+        const {toDelete, confirm} = await prompt([{
+            type: 'multiselect',
+            name: 'toDelete',
+            choices: sortedRuns.map(({run}) => run)
+        }, {
+            type: 'confirm',
+            name: 'confirm',
+            message: ({answers: {toDelete}}) => `delete ${toSentence(toDelete)}`,
+            skip() {
+                // should be first argument to skip, see https://github.com/enquirer/enquirer/issues/105
+                return this.state.answers.toDelete.length === 0;
+            } 
+        }]);
+
+        if(confirm) {
+            await Promise.all(
+                toDelete.map(
+                    run => fs.unlink(
+                        path.join(workspacePath, run)
+                    )
+                )
+            );
+        }
+
+        return getResume();
     }
 
     if(resume === 'new') {
@@ -246,6 +267,21 @@ const handler = async () => {
             await readFile(run, 'utf8')
         ));
     }
+
+    return {run, type, steps, data};
+}
+
+/**
+ * yargs handler function.
+ *
+ * @param {object} argv - argv parsed and filtered by yargs
+ * @param {string} argv.workspace
+ * @param {string} argv.script
+ * @param {string} argv.targets
+ * @param {string} argv.branch
+ */
+const handler = async () => {
+    const {run, type, steps, data} = await getResume();
 
     while(true) {
         const header = shortPreviews.map(format => format(data)).filter(Boolean).join(' ∙ ');
