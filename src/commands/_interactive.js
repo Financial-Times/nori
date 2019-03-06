@@ -3,12 +3,12 @@
 const {prompt} = require('enquirer');
 const isUrl = require('is-url');
 const got = require('got');
-const {handler: runScript} = require('./run-script');
 const fs = require('mz/fs');
 const util = require('util');
 const path = require('path');
 const relativeDate = require('tiny-relative-date');
 const toSentence = require('array-to-sentence');
+const types = require('../lib/types');
 
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
@@ -28,13 +28,6 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
 - pushing branch as separate step?
 - reuse stateFile code for interactive?
 */
-
-const shortPreviews = [
-    ({repos}) => repos ? `${repos.length} repositor${repos.length > 1 ? 'ies' : 'y'}` : false,
-    ({branches}) => branches ? `${branches.length} branch${branches.length > 1 ? 'es' : ''}` : false,
-    ({prs}) => prs ? `${prs.length} pull request${prs.length > 1 ? 's' : ''}` : false,
-    ({project}) => project ? project.html_url : false,
-];
 
 const operations = [
     require('./tako'),
@@ -144,7 +137,10 @@ const handler = async () => {
     const {run, steps, data} = await getResume();
 
     while(true) {
-        const header = shortPreviews.map(format => format(data)).filter(Boolean).join(' ∙ ');
+        const header = Object.keys(data).map(
+            type => types[type].shortPreview(data[type])
+        ).filter(Boolean).join(' ∙ ');
+
         const {thing} = await prompt({
             name: 'thing',
             message: 'what do',

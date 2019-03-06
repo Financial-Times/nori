@@ -2,6 +2,7 @@
 
 const {prompt} = require('enquirer');
 const fs = require('mz/fs');
+const types = require('./lib/types');
 
 function enquirerToYargs(arg) {
 	const option = {
@@ -32,36 +33,6 @@ function enquirerToYargs(arg) {
 
 	return option;
 }
-
-const types = {
-	repos: {
-		argument: {
-			type: 'list',
-			result: repos => repos.map(repo => {
-				const [match, owner, name] = repo.match(/(.+?)\/(.+?)(?:.git)?$/) || [false];
-				if(match) {
-					return {owner, name};
-				}
-
-				throw new Error(`${repo} is not a valid repository`);
-			})
-		},
-		format: result => result.map(repo => `https://github.com/${repo.owner}/${repo.name}`).join('\n'),
-	},
-	branches: {
-		argument: {type: 'list'},
-		format: result => result.join('\n'),
-	},
-	// TODO idk get from github api maybe? what's the best thing to input here a url?
-	prs: {
-		argument: {type: 'list'},
-		format: result => result.map(pr => pr.html_url).join('\n'),
-	},
-	project: {
-		argument: {type: 'list'},
-		format: result => result.html_url,
-	},
-};
 
 const enquirerValidate = arg => async argv => {
 	if(arg.validate) {
