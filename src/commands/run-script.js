@@ -1,5 +1,7 @@
 #!/usr/bin/env node
 
+/* eslint-disable no-console */
+
 const assert = require('assert');
 const fs = require('fs');
 const path = require('path');
