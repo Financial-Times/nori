@@ -6,7 +6,7 @@ function enquirerToYargs(arg) {
 	const option = {
 		// alias: arg.name[0],
 		describe: arg.message,
-		coerce: arg.yargsCoerce,
+		coerce: arg.result,
 	}
 
 	switch(arg.type) {
@@ -35,9 +35,9 @@ function enquirerToYargs(arg) {
 const types = {
 	repos: {
 		argument: {
-			type: 'array',
-			coerce: repos => repos.map(repo => {
-				const [match, owner, name] = repo.match(/(.+?)\/(.+?)(?:.git)$/) || [false];
+			type: 'list',
+			result: repos => repos.map(repo => {
+				const [match, owner, name] = repo.match(/(.+?)\/(.+?)(?:.git)?$/) || [false];
 				if(match) {
 					return {owner, name};
 				}
@@ -48,15 +48,16 @@ const types = {
 		format: result => result.map(repo => `https://github.com/${repo.owner}/${repo.name}`).join('\n'),
 	},
 	branches: {
-		argument: {type: 'array'},
+		argument: {type: 'list'},
 		format: result => result.join('\n'),
 	},
+	// TODO idk get from github api maybe? what's the best thing to input here a url?
 	prs: {
-		argument: {type: 'array'},
+		argument: {type: 'list'},
 		format: result => result.map(pr => pr.html_url).join('\n'),
 	},
 	project: {
-		argument: {type: 'array'},
+		argument: {type: 'list'},
 		format: result => result.html_url,
 	},
 };
@@ -83,7 +84,7 @@ require('yargs')
 			builder: yargs => {
 				if(command.input) {
 					command.input.forEach(type => yargs
-						.option(type, types[type].argument)
+						.option(type, enquirerToYargs(types[type].argument))
 					);
 				}
 			
@@ -94,7 +95,9 @@ require('yargs')
 					);
 
 					return yargs.middleware(async argv => {
-						const missingArgs = command.arguments.filter(arg => !(arg.name in argv));
+						const missingArgs = command.arguments.concat(
+							command.input.map(type => Object.assign({name: type}, types[type].argument))
+						).filter(arg => !(arg.name in argv));
 	
 						if(missingArgs.length) {
 							return await prompt(missingArgs);
