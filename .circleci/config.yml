@@ -11,14 +11,14 @@ jobs:
 
       - restore_cache:
           keys:
-            - node-v10-{{ arch }}-{{ checksum "package.json" }}
+            - node-v10-{{ arch }}-{{ checksum "package-lock.json" }}
             - node-v10-{{ arch }}-
             - node-v10- # used if checksum fails
 
       - run: npm install
 
       - save_cache:
-          key: node-v10-{{ arch }}-{{ checksum "package.json" }}
+          key: node-v10-{{ arch }}-{{ checksum "package-lock.json" }}
           paths:
             - ~/usr/local/lib/node_modules
             - node_modules/
