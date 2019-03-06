@@ -17,7 +17,7 @@ const github = require('@financial-times/github')({
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
 /*TODO
-- take context data from input types
+- fully yargs everything
 - undo
 - full replay
 - noop scripts
