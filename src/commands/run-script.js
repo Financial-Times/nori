@@ -12,34 +12,10 @@ const {prompt} = require('enquirer');
 
 const runProcess = require('../lib/run-process');
 
-/**
- * yargs builder function.
- *
- * @param {import('yargs/yargs').Yargs} yargs - Instance of yargs
- */
-exports.builder = yargs => yargs
-    .option('script', {
-        alias: 's',
-        describe: 'Path to a script',
-        demandOption: true,
-        type: 'string'
-    })
-    .option('repos', {
-        describe: 'Target repositories (separate multiple repos with a space)',
-        demandOption: true,
-        type: 'array'
-    })
-    .option('branch', {
-        alias: 'b',
-        describe: 'Name for the git branch to create',
-        demandOption: true,
-        type: 'string'
-    });
-
-exports.interactiveArguments = () => prompt([
-    {type: 'text', name: 'script'},
-    {type: 'text', name: 'branch'},
-]);
+exports.arguments = [
+    {type: 'text', name: 'script', message: 'path to a script'},
+    {type: 'text', name: 'branch', message: 'branch to create'},
+];
 
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 

@@ -7,14 +7,14 @@ exports.desc = 'create Github pull requests for pushed branches';
 exports.input = ['repos', 'branches'];
 exports.output = 'prs';
 
-exports.interactiveArguments = () => prompt({
+exports.arguments = [{
 	type: 'form',
 	name: 'templates',
 	choices: [
 		{name: 'title'},
 		{name: 'body'},
 	]
-});
+}];
 
 exports.handler = ({templates: {title, body}, repos, branches}) => {
 	const titleTemplate = new Function('repo', 'branch', `return \`${title}\``);

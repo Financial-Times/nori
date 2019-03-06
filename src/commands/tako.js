@@ -7,7 +7,7 @@ exports.desc = 'get a list of repos from a tako instance';
 exports.input = [];
 exports.output = 'repos';
 
-exports.interactiveArguments = () => prompt([{
+exports.arguments = [{
 	name: 'url',
 	validate: input => isUrl(input) || 'Please enter a valid URL',
 	type: 'text',
@@ -17,9 +17,9 @@ exports.interactiveArguments = () => prompt([{
 }, {
 	name: 'topic',
 	type: 'text',
-}]);
+}];
 
-exports.handler = ({url, token, topic}) => got(url, {
+exports.handler = ({url, token, topic}) => got(`${url}/tako/repositories`, {
 	json: true,
 	headers: token && {
 		authorization: `Bearer ${token}`

@@ -6,14 +6,14 @@ exports.desc = 'Create a Github project board and attach the pull requests to it
 exports.input = ['prs'];
 exports.output = 'project';
 
-exports.interactiveArguments = () => prompt({
+exports.arguments = [{
 	name: 'projectData',
 	type: 'form',
 	choices: [
 		{name: 'name'},
 		{name: 'org'}
 	]
-});
+}];
 
 exports.handler = async ({projectData, prs}) => {
 	const project = await github.createProject(projectData);

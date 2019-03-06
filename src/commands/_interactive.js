@@ -28,14 +28,10 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
 - better logging for async tasks
 - ebi
 - toposort operations by input & output
+- support non-github hosts in repo object???
+- think about naming of types
+- pushing branch as separate step?
 */
-
-/**
- * yargs builder function.
- *
- * @param {import('yargs/yargs').Yargs} yargs - Instance of yargs
- */
-const builder = () => {};
 
 const shortPreviews = [
     ({repos}) => repos ? `${repos.length} repositor${repos.length > 1 ? 'ies' : 'y'}` : false,
@@ -187,7 +183,7 @@ const handler = async () => {
             console.log(data);
         } else {
             const choice = operations.find(({command}) => command === thing);
-            const args = await choice.interactiveArguments();
+            const args = await prompt(choice.arguments);
             const dataArgs = choice.input.reduce(
                 (args, type) => Object.assign(args, {
                     [type]: data[type]
@@ -214,6 +210,5 @@ const handler = async () => {
 module.exports = {
 	command: ['*', 'interactive'],
 	desc: 'interactively build steps of a transformation',
-	builder,
 	handler,
 };
