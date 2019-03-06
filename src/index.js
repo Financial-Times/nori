@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 
 const {prompt} = require('enquirer');
+const fs = require('mz/fs');
 
 function enquirerToYargs(arg) {
 	const option = {
@@ -79,6 +80,12 @@ require('yargs')
 		type: 'boolean',
 		global: true,
 	})
+	.option('state-file', {
+		describe: 'path to a file containing JSON-formatted nori output, or "-" for standard input (e.g. piping)',
+		type: 'string',
+		global: true,
+		coerce: input => input === '-' ? '/dev/stdin' : input,
+	})
 	.commandDir('commands', {
 		visit: command => Object.assign({}, command, {
 			builder: yargs => {
@@ -86,23 +93,34 @@ require('yargs')
 					command.input.forEach(type => yargs
 						.option(type, enquirerToYargs(types[type].argument))
 					);
+
+					yargs.middleware(async argv => {
+						if(argv.stateFile) {
+							const contents = await fs.readFile(argv.stateFile, 'utf8');
+							const {data} = JSON.parse(contents);
+							return Object.assign(
+								{stateData: data}, // keep the original to prepend to json output later
+								data
+							);
+						}
+					});
 				}
-			
+
 				if(command.arguments) {
 					command.arguments.forEach(arg => yargs
 						.option(arg.name, enquirerToYargs(arg))
 						.middleware(enquirerValidate(arg))
 					);
 
-					return yargs.middleware(async argv => {
+					yargs.middleware(async argv => {
 						const missingArgs = command.arguments.concat(
 							command.input.map(type => Object.assign({name: type}, types[type].argument))
 						).filter(arg => !(arg.name in argv));
-	
+
 						if(missingArgs.length) {
 							return await prompt(missingArgs);
 						}
-	
+
 						return {}
 					});
 				}
@@ -112,12 +130,38 @@ require('yargs')
 
 			handler: async argv => {
 				const result = await command.handler(argv);
+
 				if(command.output) {
-					console.log(
-						argv.json
-							? JSON.stringify(result, null, 2)
-							: types[command.output].format(result)
-					);
+					if(argv.stateFile) {
+						const isPipe = argv.stateFile === '/dev/stdin';
+
+						const fullData = JSON.stringify(
+							{
+								data: Object.assign(
+									{}, argv.stateData,
+									{[command.output]: result}
+								)
+							},
+							null,
+							// format nicely if the output is a terminal (ie a human)
+							process.stdout.isTTY ? 2 : null
+						);
+
+						if(argv.stateFile === '/dev/stdin') {
+							process.stdout.write(fullData);
+						} else {
+							await fs.writeFile(
+								argv.stateFile,
+								fullData
+							);
+						}
+					} else {
+						console.log(
+							argv.json
+								? JSON.stringify(result, null, 2)
+								: types[command.output].format(result)
+						);
+					}
 				}
 			}
 		})
