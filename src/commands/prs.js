@@ -1,5 +1,7 @@
 const {prompt} = require('enquirer');
-const github = require('@financial-times/github');
+const github = require('@financial-times/github')({
+    personalAccessToken: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
+});
 
 exports.command = 'prs';
 exports.desc = 'create Github pull requests for pushed branches';

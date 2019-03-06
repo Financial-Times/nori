@@ -10,14 +10,9 @@ const path = require('path');
 const relativeDate = require('tiny-relative-date');
 const toSentence = require('array-to-sentence');
 
-const github = require('@financial-times/github')({
-    personalAccessToken: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
-});
-
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
 /*TODO
-- fully yargs everything
 - undo
 - full replay
 - noop scripts
@@ -31,6 +26,7 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
 - support non-github hosts in repo object???
 - think about naming of types
 - pushing branch as separate step?
+- reuse stateFile code for interactive?
 */
 
 const shortPreviews = [

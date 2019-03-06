@@ -1,7 +1,9 @@
-const github = require('@financial-times/github');
+const github = require('@financial-times/github')({
+    personalAccessToken: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
+});
 
 exports.command = 'project';
-exports.desc = 'Create a Github project board and attach the pull requests to it';
+exports.desc = 'create a Github project board and attach the pull requests to it';
 
 exports.input = ['prs'];
 exports.output = 'project';
