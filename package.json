@@ -10,6 +10,10 @@
     "lint-fix": "eslint --fix src/",
     "eslint-check": "eslint --print-config . | eslint-config-prettier-check"
   },
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:Financial-Times/transformation-runner.git"
+  },
   "author": "",
   "license": "MIT",
   "dependencies": {
