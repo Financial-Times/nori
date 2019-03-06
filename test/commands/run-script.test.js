@@ -1,5 +1,6 @@
 const yargs = require('yargs');
 const {fs, vol} = require('memfs');
+const util = require('util');
 
 const runScript = require('../../src/commands/run-script');
 
@@ -14,7 +15,7 @@ const mockConsoleWarn = jest
 let mockFsAccess;
 
 beforeEach(() => {
-    mockFsAccess = jest.spyOn(fs.promises, 'access');
+    mockFsAccess = jest.spyOn(fs, 'access');
 });
 
 afterEach(() => {
@@ -108,11 +109,11 @@ test('errors when `script` is not executable', async () => {
         'transformation.js': 'Some transformation script'
     });
     // memfs does not currently implement permissions, so directly mock fs.access
-    mockFsAccess.mockImplementation(async (file, mode) => {
+    mockFsAccess.mockImplementation(util.callbackify(async (file, mode) => {
         if(file.endsWith('transformation.js') && mode === fs.constants.X_OK) {
             throw new Error(`Error: EACCES: permission denied, access '${file}'`);
         }
-    });
+    }));
     await expect(
         runScript.handler({
             targets: ['git@github.com:Financial-Times/next-search-page'],
@@ -127,7 +128,7 @@ test('runs script', async () => {
         hello: {},
         'transformation.js': 'Some transformation script'
     });
-    mockFsAccess.mockResolvedValue(undefined);
+    mockFsAccess.mockImplementation(util.callbackify(async () => undefined));
     await runScript.handler({
         targets: ['git@github.com:Financial-Times/next-search-page'],
         workspace: 'hello',

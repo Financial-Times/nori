@@ -1,11 +1,15 @@
 #!/usr/bin/env node
 
 const assert = require('assert');
-const {promises: fs, constants} = require('fs');
+const fs = require('fs');
 const path = require('path');
+const util = require('util');
 
 const git = require('@financial-times/git');
 const runProcess = require('../lib/run-process');
+
+const fsAccess = util.promisify((...args) => fs.access(...args));
+const fsLstat = util.promisify((...args) => fs.lstat(...args));
 
 /**
  * yargs builder function.
@@ -56,18 +60,18 @@ const handler = async ({ workspace, script, targets, branch }) => {
     }
 
     const workspacePath = path.resolve(workspace);
-    await fs.access(workspacePath).catch(
+    await fsAccess(workspacePath).catch(
         () => assert(false, `Workspace directory path does not exist: ${workspacePath}`)
     );
-    const workspacePathIsDirectory = (await fs.lstat(workspacePath)).isDirectory();
+    const workspacePathIsDirectory = (await fsLstat(workspacePath)).isDirectory();
     assert(workspacePathIsDirectory, `Workspace directory path is not a directory: ${workspacePath}`);
 
     const scriptPath = path.resolve(script);
-    await fs.access(scriptPath).catch(
+    await fsAccess(scriptPath).catch(
         () => assert(false, `Script does not exist: ${scriptPath}`)
     );
 
-    await fs.access(scriptPath, constants.X_OK).catch(
+    await fsAccess(scriptPath, fs.constants.X_OK).catch(
         () => assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`)
     );
 
