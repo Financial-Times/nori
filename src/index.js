@@ -93,11 +93,11 @@ require('yargs')
 						.middleware(enquirerValidate(arg))
 					);
 
-					return yargs.middleware(argv => {
+					return yargs.middleware(async argv => {
 						const missingArgs = command.arguments.filter(arg => !(arg.name in argv));
 	
 						if(missingArgs.length) {
-							return prompt(missingArgs);
+							return await prompt(missingArgs);
 						}
 	
 						return {}
