@@ -88,8 +88,8 @@ async function getResume() {
                 })
             ).concat(
                 {role: 'separator'},
+                {name: 'new'},
                 {name: 'edit'},
-                {name: 'new'}
             ),
         }));
     }
@@ -158,13 +158,23 @@ const handler = async () => {
             message: 'what do',
             type: 'select',
             header,
-            choices: operations.map(({command, desc, input}) => ({
-                name: command,
-                message: desc,
-                disabled: (input.length === 0
-                    ? Object.keys(data).length === 0
-                    : input.every(type => type in data)) ? false : '',
-            })).concat([
+            choices: operations.map(({command, desc, input, output}) => {
+                const dataHasInputs = input.every(type => type in data);
+                const dataHasOutput = output in data;
+                const isFilter = input.includes(output);
+
+                // allow an operation if the data has all the inputs and the data doesn't
+                // have the output (i.e. this operation hasn't already been run) *unless*
+                // the operation has the same output as one of the inputs (i.e. it can be
+                // run multiple times on the same data)
+                const shouldAllowOperation = dataHasInputs && (!dataHasOutput || isFilter);
+
+                return {
+                    name: command,
+                    message: desc,
+                    disabled: shouldAllowOperation ? false : '', // empty string to hide "(disabled)" message
+                };
+            }).concat([
                 {role: 'separator'},
                 {name: 'preview'},
                 {name: 'done', hint: `your work is autosaved as ${path.basename(run)}`}
