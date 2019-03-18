@@ -104,8 +104,6 @@ require('yargs')
 
 				if(command.output) {
 					if(argv.stateFile) {
-						const isPipe = argv.stateFile === '/dev/stdin';
-
 						const fullData = JSON.stringify(
 							{
 								data: Object.assign(
@@ -127,7 +125,7 @@ require('yargs')
 							);
 						}
 					} else {
-						console.log(
+						console.log( //eslint-disable-line no-console
 							argv.json
 								? JSON.stringify(result, null, 2)
 								: types[command.output].format(result)

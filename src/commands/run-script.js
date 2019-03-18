@@ -8,7 +8,6 @@ const path = require('path');
 const util = require('util');
 const mkdirp = util.promisify(require('mkdirp'));
 const git = require('@financial-times/git');
-const {prompt} = require('enquirer');
 
 const runProcess = require('../lib/run-process');
 
@@ -31,6 +30,8 @@ exports.handler = async ({ script, repos, branch }) => {
     if(repos.length === 0) {
         throw new Error('No repos specified');
     }
+
+    const scriptPath = path.resolve(script);
 
     if(!(await fs.exists(scriptPath))) {
         assert(false, `Script does not exist: ${scriptPath}`);

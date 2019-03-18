@@ -1,4 +1,3 @@
-const {prompt} = require('enquirer');
 const got = require('got');
 const isUrl = require('is-url');
 

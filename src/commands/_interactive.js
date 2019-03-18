@@ -1,10 +1,7 @@
 #!/usr/bin/env node
 
 const {prompt} = require('enquirer');
-const isUrl = require('is-url');
-const got = require('got');
 const fs = require('mz/fs');
-const util = require('util');
 const path = require('path');
 const relativeDate = require('tiny-relative-date');
 const toSentence = require('array-to-sentence');
@@ -13,8 +10,7 @@ const types = require('../lib/types');
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
 /*TODO
-- undo
-- full replay
+- undoing side effects
 - noop scripts
 - richer previews
 - messaging & help
@@ -29,14 +25,25 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
 - reuse stateFile code for interactive?
 */
 
-const operations = [
-    require('./tako'),
-    require('./file'),
+const operations = {
+    tako: require('./tako'),
+    file: require('./file'),
     // require('./ebi'), // ebi isn't yet usable outside of the CLI
-    require('./run-script'),
-    require('./prs'),
-    require('./project'),
-];
+    'silly-filter': {
+        command: 'silly-filter',
+        desc: 'silly filter test',
+        input: ['repos'],
+        output: 'repos',
+        arguments: [{
+            name: 'filter',
+            type: 'text'
+        }],
+        handler: ({filter, repos}) => repos.filter(repo => repo.name.includes(filter))
+    },
+    'run-script': require('./run-script'),
+    prs: require('./prs'),
+    project: require('./project'),
+};
 
 async function getResume() {
     let steps = [];
@@ -91,7 +98,7 @@ async function getResume() {
             skip() {
                 // should be first argument to skip, see https://github.com/enquirer/enquirer/issues/105
                 return this.state.answers.toDelete.length === 0;
-            } 
+            }
         }]);
 
         if(confirm) {
@@ -124,6 +131,12 @@ async function getResume() {
     return {run, steps, data};
 }
 
+const takeWhileLast = (array, func) => (
+    array.length && func(array[array.length - 1])
+        ? takeWhileLast(array.slice(0, -1), func).concat(array.slice(-1))
+        : []
+)
+
 /**
  * yargs handler function.
  *
@@ -136,6 +149,40 @@ async function getResume() {
 const handler = async () => {
     const {run, steps, data} = await getResume();
 
+    const persist = () => fs.writeFile(
+        run,
+        JSON.stringify({steps, data}, null, 2)
+    );
+
+    async function runStep({operation, args}) {
+        const dataArgs = operation.input.reduce(
+            (args, type) => Object.assign(args, {
+                [type]: data[type]
+            }),
+            {}
+        );
+
+        const stepData = await operation.handler(
+            Object.assign(dataArgs, args)
+        );
+
+        if(operation.output) {
+            steps.push({name: operation.command, args});
+            data[operation.output] = stepData;
+        }
+
+        await persist();
+    }
+
+    async function replay(steps) {
+        for(const step of steps) {
+            await runStep({
+                operation: operations[step.name],
+                args: step.arguments,
+            });
+        }
+    }
+
     while(true) {
         const header = Object.keys(data).map(
             type => types[type].shortPreview(data[type])
@@ -146,7 +193,7 @@ const handler = async () => {
             message: 'what do',
             type: 'select',
             header,
-            choices: operations.map(({command, desc, input, output}) => {
+            choices: Object.values(operations).map(({command, desc, input, output}) => {
                 const dataHasInputs = input.every(type => type in data);
                 const dataHasOutput = output in data;
                 const isFilter = input.includes(output);
@@ -165,6 +212,7 @@ const handler = async () => {
             }).concat([
                 {role: 'separator'},
                 {name: 'preview'},
+                {name: 'undo', message: 'undo last step', disabled: steps.length > 0 ? false : ''},
                 {name: 'done', hint: `your work is autosaved as ${path.basename(run)}`}
             ]),
         });
@@ -172,35 +220,33 @@ const handler = async () => {
         if(thing === 'done') {
             break;
         } else if(thing === 'preview') {
-            console.log(data);
+            console.log(data); //eslint-disable-line no-console
+        } else if(thing === 'undo') {
+            const undoneStep = steps.pop(); // remove last operation
+            const undoneOperation = operations[undoneStep.name];
+            delete data[undoneOperation.output]; // clear any output data. if it's a filter step we'll rebuild it
+
+            const stepsToReplay = takeWhileLast(
+                steps,
+                step => operations[step.name].output === undoneOperation.output
+            );
+
+            steps.splice(steps.length - stepsToReplay.length, stepsToReplay.length);
+            await persist();
+
+            // if stepsToReplay is empty this will do nothing
+            await replay(stepsToReplay);
         } else {
-            const choice = operations.find(({command}) => command === thing);
-            const args = await prompt(choice.arguments);
-            const dataArgs = choice.input.reduce(
-                (args, type) => Object.assign(args, {
-                    [type]: data[type]
-                }),
-                {}
-            );
-            const stepData = await choice.handler(
-                Object.assign(dataArgs, args)
-            );
-
-            if(choice.output) {
-                steps.push({name: thing, args});
-                data[choice.output] = stepData;
-            }
-
-            await fs.writeFile(
-                run,
-                JSON.stringify({steps, data}, null, 2)
-            );
+            await runStep({
+                operation: operations[thing],
+                args: await prompt(operations[thing].arguments),
+            });
         }
     }
 };
 
 module.exports = {
-	command: ['*', 'interactive'],
-	desc: 'interactively build steps of a transformation',
-	handler,
+    command: ['*', 'interactive'],
+    desc: 'interactively build steps of a transformation',
+    handler,
 };

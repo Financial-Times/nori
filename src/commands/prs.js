@@ -1,4 +1,3 @@
-const {prompt} = require('enquirer');
 const github = require('@financial-times/github')({
     personalAccessToken: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
 });
@@ -32,6 +31,6 @@ exports.handler = ({templates: {title, body}, repos, branches}) => {
 			base: 'master',
 			title: titleTemplate(repo, branch),
 			body: bodyTemplate(repo, branch)
-		})
+		});
 	}))
 };
