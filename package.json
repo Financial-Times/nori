@@ -4,6 +4,7 @@
   "description": "",
   "bin": "src/index.js",
   "scripts": {
+    "start": "node -r dotenv/config src/index.js",
     "test": "npm run lint && npm run unit-test",
     "unit-test": "jest",
     "lint": "eslint src/",
@@ -31,6 +32,7 @@
     "yargs": "^13.2.2"
   },
   "devDependencies": {
+    "dotenv": "^7.0.0",
     "eslint": "^5.15.1",
     "eslint-config-prettier": "^4.1.0",
     "eslint-plugin-no-only-tests": "^2.1.0",
