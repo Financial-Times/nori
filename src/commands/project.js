@@ -16,8 +16,8 @@ exports.args = [{
 }];
 
 exports.handler = async ({projectData, prs}) => {
-	const project = await octokit.projects.createForOrg(projectData);
-	const todoColumn = await octokit.projects.createColumn({project_id: project.id, name: 'To do'});
+	const {data: project} = await octokit.projects.createForOrg(projectData);
+	const {data: todoColumn} = await octokit.projects.createColumn({project_id: project.id, name: 'To do'});
 	await octokit.projects.createColumn({project_id: project.id, name: 'In progress'});
 	await octokit.projects.createColumn({project_id: project.id, name: 'Done'});
 

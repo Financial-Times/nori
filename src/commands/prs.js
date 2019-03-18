@@ -29,7 +29,7 @@ exports.handler = ({templates: {title, body}, repos, branches}) => {
 			base: 'master',
 			title: titleTemplate(repo, branch),
 			body: bodyTemplate(repo, branch)
-		});
+		}).then(response => response.data);
 	}))
 };
 
@@ -39,7 +39,7 @@ exports.undo = async ({prs}) => (
 			owner: pr.head.repo.owner.login,
 			repo: pr.head.repo.name,
 			number: pr.number,
-			body: 'automatically closed 🤖' //TODO prompt for template
+			body: 'automatically closed 🤖' //TODO prompt for template?
 		});
 
 		await octokit.pulls.update({
