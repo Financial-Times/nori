@@ -1,6 +1,4 @@
-const github = require('@financial-times/github')({
-    personalAccessToken: process.env.GITHUB_PERSONAL_ACCESS_TOKEN
-});
+const octokit = require('../lib/octokit');
 
 exports.command = 'project';
 exports.desc = 'create a Github project board and attach the pull requests to it';
@@ -18,13 +16,13 @@ exports.args = [{
 }];
 
 exports.handler = async ({projectData, prs}) => {
-	const project = await github.createProject(projectData);
-	const todoColumn = await github.createProjectColumn({project_id: project.id, name: 'To do'});
-	await github.createProjectColumn({project_id: project.id, name: 'In progress'});
-	await github.createProjectColumn({project_id: project.id, name: 'Done'});
+	const project = await octokit.projects.createForOrg(projectData);
+	const todoColumn = await octokit.projects.createColumn({project_id: project.id, name: 'To do'});
+	await octokit.projects.createColumn({project_id: project.id, name: 'In progress'});
+	await octokit.projects.createColumn({project_id: project.id, name: 'Done'});
 
 	await Promise.all(
-		prs.map(pr => github.createPullRequestCard({
+		prs.map(pr => octokit.projects.createCard({
 			column_id: todoColumn.id,
 			content_id: pr.id,
 			content_type: 'PullRequest'
@@ -33,3 +31,7 @@ exports.handler = async ({projectData, prs}) => {
 
 	return project;
 };
+
+exports.undo = ({project}) => octokit.projects.delete({
+	project_id: project.id,
+});

@@ -224,6 +224,11 @@ const handler = async () => {
         } else if(thing === 'undo') {
             const undoneStep = steps.pop(); // remove last operation
             const undoneOperation = operations[undoneStep.name];
+
+            if(undoneOperation.undo) {
+                await undoneOperation.undo(data);
+            }
+
             delete data[undoneOperation.output]; // clear any output data. if it's a filter step we'll rebuild it
 
             const stepsToReplay = takeWhileLast(
