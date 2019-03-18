@@ -32,6 +32,7 @@ exports.handler = async ({projectData, prs}) => {
 	return project;
 };
 
-exports.undo = ({project}) => octokit.projects.delete({
+exports.undo = ({project}) => octokit.projects.update({
 	project_id: project.id,
+	state: 'closed'
 });
