@@ -34,7 +34,7 @@ const operations = {
         desc: 'silly filter test',
         input: ['repos'],
         output: 'repos',
-        arguments: [{
+        args: [{
             name: 'filter',
             type: 'text'
         }],
@@ -178,7 +178,7 @@ const handler = async () => {
         for(const step of steps) {
             await runStep({
                 operation: operations[step.name],
-                args: step.arguments,
+                args: step.args,
             });
         }
     }
@@ -239,7 +239,7 @@ const handler = async () => {
         } else {
             await runStep({
                 operation: operations[thing],
-                args: await prompt(operations[thing].arguments),
+                args: await prompt(operations[thing].args),
             });
         }
     }

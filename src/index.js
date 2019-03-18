@@ -77,14 +77,14 @@ require('yargs')
 					});
 				}
 
-				if(command.arguments) {
-					command.arguments.forEach(arg => yargs
+				if(command.args) {
+					command.args.forEach(arg => yargs
 						.option(arg.name, enquirerToYargs(arg))
 						.middleware(enquirerValidate(arg))
 					);
 
 					yargs.middleware(async argv => {
-						const missingArgs = command.arguments.concat(
+						const missingArgs = command.args.concat(
 							command.input.map(type => Object.assign({name: type}, types[type].argument))
 						).filter(arg => !(arg.name in argv));
 

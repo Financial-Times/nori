@@ -6,7 +6,7 @@ exports.desc = 'get a list of repos from a tako instance';
 exports.input = [];
 exports.output = 'repos';
 
-exports.arguments = [{
+exports.args = [{
 	name: 'url',
 	validate: input => isUrl(input) || 'Please enter a valid URL',
 	type: 'text',

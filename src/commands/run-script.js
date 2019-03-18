@@ -11,7 +11,7 @@ const git = require('@financial-times/git');
 
 const runProcess = require('../lib/run-process');
 
-exports.arguments = [
+exports.args = [
     {type: 'text', name: 'script', message: 'path to a script'},
     {type: 'text', name: 'branch', message: 'branch to create'},
 ];

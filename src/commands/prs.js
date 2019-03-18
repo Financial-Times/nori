@@ -8,7 +8,7 @@ exports.desc = 'create Github pull requests for pushed branches';
 exports.input = ['repos', 'branches'];
 exports.output = 'prs';
 
-exports.arguments = [{
+exports.args = [{
 	type: 'form',
 	name: 'templates',
 	choices: [

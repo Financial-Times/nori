@@ -6,7 +6,7 @@ exports.desc = 'get a list of repos from a file';
 exports.input = [];
 exports.output = 'repos';
 
-exports.arguments = [{
+exports.args = [{
 	name: 'file',
 	type: 'text',
 	message: 'path to a text file of repositories',

@@ -8,7 +8,7 @@ exports.desc = 'create a Github project board and attach the pull requests to it
 exports.input = ['prs'];
 exports.output = 'project';
 
-exports.arguments = [{
+exports.args = [{
 	name: 'projectData',
 	type: 'form',
 	choices: [
