@@ -21,7 +21,6 @@
     "@financial-times/git": "^1.0.0",
     "@octokit/rest": "^16.19.0",
     "array-to-sentence": "^2.0.0",
-    "ebi": "^1.1.0",
     "enquirer": "^2.3.0",
     "got": "^9.6.0",
     "is-url": "^1.2.4",

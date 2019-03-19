@@ -28,7 +28,6 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
 const operations = {
 	tako: require('./tako'),
 	file: require('./file'),
-	// require('./ebi'), // ebi isn't yet usable outside of the CLI
 	'silly-filter': {
 		command: 'silly-filter',
 		desc: 'silly filter test',
