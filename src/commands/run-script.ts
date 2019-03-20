@@ -2,16 +2,18 @@
 
 /* eslint-disable no-console */
 
-const assert = require('assert');
-const fs = require('mz/fs');
-const path = require('path');
-const util = require('util');
-const mkdirp = util.promisify(require('mkdirp'));
-const git = require('@financial-times/git');
+import * as assert from 'assert';
+import * as fs from 'mz/fs';
+import * as path from 'path';
+import * as util from 'util';
+import * as _mkdirp from 'mkdirp';
+import git from '@financial-times/git';
 
-const runProcess = require('../lib/run-process');
+const mkdirp = util.promisify(_mkdirp);
 
-exports.args = [
+import runProcess from '../lib/run-process';
+
+export const args = [
 	{type: 'text', name: 'script', message: 'path to a script'},
 	{type: 'text', name: 'branch', message: 'branch to create'},
 ];
@@ -26,7 +28,7 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
  * @param {string} argv.repos
  * @param {string} argv.branch
  */
-exports.handler = async ({ script, repos, branch }) => {
+export const handler = async ({ script, repos, branch }) => {
 	if(repos.length === 0) {
 		throw new Error('No repos specified');
 	}
@@ -106,8 +108,8 @@ exports.handler = async ({ script, repos, branch }) => {
 	return branches;
 };
 
-exports.command = 'run-script',
-exports.desc = 'clone repositories and run a script against them',
-exports.input = ['repos'];
-exports.output = 'branches';
+export const command = 'run-script';
+export const desc = 'clone repositories and run a script against them';
+export const input = ['repos'];
+export const output = 'branches';
 

@@ -1,21 +1,21 @@
 #!/usr/bin/env node
 
-const {prompt} = require('enquirer');
-const fs = require('mz/fs');
-const path = require('path');
-const relativeDate = require('tiny-relative-date');
-const types = require('../lib/types');
+import {prompt} from 'enquirer';
+import * as fs from 'mz/fs';
+import * as path from 'path';
+import relativeDate from 'tiny-relative-date';
+import types from '../lib/types';
 
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
-const operations = {
-	tako: require('./tako'),
-	file: require('./file'),
-	'filter-repo-name': require('./filter-repo-name'),
-	'run-script': require('./run-script'),
-	prs: require('./prs'),
-	project: require('./project'),
-};
+import * as tako from './tako';
+import * as file from './file';
+import * as filterRepoName from './filter-repo-name';
+import * as runScript from './run-script';
+import * as prs from './prs';
+import * as project from './project';
+
+const operations = { tako, file, 'filter-repo-name': filterRepoName, 'run-script': runScript, prs, project };
 
 const noriExtension = '.nori.json';
 
@@ -43,7 +43,7 @@ async function getSortedStateFiles() {
 	);
 }
 
-const toSentence = words => {
+const toSentence = (words: Array<string>) => {
 	let string = words.slice(0, -1).join(', ');
 
 	if(words.length > 1) {
@@ -55,9 +55,28 @@ const toSentence = words => {
 	return string;
 }
 
-const promptStateFile = ({stateFiles}) => prompt([
+interface StateFile {
+	stateFile: string,
+	modified: Date,
+}
+
+type Operations = typeof operations;
+type Operation = Operations[keyof Operations];
+
+interface Step {
+	name: Operation['command'],
+	args: Operation['args']
+}
+
+interface State {
+	steps: Array<Step>,
+	data: { [T in Operation['output']]: any }
+}
+
+const promptStateFile = ({stateFiles}: {stateFiles: Array<StateFile>}) => prompt([
 	{
 		name: 'stateFile',
+		message: '',
 		type: 'select',
 		choices: stateFiles.map(
 			({stateFile, modified}) => ({
@@ -76,6 +95,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 	},
 	{
 		name: 'newStateFile',
+		message: '',
 		type: 'text',
 		result: fileName => (
 			fileName.endsWith(noriExtension)
@@ -90,6 +110,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 	},
 	{
 		type: 'multiselect',
+		message: '',
 		name: 'toDelete',
 		choices: (
 			// causes a weird unresolved promise when it's skipped and the
@@ -106,6 +127,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 	},
 	{
 		type: 'confirm',
+		message: '',
 		name: 'confirmDelete',
 		message: ({answers: {toDelete}}) => `delete ${toSentence(toDelete)}`,
 		skip() {
@@ -117,7 +139,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 	},
 ]);
 
-async function getStateFile() {
+async function getStateFile(): Promise<string> {
 	const stateFiles = await getSortedStateFiles();
 	const {stateFile, newStateFile, toDelete, confirmDelete} = promptStateFile({stateFiles});
 
@@ -125,7 +147,7 @@ async function getStateFile() {
 		if(confirmDelete) {
 			await Promise.all(
 				toDelete.map(
-					stateFile => fs.unlink(
+					(stateFile: string) => fs.unlink(
 						path.join(workspacePath, stateFile)
 					)
 				)
@@ -140,7 +162,7 @@ async function getStateFile() {
 	return path.join(workspacePath, stateFileName);
 }
 
-async function loadStateFile(stateFile) {
+async function loadStateFile(stateFile: string) {
 	try {
 		return JSON.parse(
 			await fs.readFile(stateFile, 'utf8')
@@ -156,14 +178,9 @@ async function loadStateFile(stateFile) {
 /**
  * returns the last elements from the array that meet the predicate
  * e.g. takeWhileLast([1, 2, 3, 2, 3, 4, 5], n => n > 2) returns [3, 4, 5]
- *
- * @template T
- * @param {Array<T>} array
- * @param {function(T): Boolean} predicate
- * @returns {Array<T>}
  */
-const takeWhileLast = (array, predicate) => (
-	array.length && predicate(array[array.length - 1])
+function takeWhileLast<T>(array: Array<T>, predicate: ((_: T) => Boolean)): Array<T> {
+	return array.length && predicate(array[array.length - 1])
 		? takeWhileLast(
 			array.slice(0, -1),
 			predicate
@@ -171,18 +188,18 @@ const takeWhileLast = (array, predicate) => (
 			array.slice(-1)
 		)
 		: []
-);
+};
 
-const persist = ({stateFile, state}) => fs.writeFile(
+const persist = ({stateFile, state}: {stateFile: string, state: State}) => fs.writeFile(
 	stateFile,
 	JSON.stringify(state, null, 2)
 );
 
-async function runStep({stateFile, state, operation, args}) {
+async function runStep({stateFile, state, operation, args}: {stateFile: string, state: State, operation: Operation, args: Operation['args']}) {
 	// get the keys from `data` that are present in
 	// `operation.input`
-	const dataArgs = operation.input.reduce(
-		(args, type) => Object.assign(args, {
+	const dataArgs: State['data'] = operation.input.reduce(
+		(args: State['data'], type: Operation['output']) => Object.assign(args, {
 			[type]: state.data[type]
 		}),
 		{}
@@ -200,7 +217,7 @@ async function runStep({stateFile, state, operation, args}) {
 	await persist({state, stateFile});
 }
 
-async function replay({state, stateFile, steps}) {
+async function replay({state, stateFile, steps}: {stateFile: string, state: State, steps: Array<Step>}) {
 	for(const step of steps) {
 		await runStep({
 			state,
@@ -211,7 +228,7 @@ async function replay({state, stateFile, steps}) {
 	}
 }
 
-const promptOperation = ({state, stateFile}) => prompt({
+const promptOperation = ({state, stateFile}: {stateFile: string, state: State}) => prompt({
 	name: 'choice',
 	message: 'what do',
 	type: 'select',
@@ -242,7 +259,7 @@ const promptOperation = ({state, stateFile}) => prompt({
 	]),
 });
 
-async function undo({state, stateFile}) {
+async function undo({state, stateFile}: {stateFile: string, state: State}) {
 	const undoneStep = state.steps.pop(); // remove last operation
 	const undoneOperation = operations[undoneStep.name];
 
@@ -254,7 +271,7 @@ async function undo({state, stateFile}) {
 
 	const stepsToReplay = takeWhileLast(
 		state.steps,
-		step => operations[step.name].output === undoneOperation.output
+		(step: Step) => operations[step.name].output === undoneOperation.output
 	);
 
 	state.steps.splice(state.steps.length - stepsToReplay.length, stepsToReplay.length);
@@ -262,6 +279,10 @@ async function undo({state, stateFile}) {
 
 	// if stepsToReplay is empty this will do nothing
 	await replay({state, stateFile, steps: stepsToReplay});
+}
+
+function isOperationName(name: string): name is keyof Operations {
+	return name in operations;
 }
 
 /**
@@ -284,7 +305,7 @@ const handler = async () => {
 	while(true) {
 		const {choice} = await promptOperation({state, stateFile});
 
-		if(choice in operations) {
+		if(isOperationName(choice)) {
 			const operation = operations[choice];
 			const args = await prompt(operation.args);
 			await runStep({ state, stateFile, operation, args });

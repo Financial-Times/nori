@@ -1,12 +1,12 @@
-const octokit = require('../lib/octokit');
+import octokit from '../lib/octokit';
 
-exports.command = 'project';
-exports.desc = 'create a Github project board and attach the pull requests to it';
+export const command = 'project';
+export const desc = 'create a Github project board and attach the pull requests to it';
 
-exports.input = ['prs'];
-exports.output = 'project';
+export const input = ['prs'];
+export const output = 'project';
 
-exports.args = [{
+export const args = [{
 	name: 'projectData',
 	type: 'form',
 	choices: [
@@ -15,7 +15,7 @@ exports.args = [{
 	]
 }];
 
-exports.handler = async ({projectData, prs}) => {
+export const handler = async ({projectData, prs}) => {
 	const {data: project} = await octokit.projects.createForOrg(projectData);
 	const {data: todoColumn} = await octokit.projects.createColumn({project_id: project.id, name: 'To do'});
 	await octokit.projects.createColumn({project_id: project.id, name: 'In progress'});
@@ -32,7 +32,7 @@ exports.handler = async ({projectData, prs}) => {
 	return project;
 };
 
-exports.undo = ({project}) => octokit.projects.update({
+export const undo = ({project}) => octokit.projects.update({
 	project_id: project.id,
 	state: 'closed'
 });

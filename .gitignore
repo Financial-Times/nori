@@ -82,3 +82,4 @@ typings/
 # Generated files
 test-results/
 .env
+lib

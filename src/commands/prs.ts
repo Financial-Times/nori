@@ -1,12 +1,12 @@
-const octokit = require('../lib/octokit');
+import octokit from '../lib/octokit';
 
-exports.command = 'prs';
-exports.desc = 'create Github pull requests for pushed branches';
+export const command = 'prs';
+export const desc = 'create Github pull requests for pushed branches';
 
-exports.input = ['repos', 'branches'];
-exports.output = 'prs';
+export const input = ['repos', 'branches'];
+export const output = 'prs';
 
-exports.args = [{
+export const args = [{
 	type: 'form',
 	name: 'templates',
 	choices: [
@@ -15,7 +15,7 @@ exports.args = [{
 	]
 }];
 
-exports.handler = ({templates: {title, body}, repos, branches}) => {
+export function handler({templates: {title, body}, repos, branches}): Promise<Array<Object>> {
 	const titleTemplate = new Function('repo', 'branch', `return \`${title}\``);
 	const bodyTemplate = new Function('repo', 'branch', `return \`${body}\``);
 
@@ -32,8 +32,8 @@ exports.handler = ({templates: {title, body}, repos, branches}) => {
 	}))
 };
 
-exports.undo = async ({prs}) => (
-	Promise.all(prs.map(async pr => {
+export async function undo({prs}) {
+	return Promise.all(prs.map(async pr => {
 		await octokit.issues.createComment({
 			owner: pr.head.repo.owner.login,
 			repo: pr.head.repo.name,
@@ -48,4 +48,4 @@ exports.undo = async ({prs}) => (
 			state: 'closed'
 		});
 	}))
-);
+};

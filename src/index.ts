@@ -12,7 +12,7 @@ require('yargs')
 		describe: 'path to a file containing JSON-formatted nori output, or "-" for standard input (e.g. piping)',
 		type: 'string',
 		global: true,
-		coerce: input => input === '-' ? '/dev/stdin' : input,
+		coerce: (input: string) => input === '-' ? '/dev/stdin' : input,
 	})
 	.commandDir('commands', { visit: operationToYargsCommand })
 	.demandCommand()
