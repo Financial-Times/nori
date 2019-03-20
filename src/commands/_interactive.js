@@ -48,7 +48,7 @@ const toSentence = words => words.slice(0, -1).join(', ') + ' and ' + words[word
 async function getStateFile() {
 	const stateFiles = await getSortedStateFiles();
 
-	const {stateFile, toDelete, confirmDelete} = await prompt([
+	const {stateFile, newStateFile, toDelete, confirmDelete} = await prompt([
 		{
 			name: 'stateFile',
 			type: 'select',
@@ -68,7 +68,7 @@ async function getStateFile() {
 			}
 		},
 		{
-			name: 'stateFile',
+			name: 'newStateFile',
 			type: 'text',
 			result: fileName => path.join(workspacePath, fileName + noriExtension),
 			skip() {
@@ -121,7 +121,7 @@ async function getStateFile() {
 		return getStateFile();
 	}
 
-	return stateFile;
+	return stateFile === 'new' ? newStateFile : stateFile;
 }
 
 async function loadStateFile(stateFile) {
