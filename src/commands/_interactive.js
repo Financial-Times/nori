@@ -213,6 +213,10 @@ const handler = async () => {
 		}
 	}
 
+	// save the state file so it gets created if it's new
+	// or its last modified time gets updated if it's not
+	await persist();
+
 	while(true) {
 		const header = Object.keys(data).map(
 			type => types[type].shortPreview(data[type])
