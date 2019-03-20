@@ -12,17 +12,7 @@ const workspacePath = path.join(process.env.HOME, '.config/transformation-runner
 const operations = {
 	tako: require('./tako'),
 	file: require('./file'),
-	'silly-filter': {
-		command: 'silly-filter',
-		desc: 'silly filter test',
-		input: ['repos'],
-		output: 'repos',
-		args: [{
-			name: 'filter',
-			type: 'text'
-		}],
-		handler: ({filter, repos}) => repos.filter(repo => repo.name.includes(filter))
-	},
+	'filter-repo-name': require('./filter-repo-name'),
 	'run-script': require('./run-script'),
 	prs: require('./prs'),
 	project: require('./project'),
