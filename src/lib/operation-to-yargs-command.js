@@ -69,9 +69,13 @@ const operationToYargsCommand = command => Object.assign({}, command, {
 			);
 
 			yargs.middleware(async argv => {
-				const missingArgs = command.args.concat(
-					command.input.map(type => Object.assign({name: type}, types[type].argument))
-				).filter(arg => !(arg.name in argv));
+				const argsFromInputTypes = command.input.map(
+					type => Object.assign({name: type}, types[type].argument)
+				);
+				const allArgs = command.args.concat(argsFromInputTypes);
+				const missingArgs = allArgs.filter(
+					arg => !(arg.name in argv)
+				);
 
 				if(missingArgs.length) {
 					return await prompt(missingArgs);
