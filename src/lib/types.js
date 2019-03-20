@@ -21,7 +21,6 @@ module.exports = {
 		shortPreview: branches => branches ? `${branches.length} branch${branches.length > 1 ? 'es' : ''}` : false,
 	},
 
-	// TODO idk get from github api maybe? what's the best thing to input here a url?
 	prs: {
 		argument: {type: 'list'},
 		format: result => result.map(pr => pr.html_url).join('\n'),

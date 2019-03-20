@@ -43,13 +43,11 @@ exports.handler = async ({ script, repos, branch }) => {
 
 	await mkdirp(workspacePath);
 
-	// TODO konmari logging
 	console.log(`-- Script: ${scriptPath}`);
 	console.log(`-- Target(s):\n\n   ${repos.map(({name}) => name).join('\n   ')}`);
 
 	const branches = [];
 
-	// TODO parallel
 	for (let repository of repos) {
 		console.log('\n===\n');
 
@@ -62,7 +60,6 @@ exports.handler = async ({ script, repos, branch }) => {
 			if(await fs.exists(cloneDirectory)) {
 				console.log(`-- Updating local clone: ${repository.name}`);
 				await git.checkoutBranch({ name: 'master' });
-				// TODO reset & pull
 				console.log(`-- Repository '${repository.name}' updated in ${cloneDirectory}`);
 			} else {
 				console.log(`-- Cloning repository locally: ${remoteUrl}`);
@@ -96,8 +93,6 @@ exports.handler = async ({ script, repos, branch }) => {
 			);
 
 			console.log(scriptOutput);
-
-			// TODO don't push if no changes
 			console.log(`-- Pushing branch ${branch} to remote 'origin'`);
 			await git.push({ repository: 'origin', refspec: branch });
 

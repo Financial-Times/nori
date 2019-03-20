@@ -19,7 +19,6 @@ exports.handler = ({templates: {title, body}, repos, branches}) => {
 	const titleTemplate = new Function('repo', 'branch', `return \`${title}\``);
 	const bodyTemplate = new Function('repo', 'branch', `return \`${body}\``);
 
-	// TODO what if not all the repos had a branch created
 	return Promise.all(branches.map((branch, index) => {
 		const repo = repos[index];
 		return octokit.pulls.create({

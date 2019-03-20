@@ -9,22 +9,6 @@ const types = require('../lib/types');
 
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
-/*TODO
-- undoing side effects
-- noop scripts
-- richer previews
-- messaging & help
-- open in browser (multiple input types?)
-- better form field ux
-- better logging for async tasks
-- ebi
-- toposort operations by input & output
-- support non-github hosts in repo object???
-- think about naming of types
-- pushing branch as separate step?
-- reuse stateFile code for interactive?
-*/
-
 const operations = {
 	tako: require('./tako'),
 	file: require('./file'),
