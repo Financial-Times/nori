@@ -45,7 +45,7 @@ test('yargs can load the `run-script` command without any errors or warnings', (
         ).argv;
     }).not.toThrow();
 
-    // yargs uses `console.warn` to raise errors about incorrect types for some args to the `command` method
+    // yargs uses `console.warn` to raise errors about incorrect types for some arguments to the `command` method
     expect(mockConsoleWarn).not.toBeCalled();
 });
 
