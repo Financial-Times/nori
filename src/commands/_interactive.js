@@ -43,7 +43,17 @@ async function getSortedStateFiles() {
 	);
 }
 
-const toSentence = words => words.slice(0, -1).join(', ') + ' and ' + words[words.length - 1];
+const toSentence = words => {
+	let string = words.slice(0, -1).join(', ');
+
+	if(words.length > 1) {
+		string += ' and ';
+	}
+
+	string += words[words.length - 1];
+
+	return string;
+}
 
 async function getStateFile() {
 	const stateFiles = await getSortedStateFiles();
