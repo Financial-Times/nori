@@ -1,6 +1,6 @@
 const {prompt} = require('enquirer');
 const fs = require('mz/fs');
-const types = require('./lib/types');
+const types = require('./types');
 
 function enquirerToYargs(arg) {
 	const option = {

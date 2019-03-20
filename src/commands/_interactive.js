@@ -4,7 +4,6 @@ const {prompt} = require('enquirer');
 const fs = require('mz/fs');
 const path = require('path');
 const relativeDate = require('tiny-relative-date');
-const toSentence = require('array-to-sentence');
 const types = require('../lib/types');
 
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
@@ -18,97 +17,144 @@ const operations = {
 	project: require('./project'),
 };
 
-async function getResume() {
-	let steps = [];
-	let data = {};
-	let resume = 'new';
-	let run;
+const noriExtension = '.nori.json';
 
-	const previousRuns = (await fs.readdir(workspacePath)).filter(
-		file => file.endsWith('.json')
+async function getSortedStateFiles() {
+	const stateFiles = (
+		await fs.readdir(workspacePath)
+	).filter(
+		file => file.endsWith(noriExtension)
 	);
 
 	const modifiedTimes = await Promise.all(
-		previousRuns.map(run =>
+		stateFiles.map(run =>
 			fs.stat(
 				path.join(workspacePath, run)
-			).then(stat => stat.mtime)
+			).then(
+				stat => stat.mtime // time the file was last modified as a javascript Date
+			)
 		)
 	);
 
-	const sortedRuns = previousRuns.map(
-		(run, index) => ({run, modified: modifiedTimes[index]})
+	return stateFiles.map(
+		(stateFile, index) => ({stateFile, modified: modifiedTimes[index]})
 	).sort(
 		({modified: a}, {modified: b}) => b - a
 	);
+}
 
-	if(previousRuns.length) {
-		({resume} = await prompt({
-			name: 'resume',
+const toSentence = words => words.slice(0, -1).join(', ') + ' and ' + words[words.length - 1];
+
+async function getStateFile() {
+	const stateFiles = await getSortedStateFiles();
+
+	const {stateFile, toDelete, confirmDelete} = await prompt([
+		{
+			name: 'stateFile',
 			type: 'select',
-			choices: sortedRuns.map(
-				({run, modified}) => ({
-					name: run,
-					message: `${run} (${relativeDate(modified)})`,
+			choices: stateFiles.map(
+				({stateFile, modified}) => ({
+					name: stateFile,
+					message: `${stateFile.replace(noriExtension, '')} (${relativeDate(modified)})`,
 				})
-			).concat(
+			).reverse().concat(
 				{role: 'separator'},
 				{name: 'new'},
 				{name: 'edit'},
 			),
-		}));
-	}
-
-	if(resume === 'edit') {
-		const {toDelete, confirm} = await prompt([{
+			initial: 'new',
+			skip() {
+				return stateFiles.length === 0;
+			}
+		},
+		{
+			name: 'stateFile',
+			type: 'text',
+			result: fileName => path.join(workspacePath, fileName + noriExtension),
+			skip() {
+				// this.state.answers should be first argument to skip
+				// see https://github.com/enquirer/enquirer/issues/105
+				return this.state.answers.stateFile !== 'new'
+			}
+		},
+		{
 			type: 'multiselect',
 			name: 'toDelete',
-			choices: sortedRuns.map(({run}) => run)
-		}, {
+			choices: (
+				// causes a weird unresolved promise when it's skipped and the
+				// array is empty https://github.com/enquirer/enquirer/issues/128
+				stateFiles.length
+					? stateFiles.map(
+						({stateFile}) => stateFile
+					)
+					: ['no']
+			),
+			skip() {
+				return this.state.answers.stateFile !== 'edit';
+			}
+		},
+		{
 			type: 'confirm',
-			name: 'confirm',
+			name: 'confirmDelete',
 			message: ({answers: {toDelete}}) => `delete ${toSentence(toDelete)}`,
 			skip() {
-				// should be first argument to skip, see https://github.com/enquirer/enquirer/issues/105
-				return this.state.answers.toDelete.length === 0;
+				return (
+					this.state.answers.stateFile !== 'edit'
+					|| this.state.answers.toDelete.length === 0
+				);
 			}
-		}]);
+		},
+	]);
 
-		if(confirm) {
+	if(stateFile === 'edit') {
+		if(confirmDelete) {
 			await Promise.all(
 				toDelete.map(
-					run => fs.unlink(
-						path.join(workspacePath, run)
+					stateFile => fs.unlink(
+						path.join(workspacePath, stateFile)
 					)
 				)
 			);
 		}
 
-		return getResume();
+		// re-run this function to display the prompt again
+		return getStateFile();
 	}
 
-	if(resume === 'new') {
-		const {name} = await prompt({
-			name: 'name',
-			type: 'text',
-		});
-
-		run = path.join(workspacePath, name + '.json');
-	} else {
-		run = path.join(workspacePath, resume);
-		({steps, data} = JSON.parse(
-			await fs.readFile(run, 'utf8')
-		));
-	}
-
-	return {run, steps, data};
+	return stateFile;
 }
 
-const takeWhileLast = (array, func) => (
-	array.length && func(array[array.length - 1])
-		? takeWhileLast(array.slice(0, -1), func).concat(array.slice(-1))
+async function loadStateFile(stateFile) {
+	try {
+		return JSON.parse(
+			await fs.readFile(stateFile, 'utf8')
+		);
+	} catch(_) {
+		return {
+			data: {},
+			steps: []
+		};
+	}
+}
+
+/**
+ * returns the last elements from the array that meet the predicate
+ * e.g. takeWhileLast([1, 2, 3, 2, 3, 4, 5], n => n > 2) returns [3, 4, 5]
+ *
+ * @param {Array<T>} array
+ * @param {T => Boolean} predicate
+ * @returns {Array<T>}
+ */
+const takeWhileLast = (array, predicate) => (
+	array.length && predicate(array[array.length - 1])
+		? takeWhileLast(
+			array.slice(0, -1),
+			predicate
+		).concat(
+			array.slice(-1)
+		)
 		: []
-)
+);
 
 /**
  * yargs handler function.
@@ -120,10 +166,11 @@ const takeWhileLast = (array, func) => (
  * @param {string} argv.branch
  */
 const handler = async () => {
-	const {run, steps, data} = await getResume();
+	const stateFile = await getStateFile();
+	const {steps, data} = await loadStateFile(stateFile);
 
 	const persist = () => fs.writeFile(
-		run,
+		stateFile,
 		JSON.stringify({steps, data}, null, 2)
 	);
 
@@ -186,7 +233,7 @@ const handler = async () => {
 				{role: 'separator'},
 				{name: 'preview'},
 				{name: 'undo', message: 'undo last step', disabled: steps.length > 0 ? false : ''},
-				{name: 'done', hint: `your work is autosaved as ${path.basename(run)}`}
+				{name: 'done', hint: `your work is autosaved as ${path.basename(stateFile)}`}
 			]),
 		});
 
