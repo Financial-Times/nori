@@ -28,7 +28,7 @@ async function getResume() {
 		file => file.endsWith('.json')
 	);
 
-	const mtimes = await Promise.all(
+	const modifiedTimes = await Promise.all(
 		previousRuns.map(run =>
 			fs.stat(
 				path.join(workspacePath, run)
@@ -37,7 +37,7 @@ async function getResume() {
 	);
 
 	const sortedRuns = previousRuns.map(
-		(run, index) => ({run, modified: mtimes[index]})
+		(run, index) => ({run, modified: modifiedTimes[index]})
 	).sort(
 		({modified: a}, {modified: b}) => b - a
 	);
