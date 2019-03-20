@@ -55,66 +55,71 @@ const toSentence = words => {
 	return string;
 }
 
+const promptStateFile = ({stateFiles}) => prompt([
+	{
+		name: 'stateFile',
+		type: 'select',
+		choices: stateFiles.map(
+			({stateFile, modified}) => ({
+				name: stateFile,
+				message: `${stateFile.replace(noriExtension, '')} (${relativeDate(modified)})`,
+			})
+		).reverse().concat(
+			{role: 'separator'},
+			{name: 'new'},
+			{name: 'edit'},
+		),
+		initial: 'new',
+		skip() {
+			return stateFiles.length === 0;
+		}
+	},
+	{
+		name: 'newStateFile',
+		type: 'text',
+		result: fileName => (
+			fileName.endsWith(noriExtension)
+				? fileName
+				: fileName + noriExtension
+		),
+		skip() {
+			// this.state.answers should be first argument to skip
+			// see https://github.com/enquirer/enquirer/issues/105
+			return this.state.answers.stateFile !== 'new'
+		}
+	},
+	{
+		type: 'multiselect',
+		name: 'toDelete',
+		choices: (
+			// causes a weird unresolved promise when it's skipped and the
+			// array is empty https://github.com/enquirer/enquirer/issues/128
+			stateFiles.length
+				? stateFiles.map(
+					({stateFile}) => stateFile
+				)
+				: ['no']
+		),
+		skip() {
+			return this.state.answers.stateFile !== 'edit';
+		}
+	},
+	{
+		type: 'confirm',
+		name: 'confirmDelete',
+		message: ({answers: {toDelete}}) => `delete ${toSentence(toDelete)}`,
+		skip() {
+			return (
+				this.state.answers.stateFile !== 'edit'
+				|| this.state.answers.toDelete.length === 0
+			);
+		}
+	},
+]);
+
 async function getStateFile() {
 	const stateFiles = await getSortedStateFiles();
-
-	const {stateFile, newStateFile, toDelete, confirmDelete} = await prompt([
-		{
-			name: 'stateFile',
-			type: 'select',
-			choices: stateFiles.map(
-				({stateFile, modified}) => ({
-					name: stateFile,
-					message: `${stateFile.replace(noriExtension, '')} (${relativeDate(modified)})`,
-				})
-			).reverse().concat(
-				{role: 'separator'},
-				{name: 'new'},
-				{name: 'edit'},
-			),
-			initial: 'new',
-			skip() {
-				return stateFiles.length === 0;
-			}
-		},
-		{
-			name: 'newStateFile',
-			type: 'text',
-			result: fileName => path.join(workspacePath, fileName + noriExtension),
-			skip() {
-				// this.state.answers should be first argument to skip
-				// see https://github.com/enquirer/enquirer/issues/105
-				return this.state.answers.stateFile !== 'new'
-			}
-		},
-		{
-			type: 'multiselect',
-			name: 'toDelete',
-			choices: (
-				// causes a weird unresolved promise when it's skipped and the
-				// array is empty https://github.com/enquirer/enquirer/issues/128
-				stateFiles.length
-					? stateFiles.map(
-						({stateFile}) => stateFile
-					)
-					: ['no']
-			),
-			skip() {
-				return this.state.answers.stateFile !== 'edit';
-			}
-		},
-		{
-			type: 'confirm',
-			name: 'confirmDelete',
-			message: ({answers: {toDelete}}) => `delete ${toSentence(toDelete)}`,
-			skip() {
-				return (
-					this.state.answers.stateFile !== 'edit'
-					|| this.state.answers.toDelete.length === 0
-				);
-			}
-		},
-	]);
+	const {stateFile, newStateFile, toDelete, confirmDelete} = promptStateFile({stateFiles});
 
 	if(stateFile === 'edit') {
 		if(confirmDelete) {
@@ -131,7 +136,8 @@ async function getStateFile() {
 		return getStateFile();
 	}
 
-	return stateFile === 'new' ? newStateFile : stateFile;
+	const stateFileName = stateFile === 'new' ? newStateFile : stateFile;
+	return path.join(workspacePath, stateFileName);
 }
 
 async function loadStateFile(stateFile) {
@@ -151,8 +157,9 @@ async function loadStateFile(stateFile) {
  * returns the last elements from the array that meet the predicate
  * e.g. takeWhileLast([1, 2, 3, 2, 3, 4, 5], n => n > 2) returns [3, 4, 5]
  *
+ * @template T
  * @param {Array<T>} array
- * @param {T => Boolean} predicate
+ * @param {function(T): Boolean} predicate
  * @returns {Array<T>}
  */
 const takeWhileLast = (array, predicate) => (
@@ -166,6 +173,97 @@ const takeWhileLast = (array, predicate) => (
 		: []
 );
 
+const persist = ({stateFile, state}) => fs.writeFile(
+	stateFile,
+	JSON.stringify(state, null, 2)
+);
+
+async function runStep({stateFile, state, operation, args}) {
+	// get the keys from `data` that are present in
+	// `operation.input`
+	const dataArgs = operation.input.reduce(
+		(args, type) => Object.assign(args, {
+			[type]: state.data[type]
+		}),
+		{}
+	);
+
+	const stepData = await operation.handler(
+		Object.assign(dataArgs, args)
+	);
+
+	if(operation.output) {
+		state.steps.push({name: operation.command, args});
+		state.data[operation.output] = stepData;
+	}
+
+	await persist({state, stateFile});
+}
+
+async function replay({state, stateFile, steps}) {
+	for(const step of steps) {
+		await runStep({
+			state,
+			stateFile,
+			operation: operations[step.name],
+			args: step.args,
+		});
+	}
+}
+
+const promptOperation = ({state, stateFile}) => prompt({
+	name: 'choice',
+	message: 'what do',
+	type: 'select',
+	header: Object.keys(state.data).map(
+		type => types[type].shortPreview(state.data[type])
+	).filter(Boolean).join(' ∙ '),
+	choices: Object.values(operations).map(({command, desc, input, output}) => {
+		const dataHasInputs = input.every(type => type in state.data);
+		const dataHasOutput = output in state.data;
+		const isFilter = input.includes(output);
+
+		// allow an operation if the state.data has all the inputs and the data doesn't
+		// have the output (i.e. this operation hasn't already been run) *unless*
+		// the operation has the same output as one of the inputs (i.e. it can be
+		// run multiple times on the same data)
+		const shouldAllowOperation = dataHasInputs && (!dataHasOutput || isFilter);
+
+		return {
+			name: command,
+			message: desc,
+			disabled: shouldAllowOperation ? false : '', // empty string to hide "(disabled)" message
+		};
+	}).concat([
+		{role: 'separator'},
+		{name: 'preview', },
+		{name: 'undo', message: 'undo last step', disabled: state.steps.length > 0 ? false : ''},
+		{name: 'done', hint: `your work is autosaved as ${path.basename(stateFile)}`}
+	]),
+});
+
+async function undo({state, stateFile}) {
+	const undoneStep = state.steps.pop(); // remove last operation
+	const undoneOperation = operations[undoneStep.name];
+
+	if(undoneOperation.undo) {
+		await undoneOperation.undo(state.data);
+	}
+
+	delete state.data[undoneOperation.output]; // clear any output data. if it's a filter step we'll rebuild it
+
+	const stepsToReplay = takeWhileLast(
+		state.steps,
+		step => operations[step.name].output === undoneOperation.output
+	);
+
+	state.steps.splice(state.steps.length - stepsToReplay.length, stepsToReplay.length);
+	await persist({stateFile, state});
+
+	// if stepsToReplay is empty this will do nothing
+	await replay({state, stateFile, steps: stepsToReplay});
+}
+
 /**
  * yargs handler function.
  *
@@ -177,109 +275,25 @@ const takeWhileLast = (array, predicate) => (
  */
 const handler = async () => {
 	const stateFile = await getStateFile();
-	const {steps, data} = await loadStateFile(stateFile);
-
-	const persist = () => fs.writeFile(
-		stateFile,
-		JSON.stringify({steps, data}, null, 2)
-	);
-
-	async function runStep({operation, args}) {
-		const dataArgs = operation.input.reduce(
-			(args, type) => Object.assign(args, {
-				[type]: data[type]
-			}),
-			{}
-		);
-
-		const stepData = await operation.handler(
-			Object.assign(dataArgs, args)
-		);
-
-		if(operation.output) {
-			steps.push({name: operation.command, args});
-			data[operation.output] = stepData;
-		}
-
-		await persist();
-	}
-
-	async function replay(steps) {
-		for(const step of steps) {
-			await runStep({
-				operation: operations[step.name],
-				args: step.args,
-			});
-		}
-	}
+	const state = await loadStateFile(stateFile);
 
 	// save the state file so it gets created if it's new
 	// or its last modified time gets updated if it's not
-	await persist();
+	await persist({state, stateFile});
 
 	while(true) {
-		const header = Object.keys(data).map(
-			type => types[type].shortPreview(data[type])
-		).filter(Boolean).join(' ∙ ');
+		const {choice} = await promptOperation({state, stateFile});
 
-		const {thing} = await prompt({
-			name: 'thing',
-			message: 'what do',
-			type: 'select',
-			header,
-			choices: Object.values(operations).map(({command, desc, input, output}) => {
-				const dataHasInputs = input.every(type => type in data);
-				const dataHasOutput = output in data;
-				const isFilter = input.includes(output);
-
-				// allow an operation if the data has all the inputs and the data doesn't
-				// have the output (i.e. this operation hasn't already been run) *unless*
-				// the operation has the same output as one of the inputs (i.e. it can be
-				// run multiple times on the same data)
-				const shouldAllowOperation = dataHasInputs && (!dataHasOutput || isFilter);
-
-				return {
-					name: command,
-					message: desc,
-					disabled: shouldAllowOperation ? false : '', // empty string to hide "(disabled)" message
-				};
-			}).concat([
-				{role: 'separator'},
-				{name: 'preview'},
-				{name: 'undo', message: 'undo last step', disabled: steps.length > 0 ? false : ''},
-				{name: 'done', hint: `your work is autosaved as ${path.basename(stateFile)}`}
-			]),
-		});
-
-		if(thing === 'done') {
+		if(choice in operations) {
+			const operation = operations[choice];
+			const args = await prompt(operation.args);
+			await runStep({ state, stateFile, operation, args });
+		} else if(choice === 'preview') {
+			console.log(state.data); //eslint-disable-line no-console
+		} else if(choice === 'undo') {
+			await undo({state, stateFile});
+		} else if(choice === 'done') {
 			break;
-		} else if(thing === 'preview') {
-			console.log(data); //eslint-disable-line no-console
-		} else if(thing === 'undo') {
-			const undoneStep = steps.pop(); // remove last operation
-			const undoneOperation = operations[undoneStep.name];
-
-			if(undoneOperation.undo) {
-				await undoneOperation.undo(data);
-			}
-
-			delete data[undoneOperation.output]; // clear any output data. if it's a filter step we'll rebuild it
-
-			const stepsToReplay = takeWhileLast(
-				steps,
-				step => operations[step.name].output === undoneOperation.output
-			);
-
-			steps.splice(steps.length - stepsToReplay.length, stepsToReplay.length);
-			await persist();
-
-			// if stepsToReplay is empty this will do nothing
-			await replay(stepsToReplay);
-		} else {
-			await runStep({
-				operation: operations[thing],
-				args: await prompt(operations[thing].args),
-			});
 		}
 	}
 };
