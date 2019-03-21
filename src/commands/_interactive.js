@@ -273,7 +273,7 @@ async function undo({state, stateFile}) {
  * @param {string} argv.targets
  * @param {string} argv.branch
  */
-const handler = async () => {
+exports.handler = async function() {
 	const stateFile = await getStateFile();
 	const state = await loadStateFile(stateFile);
 
@@ -298,8 +298,5 @@ const handler = async () => {
 	}
 };
 
-module.exports = {
-	command: ['*', 'interactive'],
-	desc: 'interactively build steps of a transformation',
-	handler,
-};
+exports.command = ['*', 'interactive'];
+exports.desc = 'interactively build steps of a transformation'
