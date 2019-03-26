@@ -43,23 +43,28 @@ const enquirerValidate = arg => async argv => {
 	return {};
 };
 
+const promptMissingArgs = command => async argv => {
+	const argsFromInputTypes = command.input.map(
+		type => Object.assign({name: type}, types[type].argument)
+	);
+	const allArgs = command.args.concat(argsFromInputTypes);
+	const missingArgs = allArgs.filter(
+		arg => !(arg.name in argv)
+	);
+
+	if(missingArgs.length) {
+		return await prompt(missingArgs);
+	}
+
+	return {};
+};
+
 const operationToYargsCommand = command => Object.assign({}, command, {
 	builder: yargs => {
 		if(command.input) {
 			command.input.forEach(type => yargs
 				.option(type, enquirerToYargs(types[type].argument))
 			);
-
-			yargs.middleware(async argv => {
-				if(argv.stateFile) {
-					const contents = await fs.readFile(argv.stateFile, 'utf8');
-					const {data} = JSON.parse(contents);
-					return Object.assign(
-						{stateData: data}, // keep the original to prepend to json output later
-						data
-					);
-				}
-			});
 		}
 
 		if(command.args) {
@@ -68,21 +73,7 @@ const operationToYargsCommand = command => Object.assign({}, command, {
 				.middleware(enquirerValidate(arg))
 			);
 
-			yargs.middleware(async argv => {
-				const argsFromInputTypes = command.input.map(
-					type => Object.assign({name: type}, types[type].argument)
-				);
-				const allArgs = command.args.concat(argsFromInputTypes);
-				const missingArgs = allArgs.filter(
-					arg => !(arg.name in argv)
-				);
-
-				if(missingArgs.length) {
-					return await prompt(missingArgs);
-				}
-
-				return {}
-			});
+			yargs.middleware(promptMissingArgs(command));
 		}
 
 		return yargs;
@@ -94,12 +85,15 @@ const operationToYargsCommand = command => Object.assign({}, command, {
 		if(command.output) {
 			if(argv.stateFile) {
 				const fullData = JSON.stringify(
-					{
+					Object.assign({
+						steps: (argv.state.steps || []).concat([
+							{name: command.command, args: argv}
+						]),
 						data: Object.assign(
-							{}, argv.stateData,
+							{}, argv.state.data,
 							{[command.output]: result}
 						)
-					},
+					}),
 					null,
 					// format nicely if the output is a terminal (ie a human)
 					process.stdout.isTTY ? 2 : null

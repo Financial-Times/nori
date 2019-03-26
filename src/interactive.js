@@ -4,17 +4,18 @@ const {prompt} = require('enquirer');
 const fs = require('mz/fs');
 const path = require('path');
 const relativeDate = require('tiny-relative-date');
-const types = require('../lib/types');
+const types = require('./lib/types');
+const stateFiles = require('./lib/state-files');
 
 const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
 const operations = {
-	tako: require('./tako'),
-	file: require('./file'),
-	'filter-repo-name': require('./filter-repo-name'),
-	'run-script': require('./run-script'),
-	prs: require('./prs'),
-	project: require('./project'),
+	tako: require('./commands/tako'),
+	file: require('./commands/file'),
+	'filter-repo-name': require('./commands/filter-repo-name'),
+	'run-script': require('./commands/run-script'),
+	prs: require('./commands/prs'),
+	project: require('./commands/project'),
 };
 
 const noriExtension = '.nori.json';
@@ -140,18 +141,14 @@ async function getStateFile() {
 	return path.join(workspacePath, stateFileName);
 }
 
-async function loadStateFile(stateFile) {
-	try {
-		return JSON.parse(
-			await fs.readFile(stateFile, 'utf8')
-		);
-	} catch(_) {
-		return {
-			data: {},
-			steps: []
-		};
-	}
-}
+exports.builder = yargs => yargs
+	.middleware(async ({stateFile}) => {
+		if(!stateFile) {
+			return {stateFile: await getStateFile()};
+		}
+	})
+	// reload state file if the file comes from the prompt
+	.middleware(stateFiles.middleware.load);
 
 /**
  * returns the last elements from the array that meet the predicate
@@ -173,11 +170,6 @@ const takeWhileLast = (array, predicate) => (
 		: []
 );
 
-const persist = ({stateFile, state}) => fs.writeFile(
-	stateFile,
-	JSON.stringify(state, null, 2)
-);
-
 async function runStep({stateFile, state, operation, args}) {
 	// get the keys from `data` that are present in
 	// `operation.input`
@@ -197,7 +189,7 @@ async function runStep({stateFile, state, operation, args}) {
 		state.data[operation.output] = stepData;
 	}
 
-	await persist({state, stateFile});
+	await stateFiles.save({state, stateFile});
 }
 
 async function replay({state, stateFile, steps}) {
@@ -258,7 +250,7 @@ async function undo({state, stateFile}) {
 	);
 
 	state.steps.splice(state.steps.length - stepsToReplay.length, stepsToReplay.length);
-	await persist({stateFile, state});
+	await stateFiles.save({stateFile, state});
 
 	// if stepsToReplay is empty this will do nothing
 	await replay({state, stateFile, steps: stepsToReplay});
@@ -273,13 +265,10 @@ async function undo({state, stateFile}) {
  * @param {string} argv.targets
  * @param {string} argv.branch
  */
-exports.handler = async function() {
-	const stateFile = await getStateFile();
-	const state = await loadStateFile(stateFile);
-
+exports.handler = async function({stateFile, state}) {
 	// save the state file so it gets created if it's new
 	// or its last modified time gets updated if it's not
-	await persist({state, stateFile});
+	await stateFiles.save({state, stateFile});
 
 	while(true) {
 		const {choice} = await promptOperation({state, stateFile});
