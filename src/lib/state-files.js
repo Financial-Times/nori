@@ -10,16 +10,6 @@ exports.save = ({stateFile, state}) => fs.writeFile(
 );
 
 exports.middleware = {
-	parsePositional(argv) {
-		const [, stateFile] = argv._;
-
-		if(stateFile === '-' || !process.stdin.isTTY) {
-			return {stateFile: '/dev/stdin'};
-		}
-
-		return {stateFile};
-	},
-
 	async load({stateFile, state}) {
 		if(stateFile) {
 			try {

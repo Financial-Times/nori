@@ -9,11 +9,17 @@ require('yargs')
 		type: 'boolean',
 		global: true,
 	})
-	.usage(
-		'$0 <command> [stateFile]',
-		'stateFile: path to a file containing JSON-formatted nori output, or "-" for standard input (e.g. piping)',
-	)
-	.middleware(stateFiles.middleware.parsePositional)
+	.option('state-file', {
+		alias: 'f',
+		describe: 'path to a file containing JSON-formatted nori output, or "-" for standard input (e.g. piping)',
+		type: 'string',
+		global: true,
+		coerce(stateFile) {
+			if(stateFile === '-' || !process.stdin.isTTY) {
+				return '/dev/stdin';
+			}
+		},
+	})
 	.middleware(stateFiles.middleware.load)
 	.command(require('./interactive'))
 	.commandDir('commands', { visit: operationToYargsCommand })
