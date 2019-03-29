@@ -27,20 +27,19 @@ async function getSortedStateFiles() {
 		file => file.endsWith(noriExtension)
 	);
 
-	const modifiedTimes = await Promise.all(
-		stateFiles.map(run =>
-			fs.stat(
-				path.join(workspacePath, run)
-			).then(
-				stat => stat.mtime // time the file was last modified as a javascript Date
-			)
-		)
-	);
+	return (await Promise.all(
+		stateFiles.map(async stateFile => {
+			const {mtime} = await fs.stat(
+				path.join(workspacePath, stateFile)
+			);
 
-	return stateFiles.map(
-		(stateFile, index) => ({stateFile, modified: modifiedTimes[index]})
-	).sort(
-		({modified: a}, {modified: b}) => b - a
+			return {
+				stateFile,
+				mtime, // time the file was last modified as a javascript Date
+			}
+		})
+	)).sort(
+		({mtime: a}, {mtime: b}) => b - a
 	);
 }
 
@@ -61,9 +60,9 @@ const promptStateFile = ({stateFiles}) => prompt([
 		name: 'stateFile',
 		type: 'select',
 		choices: stateFiles.map(
-			({stateFile, modified}) => ({
+			({stateFile, mtime}) => ({
 				name: stateFile,
-				message: `${stateFile.replace(noriExtension, '')} (${relativeDate(modified)})`,
+				message: `${stateFile.replace(noriExtension, '')} (${relativeDate(mtime)})`,
 			})
 		).reverse().concat(
 			{role: 'separator'},
