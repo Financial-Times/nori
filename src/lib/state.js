@@ -77,7 +77,9 @@ module.exports = class State {
 			const content = await read(this.fileName);
 			try {
 				this.state = JSON.parse(content);
-			} catch(_) {}
+			} catch(_) {
+				throw new Error(`${this.fileName === '-' ? 'Standard input' : this.fileName} couldn't be parsed as JSON`);
+			}
 		}
 	}
 
