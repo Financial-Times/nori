@@ -18,6 +18,8 @@ require('yargs')
 			if(stateFile === '-' || !process.stdin.isTTY) {
 				return '/dev/stdin';
 			}
+
+			return stateFile;
 		},
 	})
 	.middleware(stateFiles.middleware.load)
