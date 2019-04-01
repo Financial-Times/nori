@@ -8,18 +8,7 @@ const types = require('./lib/types');
 const State = require('./lib/state');
 const operations = require('./operations');
 const {workspacePath, noriExtension} = require('./lib/constants');
-
-const toSentence = words => {
-	let string = words.slice(0, -1).join(', ');
-
-	if(words.length > 1) {
-		string += ' and ';
-	}
-
-	string += words[words.length - 1];
-
-	return string;
-}
+const toSentence = require('./lib/to-sentence');
 
 const promptStateFile = ({stateFiles}) => prompt([
 	{
@@ -149,23 +138,11 @@ const promptOperation = ({state}) => prompt({
 	header: Object.keys(state.state.data).map(
 		type => types[type].shortPreview(state.state.data[type])
 	).filter(Boolean).join(' ∙ '),
-	choices: Object.values(operations).map(({command, desc, input, output}) => {
-		const dataHasInputs = input.every(type => type in state.state.data);
-		const dataHasOutput = output in state.state.data;
-		const isFilter = input.includes(output);
-
-		// allow an operation if the state.state.data has all the inputs and the data doesn't
-		// have the output (i.e. this operation hasn't already been run) *unless*
-		// the operation has the same output as one of the inputs (i.e. it can be
-		// run multiple times on the same data)
-		const shouldAllowOperation = dataHasInputs && (!dataHasOutput || isFilter);
-
-		return {
-			name: command,
-			message: desc,
-			disabled: shouldAllowOperation ? false : '', // empty string to hide "(disabled)" message
-		};
-	}).concat([
+	choices: Object.values(operations).map(operation => ({
+		name: operation.command,
+		message: operation.desc,
+		disabled: state.isValidOperation(operation) ? false : '', // empty string to hide "(disabled)" message
+	})).concat([
 		{role: 'separator'},
 		{name: 'preview', },
 		{name: 'undo', message: 'undo last step', disabled: state.state.steps.length > 0 ? false : ''},

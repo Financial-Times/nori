@@ -103,6 +103,18 @@ module.exports = class State {
 		await this.save();
 	}
 
+	isValidOperation(operation) {
+		const dataHasInputs = operation.input.every(type => type in this.state.data);
+		const dataHasOutput = operation.output in this.state.data;
+		const isFilter = operation.input.includes(operation.output);
+
+		// allow an operation if the state.state.data has all the inputs and the data doesn't
+		// have the output (i.e. this operation hasn't already been run) *unless*
+		// the operation has the same output as one of the inputs (i.e. it can be
+		// run multiple times on the same data)
+		return dataHasInputs && (!dataHasOutput || isFilter);
+	}
+
 	async unwindOperation(operation) {
 		this.state.steps.pop();
 		delete this.state.data[operation.output];
