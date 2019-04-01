@@ -92,7 +92,7 @@ async function getStateFile({ stateFile }) {
 			}
 
 			// re-run this function to display the prompt again
-			return getStateFile();
+			return getStateFile({ stateFile });
 		}
 
 		const stateFileName = stateFile === 'new' ? newStateFile : stateFile;
