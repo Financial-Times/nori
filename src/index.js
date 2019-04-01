@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 const operationToYargsCommand = require('./lib/operation-to-yargs-command');
-const stateFiles = require('./lib/state-files');
+const State = require('./lib/state');
 
 require('yargs')
 	.option('json', {
@@ -14,15 +14,9 @@ require('yargs')
 		describe: 'path to a file containing JSON-formatted nori output, or "-" for standard input (e.g. piping)',
 		type: 'string',
 		global: true,
-		coerce(stateFile) {
-			if(stateFile === '-' || !process.stdin.isTTY) {
-				return '/dev/stdin';
-			}
-
-			return stateFile;
-		},
+		default: process.stdin.isTTY ? undefined : '-',
 	})
-	.middleware(stateFiles.middleware.load)
+	.middleware(State.middleware)
 	.command(require('./interactive'))
 	.commandDir('commands', { visit: operationToYargsCommand })
 	.demandCommand()

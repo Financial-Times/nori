@@ -1,5 +1,4 @@
 const {prompt} = require('enquirer');
-const fs = require('mz/fs');
 const types = require('./types');
 
 function enquirerToYargs(arg) {
@@ -59,61 +58,37 @@ const promptMissingArgs = command => async argv => {
 	return {};
 };
 
-const operationToYargsCommand = command => Object.assign({}, command, {
-	builder: yargs => {
-		if(command.input) {
-			command.input.forEach(type => yargs
+const operationToYargsCommand = operation => Object.assign({}, operation, {
+	builder(yargs) {
+		if(operation.input) {
+			operation.input.forEach(type => yargs
 				.option(type, enquirerToYargs(types[type].argument))
 			);
 		}
 
-		if(command.args) {
-			command.args.forEach(arg => yargs
+		if(operation.args) {
+			operation.args.forEach(arg => yargs
 				.option(arg.name, enquirerToYargs(arg))
 				.middleware(enquirerValidate(arg))
 			);
 
-			yargs.middleware(promptMissingArgs(command));
+			yargs.middleware(promptMissingArgs(operation));
 		}
 
 		return yargs;
 	},
 
-	handler: async argv => {
-		const result = await command.handler(argv);
+	async handler({state, ...args}) {
+		const result = await operation.handler(args);
 
-		if(command.output) {
-			if(argv.stateFile) {
-				const fullData = JSON.stringify(
-					Object.assign({
-						steps: (argv.state.steps || []).concat([
-							{name: command.command, args: argv}
-						]),
-						data: Object.assign(
-							{}, argv.state.data,
-							{[command.output]: result}
-						)
-					}),
-					null,
-					// format nicely if the output is a terminal (ie a human)
-					process.stdout.isTTY ? 2 : null
-				);
-
-				if(argv.stateFile === '/dev/stdin') {
-					process.stdout.write(fullData);
-				} else {
-					await fs.writeFile(
-						argv.stateFile,
-						fullData
-					);
-				}
-			} else {
-				console.log( //eslint-disable-line no-console
-					argv.json
-						? JSON.stringify(result, null, 2)
-						: types[command.output].format(result)
-				);
-			}
+		if(state.fileName || !process.stdout.isTTY) {
+			await state.appendOperation(operation, args, result);
+		} else {
+			console.log( //eslint-disable-line no-console
+				args.json
+					? JSON.stringify(result, null, 2)
+					: types[operation.output].format(result)
+			);
 		}
 	}
 });
