@@ -104,15 +104,24 @@ module.exports = class State {
 	}
 
 	isValidOperation(operation) {
+		const lastStep = this.state.steps[this.state.steps.length - 1];
+		const operationCanTakeLastOutput = lastStep
+			? operation.input.includes(
+				operations[lastStep.name].output
+			)
+			: operation.input.length === 0;
+
 		const dataHasInputs = operation.input.every(type => type in this.state.data);
 		const dataHasOutput = operation.output in this.state.data;
 		const isFilter = operation.input.includes(operation.output);
 
-		// allow an operation if the state.state.data has all the inputs and the data doesn't
-		// have the output (i.e. this operation hasn't already been run) *unless*
-		// the operation has the same output as one of the inputs (i.e. it can be
-		// run multiple times on the same data)
-		return dataHasInputs && (!dataHasOutput || isFilter);
+		// allow an operation if:
+		//   - the output of the last operation is one of the inputs
+		//     - or if there was no last operation, there are no inputs
+		//   - the state.data has all the inputs
+		//   - the data doesn't have the output (i.e. this operation hasn't already been run)
+		//     - *unless* the operation has the same output as one of the inputs (i.e. it can be run multiple times on the same data)
+		return operationCanTakeLastOutput && dataHasInputs && (!dataHasOutput || isFilter);
 	}
 
 	async unwindOperation(operation) {
