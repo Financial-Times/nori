@@ -9,14 +9,13 @@ const util = require('util');
 const mkdirp = util.promisify(require('mkdirp'));
 const git = require('@financial-times/git');
 
+const {workspacePath} = require('../lib/constants');
 const runProcess = require('../lib/run-process');
 
 exports.args = [
 	{type: 'text', name: 'script', message: 'path to a script'},
 	{type: 'text', name: 'branch', message: 'branch to create'},
 ];
-
-const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
 
 /**
  * yargs handler function.

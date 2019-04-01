@@ -2,9 +2,7 @@ const fs = require('mz/fs');
 const path = require('path');
 const operations = require('../operations');
 const getStdin = require('get-stdin');
-
-const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
-const noriExtension = '.nori.json';
+const {workspacePath, noriExtension} = require('./constants');
 
 /**
  * returns the last elements from the array that meet the predicate

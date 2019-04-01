@@ -7,9 +7,7 @@ const relativeDate = require('tiny-relative-date');
 const types = require('./lib/types');
 const State = require('./lib/state');
 const operations = require('./operations');
-
-const workspacePath = path.join(process.env.HOME, '.config/transformation-runner-workspace');
-const noriExtension = '.nori.json';
+const {workspacePath, noriExtension} = require('./lib/constants');
 
 const toSentence = words => {
 	let string = words.slice(0, -1).join(', ');
