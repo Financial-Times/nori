@@ -1,5 +1,4 @@
 const got = require('got');
-const isUrl = require('is-url');
 
 exports.command = 'tako';
 exports.desc = 'get a list of repos from a tako instance';
@@ -7,21 +6,14 @@ exports.input = [];
 exports.output = 'repos';
 
 exports.args = [{
-	name: 'url',
-	validate: input => isUrl(input) || 'Please enter a valid URL',
-	type: 'text',
-}, {
-	name: 'token',
-	type: 'text',
-}, {
 	name: 'topic',
 	type: 'text',
 }];
 
-exports.handler = ({url, token, topic}) => got(`${url}/tako/repositories`, {
+exports.handler = ({takoHost, takoToken, topic}) => got(`https://${takoHost}/tako/repositories`, {
 	json: true,
-	headers: token && {
-		authorization: `Bearer ${token}`
+	headers: takoToken && {
+		authorization: `Bearer ${takoToken}`
 	},
 	query: {topic}
 }).then(

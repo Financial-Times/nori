@@ -176,7 +176,7 @@ async function undo({ state }) {
  * @param {string} argv.targets
  * @param {string} argv.branch
  */
-exports.handler = async function({ state }) {
+exports.handler = async function({ state, ...argv }) {
 	// save the state file so it gets created if it's new
 	// or its last modified time gets updated if it's not
 	await state.save();
@@ -186,7 +186,11 @@ exports.handler = async function({ state }) {
 
 		if(choice in operations) {
 			const operation = operations[choice];
-			const args = await prompt(operation.args);
+			const args = Object.assign(
+				{}, argv,
+				await prompt(operation.args)
+			);
+
 			await runStep({ state, operation, args });
 		} else if(choice === 'preview') {
 			console.log(state.state.data); //eslint-disable-line no-console
