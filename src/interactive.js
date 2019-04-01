@@ -13,6 +13,7 @@ const toSentence = require('./lib/to-sentence');
 const promptStateFile = ({stateFiles}) => prompt([
 	{
 		name: 'stateFile',
+		message: 'resume a session',
 		type: 'select',
 		choices: stateFiles.map(
 			({stateFile, mtime}) => ({
@@ -31,6 +32,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 	},
 	{
 		name: 'newStateFile',
+		message: 'create a session',
 		type: 'text',
 		result: fileName => (
 			fileName.endsWith(noriExtension)
@@ -45,6 +47,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 	},
 	{
 		type: 'multiselect',
+		message: 'select sessions to delete',
 		name: 'toDelete',
 		choices: (
 			// causes a weird unresolved promise when it's skipped and the
@@ -62,7 +65,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 	{
 		type: 'confirm',
 		name: 'confirmDelete',
-		message: ({answers: {toDelete}}) => `delete ${toSentence(toDelete)}`,
+		message: ({answers: {toDelete}}) => `really delete ${toSentence(toDelete)}?`,
 		skip() {
 			return (
 				this.state.answers.stateFile !== 'edit'
@@ -72,36 +75,36 @@ const promptStateFile = ({stateFiles}) => prompt([
 	},
 ]);
 
-async function getStateFile() {
-	const stateFiles = await State.getSortedFiles();
-	const {stateFile, newStateFile, toDelete, confirmDelete} = await promptStateFile({stateFiles});
+async function getStateFile({ stateFile }) {
+	if(!stateFile) {
+		const stateFiles = await State.getSortedFiles();
+		const {stateFile, newStateFile, toDelete, confirmDelete} = await promptStateFile({stateFiles});
 
-	if(stateFile === 'edit') {
-		if(confirmDelete) {
-			await Promise.all(
-				toDelete.map(
-					stateFile => fs.unlink(
-						path.join(workspacePath, stateFile)
+		if(stateFile === 'edit') {
+			if(confirmDelete) {
+				await Promise.all(
+					toDelete.map(
+						stateFile => fs.unlink(
+							path.join(workspacePath, stateFile)
+						)
 					)
-				)
-			);
+				);
+			}
+
+			// re-run this function to display the prompt again
+			return getStateFile();
 		}
 
-		// re-run this function to display the prompt again
-		return getStateFile();
+		const stateFileName = stateFile === 'new' ? newStateFile : stateFile;
+		return {
+			stateFile: path.join(workspacePath, stateFileName),
+			createStateFile: true
+		}
 	}
-
-	const stateFileName = stateFile === 'new' ? newStateFile : stateFile;
-	return path.join(workspacePath, stateFileName);
 }
 
 exports.builder = yargs => yargs
-	.middleware(async ({stateFile}) => {
-		if(!stateFile) {
-			return {stateFile: await getStateFile()};
-		}
-	})
-	// reload state file if the file comes from the prompt
+	.middleware(getStateFile)
 	.middleware(State.middleware);
 
 async function runStep({state, operation, args}) {
@@ -133,7 +136,7 @@ async function replay({state, steps}) {
 
 const promptOperation = ({state}) => prompt({
 	name: 'choice',
-	message: 'what do',
+	message: 'available operations',
 	type: 'select',
 	header: Object.keys(state.state.data).map(
 		type => types[type].shortPreview(state.state.data[type])

@@ -27,11 +27,14 @@ const takeWhileLast = (array, predicate) => (
 const read = file => file === '-' ? getStdin() : fs.readFile(file, 'utf8');
 
 module.exports = class State {
-	static async middleware({ stateFile, state }) {
+	static async middleware({ stateFile, state, createStateFile = false }) {
 		const stateContainer = state && state.fileName
 			? state
 			: new State({ fileName: stateFile });
 
+		if(createStateFile) {
+			stateContainer.save();
+		}
 
 		await stateContainer.load();
 
