@@ -28,9 +28,37 @@ If you'll be running `nori` frequently, install it globally:
 npm install -g nori
 ```
 
-## Operations
+`nori` can run operations via the interactive prompt, or directly on the command line. Operations **output** a particular type of data, and some operations have one or more **inputs**, which are types of data that must be gathered before you can run the operation. The interactive prompt will only enable the operations you have the data for so far. When running from the command line, you can pass this data around by piping the commands, or by using a [**State File**](#state-file)
 
-### Tako
+Run `nori` with the name of the operation, and any arguments it requires as double-dashed command line arguments (`nori` understands `--kebab-case` arguments and transforms them to `camelCase`). If you're running in an interactive shell, `nori` will prompt for any missing arguments.
+
+For example, to consume repositories from `repos.txt` and output the formatted list:
+
+```sh
+⟩ nori file --file repos.txt
+https://github.com/financial-times-sandbox/Abandoned-Toothbrush
+https://github.com/financial-times-sandbox/Western-Storm
+```
+
+Every command supports the `--json` flag, which outputs all data found formatted as JSON:
+
+```sh
+⟩ nori file --file repos.txt --json
+[
+  {
+    "owner": "financial-times-sandbox",
+    "name": "Abandoned-Toothbrush"
+  },
+  {
+    "owner": "financial-times-sandbox",
+    "name": "Western-Storm"
+  }
+]
+```
+
+## Operations
+### Tako 
+##### `nori tako [--topic]`
 
 Get a list of repositories from a [Tako](https://github.com/financial-times/tako) instance.
 
@@ -39,6 +67,15 @@ Get a list of repositories from a [Tako](https://github.com/financial-times/tako
     <th align="right">Arguments</th>
     <td><code>topic</code></td>
     <td>(optional) Github topic to filter the repositories by</td>
+  </tr>
+  <tr>
+    <th align="right" rowspan="2">Configuration</th>
+    <td><code>takoHost</code></td>
+    <td>hostname of the Tako instance</td>
+  </tr>
+  <tr>
+    <td><code>takoToken</code></td>
+    <td>bearer token header to send to your Tako instance</td>
   </tr>
   <tr>
     <th align="right">Inputs</th>
@@ -51,6 +88,7 @@ Get a list of repositories from a [Tako](https://github.com/financial-times/tako
 </table>
 
 ### File
+##### `nori file --file`
 
 Get a list of repositories from a text file, structured as line-separated `owner/name` strings (optionally with leading `https://github.com/).
 
@@ -70,7 +108,8 @@ Get a list of repositories from a text file, structured as line-separated `owner
   </tr>
 </table>
 
-### File
+### Filter repository name
+##### `nori filter-repo-name --filter`
 
 Filter the list of repositories by their names.
 
@@ -91,6 +130,7 @@ Filter the list of repositories by their names.
 </table>
 
 ### Run Script
+##### `nori run-script --script --branch`
 
 Clone each of the list of repositories, create a branch, run a script on that branch, then push the branch to the remote.
 
@@ -133,18 +173,26 @@ The main benefit of this approach is that scripts do not _need_ the
 debugging and one-off runs of a script much simpler.
 
 ### Pull Requests
+##### `nori prs --templates.title --templates.body`
 
 Create a Pull Request for each of the pushed branches.
 
 <table>
   <tr>
     <th align="right" rowspan="2">Arguments</th>
-    <td><code>title</code></td>
+    <td><code>templates.title</code></td>
     <td>the title of the pull requests. you can use Javascript <code>${}</code> template string syntax. available variables are <code>repo.owner</code>, <code>repo.name</code> and <code>branch</code>.</td>
   </tr>
   <tr>
-    <td><code>body</code></td>
+    <td><code>templates.body</code></td>
     <td>the body of the pull requests. supports templates like <code>title</code></td>
+  </tr>
+  <tr>
+    <th align="right" rowspan="2">Configuration</th>
+    <td><code>githubAccessToken</code></td>
+    <td>
+      Github <a href="https://github.com/settings/tokens/new?scopes=repo&description=Nori" target="_blank">personal access token with `repo` scope</a>
+    </td>
   </tr>
   <tr>
     <th align="right">Inputs</th>
@@ -157,18 +205,26 @@ Create a Pull Request for each of the pushed branches.
 </table>
 
 ### Project
+##### `nori project --project-data.name --project-data.org`
 
 Create a Github Project, and add all created Pull Requests to it.
 
 <table>
   <tr>
     <th align="right" rowspan="2">Arguments</th>
-    <td><code>name</code></td>
+    <td><code>projectData.name</code></td>
     <td>the name of the project to create</td>
   </tr>
   <tr>
-    <td><code>org</code></td>
+    <td><code>projectData.org</code></td>
     <td>the org to create the project in. this must be the same org as every repo that you've created a PR on.</td>
+  </tr>
+  <tr>
+    <th align="right" rowspan="2">Configuration</th>
+    <td><code>githubAccessToken</code></td>
+    <td>
+      Github <a href="https://github.com/settings/tokens/new?scopes=repo&description=Nori" target="_blank">personal access token with `repo` scope</a>
+    </td>
   </tr>
   <tr>
     <th align="right">Inputs</th>
@@ -180,6 +236,6 @@ Create a Github Project, and add all created Pull Requests to it.
   </tr>
 </table>
 
-**NB** *we're considering what to do about repos from multiple orgs #62*
+**NB** *we're considering what to do about repos from multiple orgs, see #62*
 
-**NB** *the project will have `To Do`, `In Progress` and `Done` columns, but there's currently no way to set up automatic transitions using the Github API*
+**NB** *the project will have `To Do`, `In Progress` and `Done` columns, but there's currently no way to set up automatic transitions using the Github API. you'll have to set that up manually if you want the project board to reflect the state of the PRs*
