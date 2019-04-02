@@ -1,6 +1,58 @@
-# 🏃 Transformation Runner CLI tool
+<h1 align="center">
+  🍙 nori
+</h1>
 
-> A CLI tool for applying file changes to many git repositories
+<h2 align="center">
+  exploratory CLI tool to make changes across multiple repositories & track their progress
+</h2>
+
+Nori is a command-line application for managing changes across multiple (usually Github) repositories. It allows you to build up a sequence of [**Operations**](#operations) to go through the process of discovering repositories to change, cloning them & making the changes, creating Pull Requests for the changes, and tracking the progress of the Pull Requests in a Github Project. The main interface for Nori is an interactive command-line wizard, which prompts you for which operations to run, and the arguments needed for each operation.
+
+<img align="center" src="etc/screencast.gif" alt="nori screencast" height="480" width="405">
+
+## Usage
+
+```sh
+npx nori
+```
+
+Temporarily installs Nori and runs the interactive wizard. The wizard takes you through the steps you can run 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+---
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+## old readme
 
 This tool clones the git repositories, runs a script against each one to make the
 required changes and then pushes those changes. See [Separation of concerns](#separation-of-concerns)
