@@ -37,15 +37,16 @@ Get a list of repositories from a [Tako](https://github.com/financial-times/tako
 <table>
   <tr>
     <th>Arguments</th>
-    <td><code>topic</code> (optional) Github topic to filter the repositories by</td>
+    <td><code>topic</code></td>
+    <td>(optional) Github topic to filter the repositories by</td>
   </tr>
   <tr>
     <th>Inputs</th>
-    <td><em>none</em></td>
+    <td colspan="2"><em>none</em></td>
   </tr>
   <tr>
     <th>Output</th>
-    <td><code>repos</code></td>
+    <td colspan="2"><code>repos</code></td>
   </tr>
 </table>
 
