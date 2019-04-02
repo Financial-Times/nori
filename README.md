@@ -188,7 +188,7 @@ Create a Pull Request for each of the pushed branches.
     <td>the body of the pull requests. supports templates like <code>title</code></td>
   </tr>
   <tr>
-    <th align="right" rowspan="2">Configuration</th>
+    <th align="right">Configuration</th>
     <td><code>githubAccessToken</code></td>
     <td>
       Github <a href="https://github.com/settings/tokens/new?scopes=repo&description=Nori" target="_blank">personal access token with `repo` scope</a>
@@ -220,7 +220,7 @@ Create a Github Project, and add all created Pull Requests to it.
     <td>the org to create the project in. this must be the same org as every repo that you've created a PR on.</td>
   </tr>
   <tr>
-    <th align="right" rowspan="2">Configuration</th>
+    <th align="right">Configuration</th>
     <td><code>githubAccessToken</code></td>
     <td>
       Github <a href="https://github.com/settings/tokens/new?scopes=repo&description=Nori" target="_blank">personal access token with `repo` scope</a>
@@ -236,6 +236,6 @@ Create a Github Project, and add all created Pull Requests to it.
   </tr>
 </table>
 
-**NB** *we're considering what to do about repos from multiple orgs, see #62*
+**NB** *we're considering what to do about repos from multiple orgs, see [#62](https://github.com/Financial-Times/nori/issue/62)*
 
 **NB** *the project will have `To Do`, `In Progress` and `Done` columns, but there's currently no way to set up automatic transitions using the Github API. you'll have to set that up manually if you want the project board to reflect the state of the PRs*
