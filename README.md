@@ -82,7 +82,7 @@ Filter the list of repositories by their names.
   </tr>
   <tr>
     <th align="right">Inputs</th>
-    <td colspan="2"><em>repos</em></td>
+    <td colspan="2"><code>repos</code></td>
   </tr>
   <tr>
     <th align="right">Output</th>
@@ -106,7 +106,7 @@ Clone each of the list of repositories, create a branch, run a script on that br
   </tr>
   <tr>
     <th align="right">Inputs</th>
-    <td colspan="2"><em>repos</em></td>
+    <td colspan="2"><code>repos</code></td>
   </tr>
   <tr>
     <th align="right">Output</th>
@@ -148,7 +148,7 @@ Create a Pull Request for each of the pushed branches.
   </tr>
   <tr>
     <th align="right">Inputs</th>
-    <td colspan="2"><em>repos</em>, <em>branches</em></td>
+    <td colspan="2"><code>repos</code>, <code>branches</code></td>
   </tr>
   <tr>
     <th align="right">Output</th>
@@ -172,7 +172,7 @@ Create a Github Project, and add all created Pull Requests to it.
   </tr>
   <tr>
     <th align="right">Inputs</th>
-    <td colspan="2"><em>prs</em></td>
+    <td colspan="2"><code>prs</code></td>
   </tr>
   <tr>
     <th align="right">Output</th>
