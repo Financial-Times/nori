@@ -2,9 +2,11 @@
   🍙 nori
 </h1>
 
-<h2 align="center">
+<p align="center">
   exploratory CLI tool to make changes across multiple repositories & track their progress
-</h2>
+</p>
+
+---
 
 Nori is a command-line application for managing changes across multiple (usually Github) repositories. It allows you to build up a sequence of [**Operations**](#operations) to go through the process of discovering repositories to change, cloning them & making the changes, creating Pull Requests for the changes, and tracking the progress of the Pull Requests in a Github Project. The main interface for Nori is an interactive command-line wizard, which prompts you for which operations to run, and the arguments needed for each operation.
 
@@ -18,7 +20,13 @@ Nori is a command-line application for managing changes across multiple (usually
 npx nori
 ```
 
-Temporarily installs Nori and runs the interactive wizard. The wizard takes you through the steps you can run 
+This temporarily installs Nori and runs the interactive wizard. The first time you run it, it will prompt you for various [configuration variables](#configuration), which are required only for certain operations. It'll then ask you to `Create a session`. Give the session a memorable name. The wizard takes you through the operations you can run. At any point you can exit by pressing <kbd>Ctrl</kbd>+<kbd>C</kbd> or selecting `Done`. Your progress is saved under the name you gave when you started `nori`. Next time you run it, it will display a list of previous sessions that you can resume, most recent last.
+
+If you'll be running `nori` frequently, install it globally:
+
+```sh
+npm install -g nori
+```
 
 
 
