@@ -19,6 +19,7 @@
   "dependencies": {
     "@financial-times/git": "^1.0.0",
     "@octokit/rest": "^16.19.0",
+    "ansi-colors": "^3.2.4",
     "array-to-sentence": "^2.0.0",
     "enquirer": "^2.3.0",
     "get-stdin": "^6.0.0",

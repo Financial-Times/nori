@@ -9,6 +9,7 @@ const State = require('./lib/state');
 const operations = require('./operations');
 const {workspacePath, noriExtension} = require('./lib/constants');
 const toSentence = require('./lib/to-sentence');
+const c = require('ansi-colors');
 
 const promptStateFile = ({stateFiles}) => prompt([
 	{
@@ -193,7 +194,13 @@ exports.handler = async function({ state, ...argv }) {
 
 			await runStep({ state, operation, args });
 		} else if(choice === 'preview') {
-			console.log(state.state.data); //eslint-disable-line no-console
+			for(const type in state.state.data) if(state.state.data.hasOwnProperty(type)) {
+				console.log(`${c.gray('─────')} ${type}`); // eslint-disable-line no-console
+				console.log( // eslint-disable-line no-console
+					types[type].format(state.state.data[type])
+				);
+			}
+			console.log(c.gray('─────')); // eslint-disable-line no-console
 		} else if(choice === 'undo') {
 			await undo({state});
 		} else if(choice === 'done') {
