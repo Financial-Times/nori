@@ -13,7 +13,7 @@ const c = require('ansi-colors');
 
 const promptStateFile = ({stateFiles}) => prompt([
 	{
-		name: 'stateFile',
+		name: 'selectedStateFile',
 		message: 'resume a session',
 		type: 'select',
 		choices: stateFiles.map(
@@ -43,7 +43,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 		skip() {
 			// this.state.answers should be first argument to skip
 			// see https://github.com/enquirer/enquirer/issues/105
-			return this.state.answers.stateFile !== 'new'
+			return this.state.answers.selectedStateFile !== 'new'
 		}
 	},
 	{
@@ -60,7 +60,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 				: ['no']
 		),
 		skip() {
-			return this.state.answers.stateFile !== 'edit';
+			return this.state.answers.selectedStateFile !== 'edit';
 		}
 	},
 	{
@@ -69,7 +69,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 		message: ({answers: {toDelete}}) => `really delete ${toSentence(toDelete)}?`,
 		skip() {
 			return (
-				this.state.answers.stateFile !== 'edit'
+				this.state.answers.selectedStateFile !== 'edit'
 				|| this.state.answers.toDelete.length === 0
 			);
 		}
@@ -79,14 +79,14 @@ const promptStateFile = ({stateFiles}) => prompt([
 async function getStateFile({ stateFile }) {
 	if(!stateFile) {
 		const stateFiles = await State.getSortedFiles();
-		const {stateFile, newStateFile, toDelete, confirmDelete} = await promptStateFile({stateFiles});
+		const {selectedStateFile, newStateFile, toDelete, confirmDelete} = await promptStateFile({stateFiles});
 
-		if(stateFile === 'edit') {
+		if(selectedStateFile === 'edit') {
 			if(confirmDelete) {
 				await Promise.all(
 					toDelete.map(
-						stateFile => fs.unlink(
-							path.join(workspacePath, stateFile)
+						file => fs.unlink(
+							path.join(workspacePath, file)
 						)
 					)
 				);
@@ -96,10 +96,10 @@ async function getStateFile({ stateFile }) {
 			return getStateFile({ stateFile });
 		}
 
-		const stateFileName = stateFile === 'new' ? newStateFile : stateFile;
+		const stateFileName = selectedStateFile === 'new' ? newStateFile : selectedStateFile;
 		return {
 			stateFile: path.join(workspacePath, stateFileName),
-			createStateFile: true
+			createStateFile: selectedStateFile === 'new'
 		}
 	}
 }
@@ -201,7 +201,7 @@ exports.handler = async function({ state, ...argv }) {
 				);
 			}
 			console.log(c.gray('─────')); // eslint-disable-line no-console
-		} else if(choice === 'undo') {
+			} else if(choice === 'undo') {
 			await undo({state});
 		} else if(choice === 'done') {
 			break;
