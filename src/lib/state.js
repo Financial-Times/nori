@@ -2,6 +2,8 @@ const fs = require('mz/fs');
 const path = require('path');
 const operations = require('../operations');
 const getStdin = require('get-stdin');
+const util = require('util');
+const mkdirp = util.promisify(require('mkdirp'));
 const {workspacePath, noriExtension} = require('./constants');
 
 /**
@@ -28,6 +30,8 @@ const read = file => file === '-' ? getStdin() : fs.readFile(file, 'utf8');
 
 module.exports = class State {
 	static async middleware({ stateFile, state, createStateFile = false }) {
+		await mkdirp(workspacePath);
+
 		const stateContainer = state && state.fileName
 			? state
 			: new State({ fileName: stateFile });
@@ -45,6 +49,8 @@ module.exports = class State {
 	}
 
 	static async getSortedFiles() {
+		await mkdirp(workspacePath);
+
 		const stateFiles = (
 			await fs.readdir(workspacePath)
 		).filter(

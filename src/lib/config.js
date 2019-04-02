@@ -3,6 +3,8 @@ const {workspacePath} = require('./constants');
 const path = require('path');
 const {prompt} = require('enquirer');
 const toSentence = require('./to-sentence');
+const util = require('util');
+const mkdirp = util.promisify(require('mkdirp'));
 
 const configVars = [{
 	name: 'githubAccessToken',
@@ -35,6 +37,7 @@ function writeConfig(config) {
 
 module.exports = async function getConfig() {
 	let config = {};
+	await mkdirp(workspacePath);
 
 	try {
 		config = await readConfig();

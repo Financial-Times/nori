@@ -5,8 +5,6 @@
 const assert = require('assert');
 const fs = require('mz/fs');
 const path = require('path');
-const util = require('util');
-const mkdirp = util.promisify(require('mkdirp'));
 const git = require('@financial-times/git');
 
 const {workspacePath} = require('../lib/constants');
@@ -39,8 +37,6 @@ exports.handler = async ({ script, repos, branch }) => {
 	if(!(await fs.exists(scriptPath, fs.constants.X_OK))) {
 		assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`);
 	}
-
-	await mkdirp(workspacePath);
 
 	console.log(`-- Script: ${scriptPath}`);
 	console.log(`-- Target(s):\n\n   ${repos.map(({name}) => name).join('\n   ')}`);
