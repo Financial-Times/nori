@@ -8,7 +8,9 @@
 
 Nori is a command-line application for managing changes across multiple (usually Github) repositories. It allows you to build up a sequence of [**Operations**](#operations) to go through the process of discovering repositories to change, cloning them & making the changes, creating Pull Requests for the changes, and tracking the progress of the Pull Requests in a Github Project. The main interface for Nori is an interactive command-line wizard, which prompts you for which operations to run, and the arguments needed for each operation.
 
-<img align="center" src="etc/screencast.gif" alt="nori screencast" height="480" width="405">
+<p align="center">
+  <img src="etc/screencast.gif" alt="nori screencast" width="480" height="405">
+</p>
 
 ## Usage
 
