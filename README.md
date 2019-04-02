@@ -28,15 +28,26 @@ If you'll be running `nori` frequently, install it globally:
 npm install -g nori
 ```
 
+## Operations
 
+### Tako
 
+Get a list of repositories from a [Tako](https://github.com/financial-times/tako) instance.
 
-
-
-
-
-
-
+<table>
+  <tr>
+    <th>Arguments</th>
+    <td><code>topic</code> (optional) Github topic to filter the repositories by</td>
+  </tr>
+  <tr>
+    <th>Inputs</th>
+    <td><em>none</em></td>
+  </tr>
+  <tr>
+    <th>Output</th>
+    <td><code>repos</code></td>
+  </tr>
+</table>
 
 
 
