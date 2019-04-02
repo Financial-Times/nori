@@ -15,13 +15,13 @@ exports.args = [{
 	]
 }];
 
-exports.handler = ({templates: {title, body}, repos, branches}) => {
+exports.handler = ({templates: {title, body}, repos, branches, githubAccessToken}) => {
 	const titleTemplate = new Function('repo', 'branch', `return \`${title}\``);
 	const bodyTemplate = new Function('repo', 'branch', `return \`${body}\``);
 
 	return Promise.all(branches.map((branch, index) => {
 		const repo = repos[index];
-		return octokit.pulls.create({
+		return octokit(githubAccessToken).pulls.create({
 			owner: repo.owner,
 			repo: repo.name,
 			head: branch,
@@ -32,16 +32,16 @@ exports.handler = ({templates: {title, body}, repos, branches}) => {
 	}))
 };
 
-exports.undo = async ({prs}) => (
+exports.undo = async ({prs, githubAccessToken}) => (
 	Promise.all(prs.map(async pr => {
-		await octokit.issues.createComment({
+		await octokit(githubAccessToken).issues.createComment({
 			owner: pr.head.repo.owner.login,
 			repo: pr.head.repo.name,
 			number: pr.number,
 			body: 'automatically closed 🤖' //TODO prompt for template?
 		});
 
-		await octokit.pulls.update({
+		await octokit(githubAccessToken).pulls.update({
 			owner: pr.head.repo.owner.login,
 			repo: pr.head.repo.name,
 			number: pr.number,

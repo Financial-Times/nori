@@ -1,4 +1,4 @@
-const octokit = require('../lib/octokit');
+const getOctokit = require('../lib/octokit');
 
 exports.command = 'project';
 exports.desc = 'create a Github project board and attach the pull requests to it';
@@ -15,7 +15,8 @@ exports.args = [{
 	]
 }];
 
-exports.handler = async ({projectData, prs}) => {
+exports.handler = async ({projectData, prs, githubAccessToken}) => {
+	const octokit = getOctokit(githubAccessToken);
 	const {data: project} = await octokit.projects.createForOrg(projectData);
 	const {data: todoColumn} = await octokit.projects.createColumn({project_id: project.id, name: 'To do'});
 	await octokit.projects.createColumn({project_id: project.id, name: 'In progress'});
@@ -32,7 +33,7 @@ exports.handler = async ({projectData, prs}) => {
 	return project;
 };
 
-exports.undo = ({project}) => octokit.projects.update({
+exports.undo = ({project, githubAccessToken}) => getOctokit(githubAccessToken).projects.update({
 	project_id: project.id,
 	state: 'closed'
 });

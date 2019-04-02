@@ -1,6 +1,14 @@
 const Octokit = require('@octokit/rest');
 
-module.exports = new Octokit({
-	previews: ['inertia-preview'],
-	auth: `token ${process.env.GITHUB_PERSONAL_ACCESS_TOKEN}`
-});
+let client;
+
+module.exports = token => {
+	if(!client) {
+		client = new Octokit({
+			previews: ['inertia-preview'],
+			auth: `token ${token}`
+		});
+	}
+
+	return client;
+}
