@@ -33,7 +33,7 @@ module.exports = class State {
 			: new State({ fileName: stateFile });
 
 		if(createStateFile) {
-			stateContainer.save();
+			await stateContainer.save();
 		}
 
 		await stateContainer.load();
