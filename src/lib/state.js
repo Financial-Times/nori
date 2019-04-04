@@ -5,6 +5,7 @@ const getStdin = require('get-stdin');
 const util = require('util');
 const mkdirp = util.promisify(require('mkdirp'));
 const {workspacePath, noriExtension} = require('./constants');
+const {prompt} = require('enquirer');
 
 /**
  * returns the last elements from the array that meet the predicate
@@ -35,6 +36,24 @@ module.exports = class State {
 		const stateContainer = state && state.fileName
 			? state
 			: new State({ fileName: stateFile });
+
+		if(!await fs.exists(stateContainer.fileName)) {
+			const message = `state file '${stateContainer.fileName}' doesn't exist`;
+
+			const create = process.stdin.isTTY
+				? (await prompt({
+					name: 'create',
+					message: `${message}. create it?`,
+					type: 'confirm',
+				})).create
+				: false;
+
+			if(create) {
+				createStateFile = true;
+			} else {
+				throw new Error(message);
+			}
+		}
 
 		if(createStateFile) {
 			await stateContainer.save();
