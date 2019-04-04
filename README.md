@@ -8,7 +8,7 @@
     </th>
     <td>
       exploratory CLI tool to make changes across multiple repositories & track their progress<br>
-      <a href="https://circleci.com/gh/Financial-Times/transformation-runner">
+      <a href="https://circleci.com/gh/Financial-Times/nori">
         <img alt="CircleCI" src="https://circleci.com/gh/Financial-Times/nori.svg?style=svg">
       </a>
     </td>
