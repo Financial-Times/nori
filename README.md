@@ -1,12 +1,19 @@
-<h1 align="center">
-  🍙 nori
-</h1>
-
-<p align="center">
-  exploratory CLI tool to make changes across multiple repositories & track their progress
-</p>
-
----
+<table>
+  <tr></tr>
+  <tr>
+    <th>
+      <h1>
+        🍙 nori
+      </h1>
+    </th>
+    <td>
+      exploratory CLI tool to make changes across multiple repositories & track their progress<br>
+      <a href="https://circleci.com/gh/Financial-Times/transformation-runner">
+        <img alt="CircleCI" src="https://circleci.com/gh/Financial-Times/nori.svg?style=svg">
+      </a>
+    </td>
+  </tr>
+</table>
 
 Nori is a command-line application for managing changes across multiple (usually Github) repositories. It allows you to build up a sequence of [**Operations**](#operations) to go through the process of discovering repositories to change, cloning them & making the changes, creating Pull Requests for the changes, and tracking the progress of the Pull Requests in a Github Project. The main interface for Nori is an interactive command-line wizard, which prompts you for which operations to run, and the arguments needed for each operation.
 
@@ -28,7 +35,7 @@ If you'll be running `nori` frequently, install it globally:
 npm install -g nori
 ```
 
-`nori` can run operations via the interactive prompt, or directly on the command line. Operations **output** a particular type of data, and some operations have one or more **inputs**, which are types of data that must be gathered before you can run the operation. The interactive prompt will only enable the operations you have the data for so far. When running from the command line, you can pass this data around by piping the commands, or by using a [**State File**](#state-file)
+`nori` can run operations via the interactive prompt, or directly on the command line. Operations **output** a particular type of data, and some operations have one or more **inputs**, which are types of data that must be gathered before you can run the operation. The interactive prompt will only enable the operations you have the data for so far. When running from the command line, you can pass this data around by piping the commands, or by using a [**State File**](#state-file).
 
 Run `nori` with the name of the operation, and any arguments it requires as double-dashed command line arguments (`nori` understands `--kebab-case` arguments and transforms them to `camelCase`). If you're running in an interactive shell, `nori` will prompt for any missing arguments.
 
@@ -239,3 +246,11 @@ Create a Github Project, and add all created Pull Requests to it.
 **NB** *we're considering what to do about repos from multiple orgs, see [#62](https://github.com/Financial-Times/nori/issue/62)*
 
 **NB** *the project will have `To Do`, `In Progress` and `Done` columns, but there's currently no way to set up automatic transitions using the Github API. you'll have to set that up manually if you want the project board to reflect the state of the PRs*
+
+## State Files
+
+When running the interactive prompt, your progress is automatically saved to a state file. It contains the list of operations you've run & the arguments given to them, and a cache of the data returned by the operations.
+
+State files are kept in the folder `~/.config/nori-workspace` (this is also where repositories are cloned to). When you start the interactive prompt, it will list any state files already in the workspace folder, allowing you to resume previous sessions.
+
+Individual commands can also read and save to state files with the `--state-file` option. When you
