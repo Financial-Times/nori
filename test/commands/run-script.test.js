@@ -4,8 +4,6 @@ const path = require('path');
 
 const runScript = require('../../src/commands/run-script');
 
-const git = require('@financial-times/git');
-
 jest.mock('fs', () => {
 	const { fs } = require('memfs');
 	jest.spyOn(fs, 'access');
