@@ -4,8 +4,9 @@ const operations = require('../operations');
 const getStdin = require('get-stdin');
 const util = require('util');
 const mkdirp = util.promisify(require('mkdirp'));
-const {workspacePath, noriExtension} = require('./constants');
-const {prompt} = require('enquirer');
+const { workspacePath, noriExtension } = require('./constants');
+const { prompt } = require('enquirer');
+const types = require('./types');
 
 /**
  * returns the last elements from the array that meet the predicate
@@ -27,17 +28,39 @@ const takeWhileLast = (array, predicate) => (
 		: []                                            // otherwise, stop looking and discard the last item
 );
 
-const read = file => file === '-' ? getStdin() : fs.readFile(file, 'utf8');
+// read from standard input if it's a pipe, or the provided filename if not
+const read = file => process.stdin.isTTY ? fs.readFile(file, 'utf8') : getStdin();
+
+// format JSON for humans (interactive terminals) or machines
+const serialise = state => {
+	const spacing = process.stdout.isTTY ? 2 : null;
+	return JSON.stringify(state, null, spacing);
+}
 
 module.exports = class State {
 	static async middleware({ stateFile, state, createStateFile = false }) {
 		await mkdirp(workspacePath);
 
+		if (stateFile) {
+			const problems = [];
+			if (!process.stdin.isTTY) {
+				problems.push('reading state from standard input');
+			}
+
+			if (!process.stdout.isTTY) {
+				problems.push('piping state to another command or file');
+			}
+
+			if (problems.length) {
+				throw new Error(`--state-file is incompatible with ${problems.join(' or ')}`);
+			}
+		}
+
 		const stateContainer = state && state.fileName
 			? state
 			: new State({ fileName: stateFile });
 
-		if(!await fs.exists(stateContainer.fileName)) {
+		if (stateContainer.fileName && !await fs.exists(stateContainer.fileName)) {
 			const message = `state file '${stateContainer.fileName}' doesn't exist`;
 
 			const create = process.stdin.isTTY
@@ -48,14 +71,14 @@ module.exports = class State {
 				})).create
 				: false;
 
-			if(create) {
+			if (create) {
 				createStateFile = true;
 			} else {
 				throw new Error(message);
 			}
 		}
 
-		if(createStateFile) {
+		if (createStateFile) {
 			await stateContainer.save();
 		}
 
@@ -78,7 +101,7 @@ module.exports = class State {
 
 		return (await Promise.all(
 			stateFiles.map(async stateFile => {
-				const {mtime} = await fs.stat(
+				const { mtime } = await fs.stat(
 					path.join(workspacePath, stateFile)
 				);
 
@@ -88,7 +111,7 @@ module.exports = class State {
 				};
 			})
 		)).sort(
-			({mtime: a}, {mtime: b}) => b - a
+			({ mtime: a }, { mtime: b }) => b - a
 		);
 	}
 
@@ -101,34 +124,49 @@ module.exports = class State {
 	}
 
 	async load() {
-		if(this.fileName) {
+		if (this.fileName) {
 			const content = await read(this.fileName);
 			try {
 				this.state = JSON.parse(content);
-			} catch(_) {
-				throw new Error(`${this.fileName === '-' ? 'Standard input' : this.fileName} couldn't be parsed as JSON`);
+			} catch (_) {
+				throw new Error(`${process.stdin.isTTY ? this.fileName : 'Standard input'} couldn't be parsed as JSON`);
 			}
 		}
 	}
 
 	async save() {
-		const spacing = process.stdout.isTTY ? 2 : null;
-		const serialised = JSON.stringify(this.state, null, spacing);
+		const serialised = serialise(this.state);
 
-		if(this.fileName === '-' || !process.stdout.isTTY) {
-			process.stdout.write(serialised);
-		} else if(this.fileName) {
+		if (this.fileName) {
 			await fs.writeFile(
 				this.fileName,
 				serialised
 			);
 		}
+
+		return serialised;
+	}
+
+	async runSingleOperation(operation, args) {
+		const formatter = args.json ? serialise : types[operation.output].format;
+
+		const result = await operation.handler(args);
+
+		await this.appendOperation(operation, args, result);
+		const serialisedState = await this.save();
+
+		if (!process.stdout.isTTY) {
+			// eslint-disable-next-line no-console
+			console.log(serialisedState);
+		} else {
+			// eslint-disable-next-line no-console
+			console.log(formatter(result));
+		}
 	}
 
 	async appendOperation(operation, args, data) {
-		this.state.steps.push({name: operation.command, args});
+		this.state.steps.push({ name: operation.command, args });
 		this.state.data[operation.output] = data;
-		await this.save();
 	}
 
 	isValidOperation(operation) {
@@ -163,7 +201,6 @@ module.exports = class State {
 
 		this.state.steps.splice(this.state.steps.length - stepsToReplay.length, stepsToReplay.length);
 
-		await this.save();
 		return stepsToReplay;
 	}
 }

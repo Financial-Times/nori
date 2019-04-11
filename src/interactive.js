@@ -1,30 +1,30 @@
 #!/usr/bin/env node
 
-const {prompt} = require('enquirer');
+const { prompt } = require('enquirer');
 const fs = require('mz/fs');
 const path = require('path');
 const relativeDate = require('tiny-relative-date');
 const types = require('./lib/types');
 const State = require('./lib/state');
 const operations = require('./operations');
-const {workspacePath, noriExtension} = require('./lib/constants');
+const { workspacePath, noriExtension } = require('./lib/constants');
 const toSentence = require('./lib/to-sentence');
 const c = require('ansi-colors');
 
-const promptStateFile = ({stateFiles}) => prompt([
+const promptStateFile = ({ stateFiles }) => prompt([
 	{
 		name: 'selectedStateFile',
 		message: 'resume a session',
 		type: 'select',
 		choices: stateFiles.map(
-			({stateFile, mtime}) => ({
+			({ stateFile, mtime }) => ({
 				name: stateFile,
 				message: `${stateFile.replace(noriExtension, '')} (${relativeDate(mtime)})`,
 			})
 		).reverse().concat(
-			{role: 'separator'},
-			{name: 'new'},
-			{name: 'edit'},
+			{ role: 'separator' },
+			{ name: 'new' },
+			{ name: 'edit' },
 		),
 		initial: 'new',
 		skip() {
@@ -55,7 +55,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 			// array is empty https://github.com/enquirer/enquirer/issues/128
 			stateFiles.length
 				? stateFiles.map(
-					({stateFile}) => stateFile
+					({ stateFile }) => stateFile
 				)
 				: ['no']
 		),
@@ -66,7 +66,7 @@ const promptStateFile = ({stateFiles}) => prompt([
 	{
 		type: 'confirm',
 		name: 'confirmDelete',
-		message: ({answers: {toDelete}}) => `really delete ${toSentence(toDelete)}?`,
+		message: ({ answers: { toDelete } }) => `really delete ${toSentence(toDelete)}?`,
 		skip() {
 			return (
 				this.state.answers.selectedStateFile !== 'edit'
@@ -77,12 +77,12 @@ const promptStateFile = ({stateFiles}) => prompt([
 ]);
 
 async function getStateFile({ stateFile }) {
-	if(!stateFile) {
+	if (!stateFile) {
 		const stateFiles = await State.getSortedFiles();
-		const {selectedStateFile, newStateFile, toDelete, confirmDelete} = await promptStateFile({stateFiles});
+		const { selectedStateFile, newStateFile, toDelete, confirmDelete } = await promptStateFile({ stateFiles });
 
-		if(selectedStateFile === 'edit') {
-			if(confirmDelete) {
+		if (selectedStateFile === 'edit') {
+			if (confirmDelete) {
 				await Promise.all(
 					toDelete.map(
 						file => fs.unlink(
@@ -108,7 +108,7 @@ exports.builder = yargs => yargs
 	.middleware(getStateFile)
 	.middleware(State.middleware);
 
-async function runStep({state, operation, args}) {
+async function runStep({ state, operation, args }) {
 	// get the keys from `data` that are present in
 	// `operation.input`
 	const dataArgs = operation.input.reduce(
@@ -123,10 +123,11 @@ async function runStep({state, operation, args}) {
 	);
 
 	await state.appendOperation(operation, args, stepData);
+	await state.save();
 }
 
-async function replay({state, steps}) {
-	for(const step of steps) {
+async function replay({ state, steps }) {
+	for (const step of steps) {
 		await runStep({
 			state,
 			operation: operations[step.name],
@@ -135,7 +136,7 @@ async function replay({state, steps}) {
 	}
 }
 
-const promptOperation = ({state}) => prompt({
+const promptOperation = ({ state }) => prompt({
 	name: 'choice',
 	message: 'available operations',
 	type: 'select',
@@ -147,10 +148,10 @@ const promptOperation = ({state}) => prompt({
 		message: operation.desc,
 		disabled: state.isValidOperation(operation) ? false : '', // empty string to hide "(disabled)" message
 	})).concat([
-		{role: 'separator'},
-		{name: 'preview', },
-		{name: 'undo', message: 'undo last step', disabled: state.state.steps.length > 0 ? false : ''},
-		{name: 'done', hint: `your work is autosaved as ${path.basename(state.fileName)}`}
+		{ role: 'separator' },
+		{ name: 'preview', },
+		{ name: 'undo', message: 'undo last step', disabled: state.state.steps.length > 0 ? false : '' },
+		{ name: 'done', hint: `your work is autosaved as ${path.basename(state.fileName)}` }
 	]),
 });
 
@@ -158,14 +159,15 @@ async function undo({ state }) {
 	const undoneStep = state.state.steps[state.state.steps.length - 1];
 	const undoneOperation = operations[undoneStep.name];
 
-	if(undoneOperation.undo) {
+	if (undoneOperation.undo) {
 		await undoneOperation.undo(state.state.data);
 	}
 
 	const stepsToReplay = await state.unwindOperation(undoneOperation);
+	await state.save();
 
 	// if stepsToReplay is empty this will do nothing
-	await replay({state, steps: stepsToReplay});
+	await replay({ state, steps: stepsToReplay });
 }
 
 /**
@@ -177,15 +179,15 @@ async function undo({ state }) {
  * @param {string} argv.targets
  * @param {string} argv.branch
  */
-exports.handler = async function({ state, ...argv }) {
+exports.handler = async function ({ state, ...argv }) {
 	// save the state file so it gets created if it's new
 	// or its last modified time gets updated if it's not
 	await state.save();
 
-	while(true) {
-		const {choice} = await promptOperation({state});
+	while (true) {
+		const { choice } = await promptOperation({ state });
 
-		if(choice in operations) {
+		if (choice in operations) {
 			const operation = operations[choice];
 			const args = Object.assign(
 				{}, argv,
@@ -193,17 +195,17 @@ exports.handler = async function({ state, ...argv }) {
 			);
 
 			await runStep({ state, operation, args });
-		} else if(choice === 'preview') {
-			for(const type in state.state.data) if(state.state.data.hasOwnProperty(type)) {
+		} else if (choice === 'preview') {
+			for (const type in state.state.data) if (state.state.data.hasOwnProperty(type)) {
 				console.log(`${c.gray('─────')} ${type}`); // eslint-disable-line no-console
 				console.log( // eslint-disable-line no-console
 					types[type].format(state.state.data[type])
 				);
 			}
 			console.log(c.gray('─────')); // eslint-disable-line no-console
-			} else if(choice === 'undo') {
-			await undo({state});
-		} else if(choice === 'done') {
+		} else if (choice === 'undo') {
+			await undo({ state });
+		} else if (choice === 'done') {
 			break;
 		}
 	}

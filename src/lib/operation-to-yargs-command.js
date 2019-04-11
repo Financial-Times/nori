@@ -1,4 +1,4 @@
-const {prompt} = require('enquirer');
+const { prompt } = require('enquirer');
 const types = require('./types');
 const toSentence = require('./to-sentence');
 const operations = require('../operations');
@@ -10,7 +10,7 @@ function enquirerToYargs(arg) {
 		coerce: arg.result,
 	}
 
-	switch(arg.type) {
+	switch (arg.type) {
 		case 'text': {
 			option.type = 'string';
 			break;
@@ -34,9 +34,9 @@ function enquirerToYargs(arg) {
 }
 
 const enquirerValidate = arg => async argv => {
-	if(arg.validate) {
+	if (arg.validate) {
 		const maybeMessage = await arg.validate(argv[arg.name]);
-		if(typeof maybeMessage === 'string') {
+		if (typeof maybeMessage === 'string') {
 			throw new Error(maybeMessage);
 		}
 	}
@@ -45,14 +45,14 @@ const enquirerValidate = arg => async argv => {
 };
 
 const promptMissingArgs = operation => async argv => {
-	if(!argv.state.isValidOperation(operation)) {
+	if (!argv.state.isValidOperation(operation)) {
 		const validCommands = Object.keys(operations).filter(key => argv.state.isValidOperation(operations[key]));
 		const message = `'${operation.command}' isn't valid for the provided state. ${validCommands.length ? `Valid commands are ${toSentence(validCommands.map(cmd => `'${cmd}'`))}` : ''}`;
 		throw new Error(message);
 	}
 
 	const argsFromInputTypes = operation.input.map(
-		type => Object.assign({name: type}, types[type].argument)
+		type => Object.assign({ name: type }, types[type].argument)
 	);
 
 	const allArgs = operation.args.concat(argsFromInputTypes);
@@ -60,8 +60,8 @@ const promptMissingArgs = operation => async argv => {
 		arg => !(arg.name in argv)
 	);
 
-	if(missingArgs.length) {
-		if(process.stdin.isTTY) {
+	if (missingArgs.length) {
+		if (process.stdin.isTTY) {
 			return await prompt(missingArgs);
 		} else {
 			throw new Error(`Command '${operation.command}' requires arguments ${toSentence(missingArgs.map(arg => `'${arg.name}'`))}`);
@@ -73,13 +73,13 @@ const promptMissingArgs = operation => async argv => {
 
 const operationToYargsCommand = operation => Object.assign({}, operation, {
 	builder(yargs) {
-		if(operation.input) {
+		if (operation.input) {
 			operation.input.forEach(type => yargs
 				.option(type, enquirerToYargs(types[type].argument))
 			);
 		}
 
-		if(operation.args) {
+		if (operation.args) {
 			operation.args.forEach(arg => yargs
 				.option(arg.name, enquirerToYargs(arg))
 				.middleware(enquirerValidate(arg))
@@ -91,18 +91,8 @@ const operationToYargsCommand = operation => Object.assign({}, operation, {
 		return yargs;
 	},
 
-	async handler({state, ...args}) {
-		const result = await operation.handler(args);
-
-		if(state.fileName || !process.stdout.isTTY) {
-			await state.appendOperation(operation, args, result);
-		} else {
-			console.log( //eslint-disable-line no-console
-				args.json
-					? JSON.stringify(result, null, 2)
-					: types[operation.output].format(result)
-			);
-		}
+	handler({ state, ...args }) {
+		return state.runSingleOperation(operation, args);
 	}
 });
 

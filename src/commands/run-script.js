@@ -38,13 +38,13 @@ exports.handler = async ({ script, repos, branch }) => {
 		assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`);
 	}
 
-	console.log(`-- Script: ${scriptPath}`);
-	console.log(`-- Target(s):\n\n   ${repos.map(({name}) => name).join('\n   ')}`);
+	console.error(`-- Script: ${scriptPath}`);
+	console.error(`-- Target(s):\n\n   ${repos.map(({name}) => name).join('\n   ')}`);
 
 	const branches = [];
 
 	for (let repository of repos) {
-		console.log('\n===\n');
+		console.error('\n===\n');
 
 		const cloneDirectory = path.join(workspacePath, repository.name);
 		const remoteUrl = `git@github.com:${repository.owner}/${repository.name}.git`;
@@ -53,18 +53,18 @@ exports.handler = async ({ script, repos, branch }) => {
 
 		try {
 			if(await fs.exists(cloneDirectory)) {
-				console.log(`-- Updating local clone: ${repository.name}`);
+				console.error(`-- Updating local clone: ${repository.name}`);
 				await git.checkoutBranch({ name: 'master' });
-				console.log(`-- Repository '${repository.name}' updated in ${cloneDirectory}`);
+				console.error(`-- Repository '${repository.name}' updated in ${cloneDirectory}`);
 			} else {
-				console.log(`-- Cloning repository locally: ${remoteUrl}`);
+				console.error(`-- Cloning repository locally: ${remoteUrl}`);
 				await git.clone({ origin: 'origin', repository: remoteUrl });
-				console.log(`-- Repository '${repository.name}' cloned locally to ${cloneDirectory}`);
+				console.error(`-- Repository '${repository.name}' cloned locally to ${cloneDirectory}`);
 			}
 
 			await git.createBranch({ name: branch });
 			await git.checkoutBranch({ name: branch });
-			console.log(`-- Created and checked out new branch in local repository: ${branch}`);
+			console.error(`-- Created and checked out new branch in local repository: ${branch}`);
 
 			const contextForScript = {
 				TRANSFORMATION_RUNNER_RUNNING: true,
@@ -77,7 +77,7 @@ exports.handler = async ({ script, repos, branch }) => {
 				...contextForScript
 			};
 
-			console.log(`-- Running script against local repository...\n`);
+			console.error(`-- Running script against local repository...\n`);
 
 			const scriptOutput  = await runProcess(
 				scriptPath,
@@ -87,8 +87,8 @@ exports.handler = async ({ script, repos, branch }) => {
 				}
 			);
 
-			console.log(scriptOutput);
-			console.log(`-- Pushing branch ${branch} to remote 'origin'`);
+			console.error(scriptOutput);
+			console.error(`-- Pushing branch ${branch} to remote 'origin'`);
 			await git.push({ repository: 'origin', refspec: branch });
 
 			branches.push(branch);

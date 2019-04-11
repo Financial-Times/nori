@@ -12,10 +12,9 @@ require('yargs')
 	})
 	.option('state-file', {
 		alias: 'f',
-		describe: 'path to a file containing JSON-formatted nori output, or "-" for standard input (e.g. piping)',
+		describe: 'path to a file containing JSON-formatted nori output',
 		type: 'string',
 		global: true,
-		default: process.stdin.isTTY ? undefined : '-',
 	})
 	.middleware(config)
 	.middleware(State.middleware)

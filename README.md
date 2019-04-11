@@ -1,13 +1,15 @@
-<table width="100%">
+<table>
   <tr></tr>
   <tr>
     <th>
       <h1>
+        &nbsp;
         🍙 nori
+        &nbsp;
       </h1>
     </th>
     <td>
-      exploratory CLI tool to make changes across multiple repositories & track their progress<br>
+      exploratory command-line tool to make changes across multiple repositories & track their progress<br>
       <a href="https://circleci.com/gh/Financial-Times/nori">
         <img alt="CircleCI" src="https://circleci.com/gh/Financial-Times/nori.svg?style=svg">
       </a>
@@ -35,7 +37,7 @@ If you'll be running `nori` frequently, install it globally:
 npm install -g nori
 ```
 
-`nori` can run operations via the interactive prompt, or directly on the command line. Operations **output** a particular type of data, and some operations have one or more **inputs**, which are types of data that must be gathered before you can run the operation. The interactive prompt will only enable the operations you have the data for so far. When running from the command line, you can pass this data around by piping the commands, or by using a [**State File**](#state-file).
+`nori` can run operations via the interactive prompt, or directly on the command line. Operations **output** a particular type of data, and some operations have one or more **inputs**, which are types of data that must be gathered before you can run the operation. The interactive prompt will only enable the operations you have the data for so far. When running from the command line, you can pass this data around by [**Piping**](#piping) the operations, or by using a [**State File**](#state-file).
 
 Run `nori` with the name of the operation, and any arguments it requires as double-dashed command line arguments (`nori` understands `--kebab-case` arguments and transforms them to `camelCase`). If you're running in an interactive shell, `nori` will prompt for any missing arguments.
 
@@ -47,7 +49,7 @@ https://github.com/financial-times-sandbox/Abandoned-Toothbrush
 https://github.com/financial-times-sandbox/Western-Storm
 ```
 
-Every command supports the `--json` flag, which outputs all data found formatted as JSON:
+Every operation supports the `--json` flag, which outputs all data found formatted as JSON:
 
 ```sh
 ⟩ nori file --file repos.txt --json
@@ -253,4 +255,26 @@ When running the interactive prompt, your progress is automatically saved to a s
 
 State files are kept in the folder `~/.config/nori-workspace` (this is also where repositories are cloned to). When you start the interactive prompt, it will list any state files already in the workspace folder, allowing you to resume previous sessions.
 
-Individual commands can also read and save to state files with the `--state-file` option. When you
+Individual operations can also read and save to state files with the `--state-file` option. When you run an operation with a path to a state file that doesn't exist, it will ask if you want to create it. When the operation completes, it'll have added itself and the data it returned to the state file.
+
+The `--state-file` option can also be used with the interactive prompt, which will skip the step asking you to create a state file or use one from the `nori` workspace folder, and allow you to use a state file from any location. State files are compatible between individual operations and the interactive prompt, which lets you shuffle between the two modes.
+
+## Piping
+
+State can also be passed between operations using shell pipes. This is equivalent to running them in sequence and reusing the same state file. 
+
+```sh
+nori file --file repos.txt | nori run-script --script script.sh --branch change
+```
+
+Note that interactive features, such as prompting for missing arguments, won't be available when piping. If any arguments are missing, the operation will error instead. The same goes for providing a state file via the command line argument; it's an error to use `--state-file` and pipe as well. To load or save a state file in a piped operation, use [shell redirection](https://www.tldp.org/LDP/abs/html/io-redirection.html):
+
+```sh
+nori file --file repos.txt < input-state.json | nori run-script --script script.sh --branch change > output-state.json
+#                         └─────────┬────────┘                                                    └─────────┬─────────┘
+#                    read input from input-state.json                                        write output to output-state.json
+```
+
+## Licence
+
+MIT. &copy; 2019 Financial Times. Made with :green_heart: by FT.com Enabling Technologies Group
