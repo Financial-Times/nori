@@ -3,11 +3,11 @@
 const toSentence = words => {
 	let string = words.slice(0, -1).join(', ');
 
-	if(words.length > 2) {
-		string += ', ';
+	if (words.length > 2) {
+		string += ',';
 	}
 
-	if(words.length > 1) {
+	if (words.length > 1) {
 		string += ' and ';
 	}
 
