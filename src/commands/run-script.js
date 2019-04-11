@@ -7,12 +7,12 @@ const fs = require('mz/fs');
 const path = require('path');
 const git = require('@financial-times/git');
 
-const {workspacePath} = require('../lib/constants');
+const { workspacePath } = require('../lib/constants');
 const runProcess = require('../lib/run-process');
 
 exports.args = [
-	{type: 'text', name: 'script', message: 'path to a script'},
-	{type: 'text', name: 'branch', message: 'branch to create'},
+	{ type: 'text', name: 'script', message: 'path to a script' },
+	{ type: 'text', name: 'branch', message: 'branch to create' },
 ];
 
 /**
@@ -24,27 +24,29 @@ exports.args = [
  * @param {string} argv.branch
  */
 exports.handler = async ({ script, repos, branch }) => {
-	if(repos.length === 0) {
+	if (repos.length === 0) {
 		throw new Error('No repos specified');
 	}
 
 	const scriptPath = path.resolve(script);
 
-	if(!(await fs.exists(scriptPath))) {
+	if (!(await fs.exists(scriptPath))) {
 		assert(false, `Script does not exist: ${scriptPath}`);
 	}
 
-	if(!(await fs.exists(scriptPath, fs.constants.X_OK))) {
+	try {
+		await fs.access(scriptPath, fs.constants.X_OK);
+	} catch (_) {
 		assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`);
 	}
 
-	console.error(`-- Script: ${scriptPath}`);
-	console.error(`-- Target(s):\n\n   ${repos.map(({name}) => name).join('\n   ')}`);
+	console.warn(`-- Script: ${scriptPath}`);
+	console.warn(`-- Target(s):\n\n   ${repos.map(({ name }) => name).join('\n   ')}`);
 
 	const branches = [];
 
 	for (let repository of repos) {
-		console.error('\n===\n');
+		console.warn('\n===\n');
 
 		const cloneDirectory = path.join(workspacePath, repository.name);
 		const remoteUrl = `git@github.com:${repository.owner}/${repository.name}.git`;
@@ -52,19 +54,19 @@ exports.handler = async ({ script, repos, branch }) => {
 		git.defaults({ workingDirectory: cloneDirectory });
 
 		try {
-			if(await fs.exists(cloneDirectory)) {
-				console.error(`-- Updating local clone: ${repository.name}`);
+			if (await fs.exists(cloneDirectory)) {
+				console.warn(`-- Updating local clone: ${repository.name}`);
 				await git.checkoutBranch({ name: 'master' });
-				console.error(`-- Repository '${repository.name}' updated in ${cloneDirectory}`);
+				console.warn(`-- Repository '${repository.name}' updated in ${cloneDirectory}`);
 			} else {
-				console.error(`-- Cloning repository locally: ${remoteUrl}`);
+				console.warn(`-- Cloning repository locally: ${remoteUrl}`);
 				await git.clone({ origin: 'origin', repository: remoteUrl });
-				console.error(`-- Repository '${repository.name}' cloned locally to ${cloneDirectory}`);
+				console.warn(`-- Repository '${repository.name}' cloned locally to ${cloneDirectory}`);
 			}
 
 			await git.createBranch({ name: branch });
 			await git.checkoutBranch({ name: branch });
-			console.error(`-- Created and checked out new branch in local repository: ${branch}`);
+			console.warn(`-- Created and checked out new branch in local repository: ${branch}`);
 
 			const contextForScript = {
 				TRANSFORMATION_RUNNER_RUNNING: true,
@@ -77,9 +79,9 @@ exports.handler = async ({ script, repos, branch }) => {
 				...contextForScript
 			};
 
-			console.error(`-- Running script against local repository...\n`);
+			console.warn(`-- Running script against local repository...\n`);
 
-			const scriptOutput  = await runProcess(
+			const scriptOutput = await runProcess(
 				scriptPath,
 				{
 					cwd: cloneDirectory,
@@ -87,13 +89,13 @@ exports.handler = async ({ script, repos, branch }) => {
 				}
 			);
 
-			console.error(scriptOutput);
-			console.error(`-- Pushing branch ${branch} to remote 'origin'`);
+			console.warn(scriptOutput);
+			console.warn(`-- Pushing branch ${branch} to remote 'origin'`);
 			await git.push({ repository: 'origin', refspec: branch });
 
 			branches.push(branch);
 		} catch (error) {
-			console.error(new Error(`Error running script for '${repository.name}': ${error.message}`));
+			console.warn(new Error(`Error running script for '${repository.name}': ${error.message}`));
 			throw error;
 		}
 	}
@@ -101,8 +103,8 @@ exports.handler = async ({ script, repos, branch }) => {
 	return branches;
 };
 
-exports.command = 'run-script',
-exports.desc = 'clone repositories and run a script against them',
+exports.command = 'run-script';
+exports.desc = 'clone repositories and run a script against them';
 exports.input = ['repos'];
 exports.output = 'branches';
 
