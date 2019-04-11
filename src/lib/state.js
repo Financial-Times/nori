@@ -60,7 +60,11 @@ module.exports = class State {
 			? state
 			: new State({ fileName: stateFile });
 
-		if (stateContainer.fileName && !await fs.exists(stateContainer.fileName)) {
+		if (
+			!createStateFile
+			&& stateContainer.fileName
+			&& !await fs.exists(stateContainer.fileName)
+		) {
 			const message = `state file '${stateContainer.fileName}' doesn't exist`;
 
 			const create = process.stdin.isTTY
