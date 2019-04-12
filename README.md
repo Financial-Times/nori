@@ -29,7 +29,7 @@ Nori is a command-line application for managing changes across multiple (usually
 npx nori
 ```
 
-This temporarily installs Nori and runs the interactive wizard. The first time you run it, it will prompt you for various [configuration variables](#configuration), which are required only for certain operations. It'll then ask you to `Create a session`. Give the session a memorable name. The wizard takes you through the operations you can run. At any point you can exit by pressing <kbd>Ctrl</kbd>+<kbd>C</kbd> or selecting `Done`. Your progress is saved under the name you gave when you started `nori`. Next time you run it, it will display a list of previous sessions that you can resume, most recent last.
+This temporarily installs Nori and runs the interactive wizard. The first time you run it, it will prompt you for various configuration variables, which are required only for certain operations. It'll then ask you to `Create a session`. Give the session a memorable name. The wizard takes you through the operations you can run. At any point you can exit by pressing <kbd>Ctrl</kbd>+<kbd>C</kbd> or selecting `Done`. Your progress is saved under the name you gave when you started `nori`. Next time you run it, it will display a list of previous sessions that you can resume, most recent last.
 
 If you'll be running `nori` frequently, install it globally:
 
