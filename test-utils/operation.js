@@ -10,7 +10,7 @@ module.exports = name => expect.objectContaining({
 	]),
 	handler: expect.any(Function),
 	output: expect.any(String),
-	input: expect.arrayContaining([
-		expect.any(String)
-	])
+
+	// note: input should be an array. the elements in the array should be strings
+	input: expect.any(Array),
 })
