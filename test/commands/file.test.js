@@ -1,6 +1,4 @@
 const { fs, vol } = require('memfs');
-const util = require('util');
-const path = require('path');
 const expectOperation = require('../../test-utils/operation');
 
 const file = require('../../src/commands/file');

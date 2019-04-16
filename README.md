@@ -17,6 +17,8 @@
   </tr>
 </table>
 
+<blockquote><small><em>words defined by this readme are written in <strong>bold</strong></em></small></blockquote>
+
 Nori is a command-line application for managing changes across multiple (usually Github) repositories. It allows you to build up a sequence of [**Operations**](#operations) to go through the process of discovering repositories to change, cloning them & making the changes, creating Pull Requests for the changes, and tracking the progress of the Pull Requests in a Github Project. The main interface for Nori is an interactive command-line wizard, which prompts you for which operations to run, and the arguments needed for each operation.
 
 <p align="center">
@@ -99,7 +101,7 @@ Get a list of repositories from a [Tako](https://github.com/financial-times/tako
 ### File
 ##### `nori file --file`
 
-Get a list of repositories from a text file, structured as line-separated `owner/name` strings (optionally with leading `https://github.com/).
+Get a list of repositories from a text file, structured as line-separated `owner/name` strings (optionally with leading `https://github.com/`).
 
 <table>
   <tr>
@@ -177,8 +179,8 @@ Nori will take care of:
 - Creating branches
 - Pushing branches
 
-The main benefit of this approach is that scripts do not _need_ the
-`transformation-runner` for you to be able to run them. This makes development,
+The main benefit of this approach is that scripts do not _need_
+`nori` for you to be able to run them. This makes development,
 debugging and one-off runs of a script much simpler.
 
 ### Pull Requests
@@ -200,7 +202,7 @@ Create a Pull Request for each of the pushed branches.
     <th align="right">Configuration</th>
     <td><code>githubAccessToken</code></td>
     <td>
-      Github <a href="https://github.com/settings/tokens/new?scopes=repo&description=Nori" target="_blank">personal access token with `repo` scope</a>
+      Github <a href="https://github.com/settings/tokens/new?scopes=repo&description=Nori" target="_blank">personal access token with <code>repo</code> scope</a>
     </td>
   </tr>
   <tr>
@@ -232,7 +234,7 @@ Create a Github Project, and add all created Pull Requests to it.
     <th align="right">Configuration</th>
     <td><code>githubAccessToken</code></td>
     <td>
-      Github <a href="https://github.com/settings/tokens/new?scopes=repo&description=Nori" target="_blank">personal access token with `repo` scope</a>
+      Github <a href="https://github.com/settings/tokens/new?scopes=repo&description=Nori" target="_blank">personal access token with <code>repo</code> scope</a>
     </td>
   </tr>
   <tr>
@@ -255,7 +257,7 @@ When running the interactive prompt, your progress is automatically saved to a s
 
 State files are kept in the folder `~/.config/nori-workspace` (this is also where repositories are cloned to). When you start the interactive prompt, it will list any state files already in the workspace folder, allowing you to resume previous sessions.
 
-Individual operations can also read and save to state files with the `--state-file` option. When you run an operation with a path to a state file that doesn't exist, it will ask if you want to create it. When the operation completes, it'll have added itself and the data it returned to the state file.
+Individual operations can also read and save to state files with the `--state-file path/to/file.json` option. When you run an operation with a path to a state file that doesn't exist, it will ask if you want to create it. When the operation completes, it'll have added itself and the data it returned to the state file.
 
 The `--state-file` option can also be used with the interactive prompt, which will skip the step asking you to create a state file or use one from the `nori` workspace folder, and allow you to use a state file from any location. State files are compatible between individual operations and the interactive prompt, which lets you shuffle between the two modes.
 
