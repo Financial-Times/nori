@@ -8,6 +8,7 @@ exports.output = 'repos';
 exports.args = [{
 	name: 'topic',
 	type: 'text',
+	message: '(optional) GitHub topic to filter by'
 }];
 
 exports.handler = ({takoHost, takoToken, topic}) => got(`https://${takoHost}/tako/repositories`, {
