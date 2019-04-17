@@ -2,7 +2,7 @@ const expectOperation = require('../../test-utils/operation');
 const project = require('../../src/commands/project');
 const getOctokit = require('../../src/lib/octokit');
 
-const githubAccessToken = 'foo';
+const githubAccessToken = 'mock access token';
 const octokit = getOctokit(githubAccessToken);
 
 test('`project` command module exports an operation object', () => {

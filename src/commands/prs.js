@@ -9,10 +9,16 @@ exports.output = 'prs';
 exports.args = [{
 	type: 'form',
 	name: 'templates',
+	message: 'Pull Request details',
 	choices: [
 		{name: 'title'},
 		{name: 'body'},
-	]
+	],
+	validate: templates => {
+		if(!templates.title) {
+			return 'Please provide a Pull Request title';
+		}
+	}
 }];
 
 exports.handler = ({templates: {title, body}, repos, branches, githubAccessToken}) => {
@@ -32,7 +38,7 @@ exports.handler = ({templates: {title, body}, repos, branches, githubAccessToken
 	}))
 };
 
-exports.undo = async ({prs, githubAccessToken}) => (
+exports.undo = ({prs, githubAccessToken}) => (
 	Promise.all(prs.map(async pr => {
 		await octokit(githubAccessToken).issues.createComment({
 			owner: pr.head.repo.owner.login,

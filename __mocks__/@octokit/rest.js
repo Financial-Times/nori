@@ -13,6 +13,15 @@ module.exports = function Octokit() {
 			})),
 			createCard: jest.fn(),
 			update: jest.fn(),
+		},
+		pulls: {
+			create: jest.fn().mockReturnValue(Promise.resolve({
+				data: { id: 'mock pr id' }
+			})),
+			update: jest.fn()
+		},
+		issues: {
+			createComment: jest.fn()
 		}
 	}
 }
