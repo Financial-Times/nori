@@ -24,7 +24,7 @@ const promptStateFile = ({ stateFiles }) => prompt([
 		).reverse().concat(
 			{ role: 'separator' },
 			{ name: 'new' },
-			{ name: 'edit' },
+			{ name: 'edit', message: 'delete existing sessions' },
 		),
 		initial: 'new',
 		skip() {
