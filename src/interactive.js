@@ -48,7 +48,7 @@ const promptStateFile = ({ stateFiles }) => prompt([
 	},
 	{
 		type: 'multiselect',
-		message: 'select sessions to delete',
+		message: 'select sessions to delete (space to select)',
 		name: 'toDelete',
 		choices: (
 			// causes a weird unresolved promise when it's skipped and the
