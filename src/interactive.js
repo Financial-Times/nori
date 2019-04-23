@@ -24,7 +24,7 @@ const promptStateFile = ({ stateFiles }) => prompt([
 		).reverse().concat(
 			{ role: 'separator' },
 			{ name: 'new' },
-			{ name: 'edit' },
+			{ name: 'edit', message: 'delete existing sessions' },
 		),
 		initial: 'new',
 		skip() {
@@ -48,7 +48,7 @@ const promptStateFile = ({ stateFiles }) => prompt([
 	},
 	{
 		type: 'multiselect',
-		message: 'select sessions to delete',
+		message: 'select sessions to delete (space to select)',
 		name: 'toDelete',
 		choices: (
 			// causes a weird unresolved promise when it's skipped and the
