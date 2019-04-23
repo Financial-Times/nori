@@ -3,139 +3,108 @@
 /* eslint-disable no-console */
 
 const assert = require('assert');
-const fs = require('fs');
+const fs = require('mz/fs');
 const path = require('path');
-const util = require('util');
-
 const git = require('@financial-times/git');
+
+const { workspacePath } = require('../lib/constants');
 const runProcess = require('../lib/run-process');
 
-const fsAccess = util.promisify((...args) => fs.access(...args));
-const fsLstat = util.promisify((...args) => fs.lstat(...args));
-
-/**
- * yargs builder function.
- *
- * @param {import('yargs/yargs').Yargs} yargs - Instance of yargs
- */
-const builder = (yargs) => {
-
-    return yargs
-        .option('workspace', {
-            alias: 'w',
-            describe: 'Path to a workspace directory',
-            demandOption: true,
-            type: 'string'
-        })
-        .option('script', {
-            alias: 's',
-            describe: 'Path to a script',
-            demandOption: true,
-            type: 'string'
-        })
-        .option('targets', {
-            describe: 'Target repositories (separate multiple targets with a space)',
-            demandOption: true,
-            type: 'array'
-        })
-        .option('branch', {
-            alias: 'b',
-            describe: 'Name for the git branch to create',
-            demandOption: true,
-            type: 'string'
-        });
-};
+exports.args = [
+	{ type: 'text', name: 'script', message: 'path to a script' },
+	{ type: 'text', name: 'branch', message: 'branch to create' },
+];
 
 /**
  * yargs handler function.
  *
  * @param {object} argv - argv parsed and filtered by yargs
- * @param {string} argv.workspace
  * @param {string} argv.script
- * @param {string} argv.targets
+ * @param {string} argv.repos
  * @param {string} argv.branch
  */
-const handler = async ({ workspace, script, targets, branch }) => {
+exports.handler = async ({ script, repos, branch }) => {
+	if (repos.length === 0) {
+		throw new Error('No repos specified');
+	}
 
-    if (targets.length === 0) {
-        throw new Error('No targets specified');
-    }
+	const scriptPath = path.resolve(script);
 
-    const workspacePath = path.resolve(workspace);
-    await fsAccess(workspacePath).catch(
-        () => assert(false, `Workspace directory path does not exist: ${workspacePath}`)
-    );
-    const workspacePathIsDirectory = (await fsLstat(workspacePath)).isDirectory();
-    assert(workspacePathIsDirectory, `Workspace directory path is not a directory: ${workspacePath}`);
+	if (!(await fs.exists(scriptPath))) {
+		assert(false, `Script does not exist: ${scriptPath}`);
+	}
 
-    const scriptPath = path.resolve(script);
-    await fsAccess(scriptPath).catch(
-        () => assert(false, `Script does not exist: ${scriptPath}`)
-    );
+	try {
+		await fs.access(scriptPath, fs.constants.X_OK);
+	} catch (_) {
+		assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`);
+	}
 
-    await fsAccess(scriptPath, fs.constants.X_OK).catch(
-        () => assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`)
-    );
+	console.warn(`-- Script: ${scriptPath}`);
+	console.warn(`-- Target(s):\n\n   ${repos.map(({ name }) => name).join('\n   ')}`);
 
-    console.log(`-- Workspace directory: ${workspacePath}`);
-    console.log(`-- Script: ${scriptPath}`);
-    console.log(`-- Target(s):\n\n   ${targets.join('\n   ')}`);
+	const branches = [];
 
-    for (let repository of targets) {
-        console.log('\n===\n');
+	for (let repository of repos) {
+		console.warn('\n===\n');
 
-        const repositoryName = repository.split('/').pop().replace('.git', '');
-        const cloneDirectory = `${workspacePath}/${repositoryName}`;
+		const cloneDirectory = path.join(workspacePath, repository.name);
+		const remoteUrl = `git@github.com:${repository.owner}/${repository.name}.git`;
 
-        git.defaults({ workingDirectory: cloneDirectory });
+		git.defaults({ workingDirectory: cloneDirectory });
 
-        try {
-            console.log(`-- Cloning repository locally: ${repository}`);
-            await git.clone({ origin: 'origin', repository });
-            console.log(`-- Repository '${repositoryName}' cloned locally to ${cloneDirectory}`);
+		try {
+			if (await fs.exists(cloneDirectory)) {
+				console.warn(`-- Updating local clone: ${repository.name}`);
+				await git.checkoutBranch({ name: 'master' });
+				console.warn(`-- Repository '${repository.name}' updated in ${cloneDirectory}`);
+			} else {
+				console.warn(`-- Cloning repository locally: ${remoteUrl}`);
+				await git.clone({ origin: 'origin', repository: remoteUrl });
+				console.warn(`-- Repository '${repository.name}' cloned locally to ${cloneDirectory}`);
+			}
 
-            await git.createBranch({ name: branch });
-            await git.checkoutBranch({ name: branch });
-            console.log(`-- Created and checked out new branch in local repository: ${branch}`);
+			await git.createBranch({ name: branch });
+			await git.checkoutBranch({ name: branch });
+			console.warn(`-- Created and checked out new branch in local repository: ${branch}`);
 
-            const contextForScript = {
-                TRANSFORMATION_RUNNER_RUNNING: true,
-                TRANSFORMATION_RUNNER_TARGET: repository,
-                TRANSFORMATION_RUNNER_TARGET_NAME: repositoryName,
-            };
+			const contextForScript = {
+				TRANSFORMATION_RUNNER_RUNNING: true,
+				TRANSFORMATION_RUNNER_TARGET: remoteUrl,
+				TRANSFORMATION_RUNNER_TARGET_NAME: repository.name,
+			};
 
-            const scriptEnv = {
-                ...process.env,
-                ...contextForScript
-            };
+			const scriptEnv = {
+				...process.env,
+				...contextForScript
+			};
 
-            console.log(`-- Running script against local repository...\n`);
+			console.warn(`-- Running script against local repository...\n`);
 
-            const scriptOutput  = await runProcess(
-                scriptPath,
-                {
-                    cwd: cloneDirectory,
-                    env: scriptEnv
-                }
-            );
+			const scriptOutput = await runProcess(
+				scriptPath,
+				{
+					cwd: cloneDirectory,
+					env: scriptEnv
+				}
+			);
 
-            console.log(scriptOutput);
+			console.warn(scriptOutput);
+			console.warn(`-- Pushing branch ${branch} to remote 'origin'`);
+			await git.push({ repository: 'origin', refspec: branch });
 
-            console.log(`-- Pushing branch ${branch} to remote 'origin'`);
-            await git.push({ repository: 'origin', refspec: branch });
+			branches.push(branch);
+		} catch (error) {
+			console.warn(new Error(`Error running script for '${repository.name}': ${error.message}`));
+			throw error;
+		}
+	}
 
-        } catch (error) {
-            console.error(new Error(`Error running script for '${repository}': ${error.message}`));
-        }
-    }
+	return branches;
 };
 
-/**
- * @see https://github.com/yargs/yargs/blob/master/docs/advanced.md#providing-a-command-module
- */
-module.exports = {
-	command: 'run-script',
-	desc: 'Run a script against repositories',
-	builder,
-	handler,
-};
+exports.command = 'run-script';
+exports.desc = 'clone repositories and run a script against them';
+exports.input = ['repos'];
+exports.output = 'branches';
+
