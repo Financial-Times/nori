@@ -19,7 +19,7 @@ test('correctly throws an error if given incorrect arguments', () => {
 });
 
 describe('creating pull requests', () => {
-	test('creates PRs for every repo, interpolating templates', () => {
+	test('creates PRs for every repo, interpolating templates', async () => {
 		await prs.handler({
 			templates: {
 				title: 'pull request title ${repo.name}',
@@ -35,7 +35,7 @@ describe('creating pull requests', () => {
 			],
 			githubAccessToken
 		})
-		
+
 		expect(octokit.pulls.create).toHaveBeenCalledWith({
 			owner: 'org', repo: 'repo1', head: 'branch1', base: 'master',
 			title: 'pull request title repo1',
@@ -50,7 +50,7 @@ describe('creating pull requests', () => {
 	});
 
 	test('doesn\'t error on backticks in string', () => {
-		expect(() => prs.handler({
+		expect(prs.handler({
 			templates: {
 				title: 'pull request title ` ',
 				body: 'pull request body'
