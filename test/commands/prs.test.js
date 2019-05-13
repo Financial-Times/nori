@@ -19,25 +19,23 @@ test('correctly throws an error if given incorrect arguments', () => {
 });
 
 describe('creating pull requests', () => {
-	const templates = {
-		title: 'pull request title ${repo.name}',
-		body: 'pull request body ${repo.name}'
-	};
+	test('creates PRs for every repo, interpolating templates', async () => {
+		await prs.handler({
+			templates: {
+				title: 'pull request title ${repo.name}',
+				body: 'pull request body ${repo.name}'
+			},
+			repos: [
+				{owner: 'org', name: 'repo1'},
+				{owner: 'org', name: 'repo2'},
+			],
+			branches: [
+				'branch1',
+				'branch2',
+			],
+			githubAccessToken
+		})
 
-	beforeAll(() => prs.handler({
-		templates,
-		repos: [
-			{owner: 'org', name: 'repo1'},
-			{owner: 'org', name: 'repo2'},
-		],
-		branches: [
-			'branch1',
-			'branch2',
-		],
-		githubAccessToken
-	}));
-
-	test('creates PRs for every repo, interpolating templates', () => {
 		expect(octokit.pulls.create).toHaveBeenCalledWith({
 			owner: 'org', repo: 'repo1', head: 'branch1', base: 'master',
 			title: 'pull request title repo1',
@@ -49,6 +47,22 @@ describe('creating pull requests', () => {
 			title: 'pull request title repo2',
 			body: 'pull request body repo2',
 		});
+	});
+
+	test('doesn\'t error on backticks in string', () => {
+		expect(prs.handler({
+			templates: {
+				title: 'pull request title ` ',
+				body: 'pull request body'
+			},
+			repos: [
+				{owner: 'org', name: 'repo1'},
+			],
+			branches: [
+				'branch1',
+			],
+			githubAccessToken
+		})).resolves.not.toThrow()
 	});
 });
 

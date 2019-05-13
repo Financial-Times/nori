@@ -22,8 +22,8 @@ exports.args = [{
 }];
 
 exports.handler = ({templates: {title, body}, repos, branches, githubAccessToken}) => {
-	const titleTemplate = new Function('repo', 'branch', `return \`${title}\``);
-	const bodyTemplate = new Function('repo', 'branch', `return \`${body}\``);
+	const titleTemplate = new Function('repo', 'branch', `return \`${title.replace(/`/g, '\\`')}\``);
+	const bodyTemplate = new Function('repo', 'branch', `return \`${body.replace(/`/g, '\\`')}\``);
 
 	return Promise.all(branches.map((branch, index) => {
 		const repo = repos[index];
