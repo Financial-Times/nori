@@ -18,7 +18,9 @@
   "license": "MIT",
   "dependencies": {
     "@financial-times/git": "^1.0.0",
-    "@octokit/rest": "^16.24.1",
+    "@octokit/plugin-retry": "^2.2.0",
+    "@octokit/plugin-throttling": "^2.4.0",
+    "@octokit/rest": "^16.25.1",
     "ansi-colors": "^3.2.4",
     "array-to-sentence": "^2.0.0",
     "enquirer": "^2.3.0",
