@@ -22,3 +22,7 @@ exports.handler = async ({ takoHost, takoToken, topic }, state) => {
 		({ body }) => body.repositories
 	);
 };
+
+exports.undo = (_, state) => {
+	delete state.repos;
+}

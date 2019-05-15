@@ -37,23 +37,26 @@ exports.handler = async ({ templates: { title, body }, githubAccessToken }, stat
 				body: bodyTemplate(repo)
 			}).then(response => response.data);
 		}
-	}));
+	}))
 };
 
-exports.undo = ({ prs, githubAccessToken }) => (
-	Promise.all(prs.map(async pr => {
+
+exports.undo = ({ githubAccessToken }, state) => (
+	Promise.all(state.repos.map(async repo => {
 		await octokit(githubAccessToken).issues.createComment({
-			owner: pr.head.repo.owner.login,
-			repo: pr.head.repo.name,
-			number: pr.number,
+			owner: repo.pr.head.repo.owner.login,
+			repo: repo.pr.head.repo.name,
+			number: repo.pr.number,
 			body: 'automatically closed 🤖' //TODO prompt for template?
 		});
 
 		await octokit(githubAccessToken).pulls.update({
-			owner: pr.head.repo.owner.login,
-			repo: pr.head.repo.name,
-			number: pr.number,
+			owner: repo.pr.head.repo.owner.login,
+			repo: repo.pr.head.repo.name,
+			number: repo.pr.number,
 			state: 'closed'
 		});
+
+		delete repo.pr;
 	}))
 );

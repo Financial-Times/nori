@@ -175,6 +175,37 @@ module.exports = class State {
 		return this.save();
 	}
 
+	async undo(args) {
+		const undoneStep = this.state.steps[this.state.steps.length - 1];
+		const stepsToUndo = takeWhileLast(
+			this.state.steps,
+			step => operations[step.name].output === operations[undoneStep.name].output
+		);
+
+		this.state.data = await produce(this.state.data, async draft => {
+			for (const step of stepsToUndo) {
+				const operation = operations[step.name];
+				if (operation.undo) {
+					await operation.undo(
+						Object.assign({}, step.args, args),
+						draft
+					);
+				}
+			}
+		});
+
+		this.state.steps.splice(this.state.steps.length - stepsToUndo.length, stepsToUndo.length);
+
+		await this.save();
+
+		for (const step of stepsToUndo) {
+			await this.runStep(
+				operations[step.name],
+				step.args,
+			);
+		}
+	}
+
 	isValidOperation(operation) {
 		const lastStep = this.state.steps[this.state.steps.length - 1];
 		return lastStep
@@ -182,19 +213,5 @@ module.exports = class State {
 				operations[lastStep.name].output
 			)
 			: operation.input.length === 0;
-	}
-
-	async unwindOperation(operation) {
-		this.state.steps.pop();
-		delete this.state.data[operation.output];
-
-		const stepsToReplay = takeWhileLast(
-			this.state.steps,
-			step => operations[step.name].output === operation.output
-		);
-
-		this.state.steps.splice(this.state.steps.length - stepsToReplay.length, stepsToReplay.length);
-
-		return stepsToReplay;
 	}
 }

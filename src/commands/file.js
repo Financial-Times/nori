@@ -25,3 +25,7 @@ exports.handler = async ({ file }, state) => {
 		return { owner, name };
 	}).filter(Boolean);
 };
+
+exports.undo = (_, state) => {
+	delete state.repos;
+}

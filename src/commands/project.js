@@ -50,7 +50,11 @@ exports.handler = async ({ projectData, githubAccessToken }, state) => {
 	state.project = project;
 };
 
-exports.undo = ({ project, githubAccessToken }) => getOctokit(githubAccessToken).projects.update({
-	project_id: project.id,
-	state: 'closed'
-});
+exports.undo = async ({ githubAccessToken }, state) => {
+	await getOctokit(githubAccessToken).projects.update({
+		project_id: state.project.id,
+		state: 'closed'
+	});
+
+	delete state.project;
+}

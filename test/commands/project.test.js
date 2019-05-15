@@ -78,9 +78,8 @@ describe('creating project board', () => {
 });
 
 test('undo closes the project', async () => {
-	await project.undo({
+	await project.undo({ githubAccessToken }, {
 		project: { id: 'mock project id' },
-		githubAccessToken,
 	});
 
 	expect(octokit.projects.update).toHaveBeenCalledWith({

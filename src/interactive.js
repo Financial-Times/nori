@@ -108,15 +108,6 @@ exports.builder = yargs => yargs
 	.middleware(getStateFile)
 	.middleware(State.middleware);
 
-async function replay({ state, steps }) {
-	for (const step of steps) {
-		await state.runStep(
-			operations[step.name],
-			step.args,
-		);
-	}
-}
-
 const promptOperation = ({ state }) => prompt({
 	name: 'choice',
 	message: 'available operations',
@@ -135,21 +126,6 @@ const promptOperation = ({ state }) => prompt({
 		{ name: 'done', hint: `your work is autosaved as ${path.basename(state.fileName)}` }
 	]),
 });
-
-async function undo({ state }) {
-	const undoneStep = state.state.steps[state.state.steps.length - 1];
-	const undoneOperation = operations[undoneStep.name];
-
-	if (undoneOperation.undo) {
-		await undoneOperation.undo(state.state.data);
-	}
-
-	const stepsToReplay = await state.unwindOperation(undoneOperation);
-	await state.save();
-
-	// if stepsToReplay is empty this will do nothing
-	await replay({ state, steps: stepsToReplay });
-}
 
 /**
  * yargs handler function.
@@ -185,7 +161,7 @@ exports.handler = async function ({ state, ...argv }) {
 			}
 			console.log(c.gray('─────')); // eslint-disable-line no-console
 		} else if (choice === 'undo') {
-			await undo({ state });
+			await state.undo();
 		} else if (choice === 'done') {
 			break;
 		}

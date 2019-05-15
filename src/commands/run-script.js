@@ -6,6 +6,7 @@ const assert = require('assert');
 const fs = require('mz/fs');
 const path = require('path');
 const git = require('@financial-times/git');
+const rmfr = require('rmfr');
 
 const { workspacePath } = require('../lib/constants');
 const runProcess = require('../lib/run-process');
@@ -97,6 +98,25 @@ exports.handler = async ({ script, branch }, state) => {
 			throw error;
 		}
 	}));
+};
+
+exports.undo = ({ branch }, state) => {
+	Promise.all(state.repos.map(async repo => {
+		const cloneDirectory = path.join(workspacePath, repo.name);
+		// the git push syntax is localbranch:remotebranch. without the colon,
+		// they're the same. with nothing before the colon, it's "push nothing
+		// to the remote branch", i.e. delete it.
+		await git.push({
+			workingDirectory: cloneDirectory,
+			repository: 'origin',
+			refspec: `:${branch}`
+		});
+
+		// i say we take off and nuke the whole site from orbit. it's the only way to be sure
+		await rmfr(cloneDirectory);
+
+		delete repo.remoteBranch;
+	}))
 };
 
 exports.command = 'run-script';

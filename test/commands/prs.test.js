@@ -64,12 +64,11 @@ describe('creating pull requests', () => {
 });
 
 describe('undoing pull requests', () => {
-	beforeAll(() => prs.undo({
-		prs: [
-			{ head: { repo: { owner: { login: 'org' }, name: 'repo1' } }, number: 1 },
-			{ head: { repo: { owner: { login: 'org' }, name: 'repo2' } }, number: 2 },
-		],
-		githubAccessToken
+	beforeAll(() => prs.undo({ githubAccessToken }, {
+		repos: [
+			{ pr: { head: { repo: { owner: { login: 'org' }, name: 'repo1' } }, number: 1 } },
+			{ pr: { head: { repo: { owner: { login: 'org' }, name: 'repo2' } }, number: 2 } },
+		]
 	}));
 
 	test('comments on every PR', () => {
