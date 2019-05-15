@@ -198,7 +198,8 @@ module.exports = class State {
 
 		await this.save();
 
-		for (const step of stepsToUndo) {
+		// replay all but the last undone step
+		for (const step of stepsToUndo.slice(0, -1)) {
 			await this.runStep(
 				operations[step.name],
 				step.args,
