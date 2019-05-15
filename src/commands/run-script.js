@@ -44,7 +44,9 @@ exports.handler = async ({ script, branch }, state) => {
 	console.warn(`-- Script: ${scriptPath}`);
 	console.warn(`-- Target(s):\n\n   ${state.repos.map(({ name }) => name).join('\n   ')}`);
 
-	await Promise.all(state.repos.map(async repository => {
+	// must be serial until https://github.com/Financial-Times/tooling-helpers/issues/74
+	// is resolved (or, add workingDirectory to all the options of the git methods)
+	for (const repository of state.repos) {
 		console.warn('\n===\n');
 
 		const cloneDirectory = path.join(workspacePath, repository.name);
@@ -97,7 +99,7 @@ exports.handler = async ({ script, branch }, state) => {
 			console.warn(new Error(`Error running script for '${repository.name}': ${error.message}`));
 			throw error;
 		}
-	}));
+	}
 };
 
 exports.undo = ({ branch }, state) => {
