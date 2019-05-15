@@ -161,7 +161,7 @@ exports.handler = async function ({ state, ...argv }) {
 			}
 			console.log(c.gray('─────')); // eslint-disable-line no-console
 		} else if (choice === 'undo') {
-			await state.undo();
+			await state.undo(argv);
 		} else if (choice === 'done') {
 			break;
 		}
