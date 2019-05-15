@@ -108,31 +108,12 @@ exports.builder = yargs => yargs
 	.middleware(getStateFile)
 	.middleware(State.middleware);
 
-async function runStep({ state, operation, args }) {
-	// get the keys from `data` that are present in
-	// `operation.input`
-	const dataArgs = operation.input.reduce(
-		(args, type) => Object.assign(args, {
-			[type]: state.state.data[type]
-		}),
-		{}
-	);
-
-	const stepData = await operation.handler(
-		Object.assign(dataArgs, args)
-	);
-
-	await state.appendOperation(operation, args, stepData);
-	await state.save();
-}
-
 async function replay({ state, steps }) {
 	for (const step of steps) {
-		await runStep({
-			state,
-			operation: operations[step.name],
-			args: step.args,
-		});
+		await state.runStep(
+			operations[step.name],
+			step.args,
+		);
 	}
 }
 
@@ -194,7 +175,7 @@ exports.handler = async function ({ state, ...argv }) {
 				await prompt(operation.args)
 			);
 
-			await runStep({ state, operation, args });
+			await state.runStep(operation, args);
 		} else if (choice === 'preview') {
 			for (const type in state.state.data) if (state.state.data.hasOwnProperty(type)) {
 				console.log(`${c.gray('─────')} ${type}`); // eslint-disable-line no-console

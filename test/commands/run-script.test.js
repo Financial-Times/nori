@@ -29,7 +29,7 @@ test('`run-script` command module exports an operation object', () => {
 
 test('errors when `repos` is an empty array', async () => {
 	await expect(
-		runScript.handler({
+		runScript.handler({}, {
 			repos: []
 		})
 	).rejects.toThrowError(/no repos specified/i);
@@ -41,8 +41,9 @@ test('errors when `script` is empty', async () => {
 	});
 	await expect(
 		runScript.handler({
-			repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
 			workspace: 'hello'
+		}, {
+			repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
 		})
 	).rejects.toThrowError(/undefined/i);
 });
@@ -53,9 +54,10 @@ test('errors when `script` does not exist', async () => {
 	});
 	await expect(
 		runScript.handler({
-			repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
 			workspace: 'hello',
 			script: 'somefile.js'
+		}, {
+			repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
 		})
 	).rejects.toThrowError(/script does not exist/i);
 });
@@ -75,9 +77,10 @@ test('errors when `script` is not executable', async () => {
 
 	await expect(
 		runScript.handler({
-			repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
 			workspace: 'hello',
 			script: 'transformation.js'
+		}, {
+			repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
 		})
 	).rejects.toThrowError(/script is not executable/i);
 });
@@ -91,9 +94,10 @@ test('runs script', async () => {
 	fs.access.mockImplementation(util.callbackify(async () => undefined));
 
 	await runScript.handler({
-		repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
 		workspace: 'hello',
 		script: 'transformation.js'
+	}, {
+		repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
 	});
 
 	expect(runProcess).toBeCalledWith(path.resolve('transformation.js'), expect.any(Object));

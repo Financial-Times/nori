@@ -7,6 +7,7 @@ const mkdirp = util.promisify(require('mkdirp'));
 const { workspacePath, noriExtension } = require('./constants');
 const { prompt } = require('enquirer');
 const types = require('./types');
+const { produce } = require('immer');
 
 /**
  * returns the last elements from the array that meet the predicate
@@ -152,46 +153,35 @@ module.exports = class State {
 	}
 
 	async runSingleOperation(operation, args) {
-		const formatter = args.json ? serialise : types[operation.output].format;
-
-		const result = await operation.handler(args);
-
-		await this.appendOperation(operation, args, result);
-		const serialisedState = await this.save();
+		const formatter = types[operation.output][args.json ? 'serialise' : 'format'];
+		const serialisedState = await this.runStep(operation, args);
 
 		if (!process.stdout.isTTY) {
 			// eslint-disable-next-line no-console
 			console.log(serialisedState);
 		} else {
 			// eslint-disable-next-line no-console
-			console.log(formatter(result));
+			console.log(formatter(this.state.data));
 		}
 	}
 
-	async appendOperation(operation, args, data) {
+	async runStep(operation, args) {
+		// produce, from immer, lets handlers modify the state as a mutable
+		// object safely. the updated copy is then stored as the new state
+		this.state.data = await produce(this.state.data, async draft => {
+			await operation.handler(args, draft);
+		});
 		this.state.steps.push({ name: operation.command, args });
-		this.state.data[operation.output] = data;
+		return this.save();
 	}
 
 	isValidOperation(operation) {
 		const lastStep = this.state.steps[this.state.steps.length - 1];
-		const operationCanTakeLastOutput = lastStep
+		return lastStep
 			? operation.input.includes(
 				operations[lastStep.name].output
 			)
 			: operation.input.length === 0;
-
-		const dataHasInputs = operation.input.every(type => type in this.state.data);
-		const dataHasOutput = operation.output in this.state.data;
-		const isFilter = operation.input.includes(operation.output);
-
-		// allow an operation if:
-		//   - the output of the last operation is one of the inputs
-		//     - or if there was no last operation, there are no inputs
-		//   - the state.data has all the inputs
-		//   - the data doesn't have the output (i.e. this operation hasn't already been run)
-		//     - *unless* the operation has the same output as one of the inputs (i.e. it can be run multiple times on the same data)
-		return operationCanTakeLastOutput && dataHasInputs && (!dataHasOutput || isFilter);
 	}
 
 	async unwindOperation(operation) {

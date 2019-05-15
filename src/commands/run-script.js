@@ -23,8 +23,8 @@ exports.args = [
  * @param {string} argv.repos
  * @param {string} argv.branch
  */
-exports.handler = async ({ script, repos, branch }) => {
-	if (repos.length === 0) {
+exports.handler = async ({ script, branch }, state) => {
+	if (state.repos.length === 0) {
 		throw new Error('No repos specified');
 	}
 
@@ -41,11 +41,9 @@ exports.handler = async ({ script, repos, branch }) => {
 	}
 
 	console.warn(`-- Script: ${scriptPath}`);
-	console.warn(`-- Target(s):\n\n   ${repos.map(({ name }) => name).join('\n   ')}`);
+	console.warn(`-- Target(s):\n\n   ${state.repos.map(({ name }) => name).join('\n   ')}`);
 
-	const branches = [];
-
-	for (let repository of repos) {
+	await Promise.all(state.repos.map(async repository => {
 		console.warn('\n===\n');
 
 		const cloneDirectory = path.join(workspacePath, repository.name);
@@ -93,14 +91,12 @@ exports.handler = async ({ script, repos, branch }) => {
 			console.warn(`-- Pushing branch ${branch} to remote 'origin'`);
 			await git.push({ repository: 'origin', refspec: branch });
 
-			branches.push(branch);
+			repository.remoteBranch = branch;
 		} catch (error) {
 			console.warn(new Error(`Error running script for '${repository.name}': ${error.message}`));
 			throw error;
 		}
-	}
-
-	return branches;
+	}));
 };
 
 exports.command = 'run-script';

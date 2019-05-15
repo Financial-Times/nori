@@ -25,13 +25,14 @@ describe('creating project board', () => {
 
 	beforeAll(() => project.handler({
 		projectData,
-		prs: [
-			{id: 'pull request 1'},
-			{id: 'pull request 2'},
-			{id: 'pull request 3'},
-		],
 		githubAccessToken
-	}));
+	}, {
+			repos: [
+				{ pr: { id: 'pull request 1' } },
+				{ pr: { id: 'pull request 2' } },
+				{ pr: { id: 'pull request 3' } },
+			],
+		}));
 
 	test('creates the project board', () => {
 		expect(octokit.projects.createForOrg).toHaveBeenCalledWith(projectData);
@@ -78,7 +79,7 @@ describe('creating project board', () => {
 
 test('undo closes the project', async () => {
 	await project.undo({
-		project: {id: 'mock project id'},
+		project: { id: 'mock project id' },
 		githubAccessToken,
 	});
 

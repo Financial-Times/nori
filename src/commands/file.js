@@ -15,12 +15,13 @@ exports.args = [{
 	) || 'Please enter a path to a text file containing a line-separated list of repositories'
 }];
 
-exports.handler = async ({file}) => {
+exports.handler = async ({ file }, state) => {
 	const contents = await fs.readFile(file, 'utf8');
-	return contents.split('\n').map(line => {
-		if(!line) return;
+
+	state.repos = contents.split('\n').map(line => {
+		if (!line) return;
 
 		const [owner, name] = line.split('/');
-		return {owner, name};
+		return { owner, name };
 	}).filter(Boolean);
 };

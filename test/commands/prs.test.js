@@ -25,16 +25,14 @@ describe('creating pull requests', () => {
 				title: 'pull request title ${repo.name}',
 				body: 'pull request body ${repo.name}'
 			},
-			repos: [
-				{owner: 'org', name: 'repo1'},
-				{owner: 'org', name: 'repo2'},
-			],
-			branches: [
-				'branch1',
-				'branch2',
-			],
 			githubAccessToken
-		})
+		}, {
+				repos: [
+					{ owner: 'org', name: 'repo1', remoteBranch: 'branch1' },
+					{ owner: 'org', name: 'repo2', remoteBranch: 'branch2' },
+				],
+			}
+		)
 
 		expect(octokit.pulls.create).toHaveBeenCalledWith({
 			owner: 'org', repo: 'repo1', head: 'branch1', base: 'master',
@@ -55,22 +53,21 @@ describe('creating pull requests', () => {
 				title: 'pull request title ` ',
 				body: 'pull request body'
 			},
-			repos: [
-				{owner: 'org', name: 'repo1'},
-			],
-			branches: [
-				'branch1',
-			],
 			githubAccessToken
-		})).resolves.not.toThrow()
+		}, {
+				repos: [
+					{ owner: 'org', name: 'repo1', remoteBranch: 'branch1' },
+				],
+			}
+		)).resolves.not.toThrow()
 	});
 });
 
 describe('undoing pull requests', () => {
 	beforeAll(() => prs.undo({
 		prs: [
-			{head: {repo: {owner: {login: 'org'}, name: 'repo1'}}, number: 1},
-			{head: {repo: {owner: {login: 'org'}, name: 'repo2'}}, number: 2},
+			{ head: { repo: { owner: { login: 'org' }, name: 'repo1' } }, number: 1 },
+			{ head: { repo: { owner: { login: 'org' }, name: 'repo2' } }, number: 2 },
 		],
 		githubAccessToken
 	}));
