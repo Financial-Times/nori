@@ -112,9 +112,7 @@ const promptOperation = ({ state }) => prompt({
 	name: 'choice',
 	message: 'available operations',
 	type: 'select',
-	header: Object.keys(state.state.data).map(
-		type => types[type].shortPreview(state.state.data[type])
-	).filter(Boolean).join(' ∙ '),
+	header: state.shortPreview(),
 	choices: Object.values(operations).map(operation => ({
 		name: operation.command,
 		message: operation.desc,

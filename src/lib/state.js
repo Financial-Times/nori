@@ -215,4 +215,18 @@ module.exports = class State {
 			)
 			: operation.input.length === 0;
 	}
+
+	shortPreview() {
+		const stepOutputs = [...new Set(
+			this.state.steps.map(
+				step => operations[step.name].output
+			)
+		)]
+
+		const outputPreviews = stepOutputs.map(
+			type => types[type].shortPreview(this.state.data)
+		).filter(Boolean)
+
+		return outputPreviews.join(' ∙ ')
+	}
 }
