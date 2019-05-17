@@ -45,7 +45,7 @@ const enquirerValidate = arg => async argv => {
 };
 
 const promptMissingArgs = operation => async argv => {
-	if (!argv.state.isValidOperation(operation)) {
+	if (argv.state.fileName && !argv.state.isValidOperation(operation)) {
 		const validCommands = Object.keys(operations).filter(key => argv.state.isValidOperation(operations[key]));
 		const message = `'${operation.command}' isn't valid for the provided state. ${validCommands.length ? `Valid commands are ${toSentence(validCommands.map(cmd => `'${cmd}'`))}` : ''}`;
 		throw new Error(message);
@@ -92,6 +92,13 @@ const operationToYargsCommand = operation => Object.assign({}, operation, {
 	},
 
 	handler({ state, ...args }) {
+		const stateArgs = {};
+		operation.input.forEach(type => {
+			stateArgs[type] = args[type];
+			delete args[type];
+		});
+
+		state.addData(stateArgs);
 		return state.runSingleOperation(operation, args);
 	}
 });

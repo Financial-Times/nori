@@ -89,10 +89,7 @@ module.exports = class State {
 
 		await stateContainer.load();
 
-		return {
-			state: stateContainer,
-			...stateContainer.state.data
-		};
+		return { state: stateContainer };
 	}
 
 	static async getSortedFiles() {
@@ -150,6 +147,10 @@ module.exports = class State {
 		}
 
 		return serialised;
+	}
+
+	addData(data) {
+		Object.assign(this.state.data, data);
 	}
 
 	async runSingleOperation(operation, args) {
