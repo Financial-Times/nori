@@ -185,7 +185,7 @@ module.exports = class State {
 		);
 
 		this.state.data = await produce(this.state.data, async draft => {
-			for (const step of stepsToUndo) {
+			for (const step of stepsToUndo.slice().reverse()) {
 				const operation = operations[step.name];
 				if (operation.undo) {
 					await operation.undo(
