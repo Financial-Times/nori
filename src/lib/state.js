@@ -126,7 +126,7 @@ module.exports = class State {
 	}
 
 	async load() {
-		if (this.fileName) {
+		if (this.fileName || !process.stdin.isTTY) {
 			const content = await read(this.fileName);
 			try {
 				this.state = JSON.parse(content);
@@ -154,15 +154,16 @@ module.exports = class State {
 	}
 
 	async runSingleOperation(operation, args) {
-		const formatter = types[operation.output][args.json ? 'serialise' : 'format'];
+		const formatter = args.json ? serialise : types[operation.output].format;
 		const serialisedState = await this.runStep(operation, args);
+		const data = types[operation.output].getFromState(this.state.data);
 
 		if (!process.stdout.isTTY) {
 			// eslint-disable-next-line no-console
 			console.log(serialisedState);
 		} else {
 			// eslint-disable-next-line no-console
-			console.log(formatter(this.state.data));
+			console.log(formatter(data));
 		}
 	}
 
@@ -225,7 +226,10 @@ module.exports = class State {
 		)]
 
 		const outputPreviews = stepOutputs.map(
-			type => types[type].shortPreview(this.state.data)
+			type => {
+				const data = types[type].getFromState(this.state.data);
+				return types[type].shortPreview(data);
+			}
 		).filter(Boolean)
 
 		return outputPreviews.join(' ∙ ')

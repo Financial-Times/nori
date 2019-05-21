@@ -151,10 +151,13 @@ exports.handler = async function ({ state, ...argv }) {
 
 			await state.runStep(operation, args);
 		} else if (choice === 'preview') {
-			for (const type in state.state.data) if (state.state.data.hasOwnProperty(type)) {
+			for (const step of state.state.steps) {
+				const type = operations[step.name].output;
 				console.log(`${c.gray('─────')} ${type}`); // eslint-disable-line no-console
 				console.log( // eslint-disable-line no-console
-					types[type].format(state.state.data[type])
+					types[type].format(
+						types[type].getFromState(state.state.data)
+					)
 				);
 			}
 			console.log(c.gray('─────')); // eslint-disable-line no-console

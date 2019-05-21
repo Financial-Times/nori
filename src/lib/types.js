@@ -1,53 +1,30 @@
 module.exports = {
 	repos: {
-		argument: {
-			type: 'list',
-			result: repos => repos.map(repo => {
-				const [match, owner, name] = repo.match(/(.+?)\/(.+?)(?:.git)?$/) || [false];
-				if (match) {
-					return { owner, name };
-				}
-
-				throw new Error(`${repo} is not a valid repository`);
-			})
-		},
-		serialise: state => JSON.stringify(state.repos, null, 2),
-		format: state => state.repos.map(repo => `https://github.com/${repo.owner}/${repo.name}`).join('\n'),
-		shortPreview: state => state.repos ? `${state.repos.length} repositor${state.repos.length > 1 ? 'ies' : 'y'}` : false,
+		getFromState: state => state.repos,
+		exists: repos => repos && repos.length > 0,
+		format: repos => repos.map(repo => `https://github.com/${repo.owner}/${repo.name}`).join('\n'),
+		shortPreview: repos => `${repos.length} repositor${repos.length > 1 ? 'ies' : 'y'}`,
 	},
 
 	branches: {
-		argument: { type: 'list' },
-		serialise: state => JSON.stringify(state.repos.filter(repo => repo.remoteBranch), null, 2),
-		format: state => state.repos.map(repo => repo.remoteBranch).filter(Boolean).join('\n'),
-		shortPreview: state => {
-			if (!state.repos) return false;
-
-			const reposWithBranch = state.repos.filter(repo => 'remoteBranch' in repo)
-			if (reposWithBranch.length === 0) return false;
-
-			return `${reposWithBranch.length} remote branch${reposWithBranch.length > 1 ? 'es' : ''}`;
-		}
+		getFromState: state => state.repos && state.repos.map(repo => repo.remoteBranch).filter(Boolean),
+		exists: branches => branches && branches.length > 0,
+		format: branches => branches.join('\n'),
+		shortPreview: branches => `${branches.length} remote branch${branches.length > 1 ? 'es' : ''}`,
 	},
 
 	prs: {
-		argument: { type: 'list' },
-		serialise: state => JSON.stringify(state.repos.filter(repo => repo.pr), null, 2),
-		format: state => state.repos.map(repo => repo.pr && repo.pr.html_url).filter(Boolean).join('\n'),
-		shortPreview: state => {
-			if (!state.repos) return false;
-
-			const reposWithPr = state.repos.filter(repo => 'pr' in repo)
-			if (reposWithPr.length === 0) return false;
-
-			return `${reposWithPr.length} pull request${reposWithPr.length > 1 ? 's' : ''}`;
-		}
+		getFromState: state => state.prs && state.prs.map(repo => repo.remoteBranch).filter(Boolean),
+		exists: prs => prs && prs.length
+			> 0,
+		format: prs => prs.map(pr => pr.html_url).join('\n'),
+		shortPreview: prs => `${prs.length} pull request${prs.length > 1 ? 's' : ''}`,
 	},
 
 	project: {
-		argument: { type: 'list' },
-		serialise: state => JSON.stringify(state.project, null, 2),
-		format: state => state.project.html_url,
-		shortPreview: state => state.project ? state.project.html_url : false,
+		getFromState: state => state.project,
+		exists: project => Boolean(project),
+		format: project => project.html_url,
+		shortPreview: project => project.html_url,
 	},
 };
