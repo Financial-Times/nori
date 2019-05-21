@@ -210,12 +210,11 @@ module.exports = class State {
 	}
 
 	isValidOperation(operation) {
-		const lastStep = this.state.steps[this.state.steps.length - 1];
-		return lastStep
-			? operation.input.includes(
-				operations[lastStep.name].output
-			)
-			: operation.input.length === 0;
+		const previousOutputs = new Set(this.state.steps.map(
+			step => operations[step.name].output
+		));
+
+		return operation.input.every(type => previousOutputs.has(type));
 	}
 
 	shortPreview() {
