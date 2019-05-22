@@ -6,11 +6,18 @@ module.exports = {
 		shortPreview: repos => `${repos.length} repositor${repos.length > 1 ? 'ies' : 'y'}`,
 	},
 
-	branches: {
+	remoteBranch: {
 		getFromState: state => state.repos && state.repos.map(repo => repo.remoteBranch).filter(Boolean),
-		exists: branches => branches && branches.length > 0,
-		format: branches => branches.join('\n'),
-		shortPreview: branches => `${branches.length} remote branch${branches.length > 1 ? 'es' : ''}`,
+		exists: remoteBranch => remoteBranch && remoteBranch.length > 0,
+		format: remoteBranch => remoteBranch.join('\n'),
+		shortPreview: remoteBranch => `${remoteBranch.length} remote branch${remoteBranch.length > 1 ? 'es' : ''}`,
+	},
+
+	localBranch: {
+		getFromState: state => state.repos && state.repos.map(repo => repo.localBranch).filter(Boolean),
+		exists: localBranch => localBranch && localBranch.length > 0,
+		format: localBranch => localBranch.join('\n'),
+		shortPreview: localBranch => `${localBranch.length} local branch${localBranch.length > 1 ? 'es' : ''}`,
 	},
 
 	prs: {

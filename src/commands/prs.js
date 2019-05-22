@@ -3,7 +3,7 @@ const octokit = require('../lib/octokit');
 exports.command = 'prs';
 exports.desc = 'create Github pull requests for pushed branches';
 
-exports.input = ['repos', 'branches'];
+exports.input = ['repos', 'remoteBranches'];
 exports.output = 'prs';
 
 exports.args = [{
@@ -39,7 +39,6 @@ exports.handler = async ({ templates: { title, body }, githubAccessToken }, stat
 		}
 	}))
 };
-
 
 exports.undo = ({ githubAccessToken }, state) => (
 	Promise.all(state.repos.map(async repo => {
