@@ -30,4 +30,3 @@ exports.command = 'clone';
 exports.desc = 'clone repositories';
 exports.input = ['repos'];
 exports.output = 'clones';
-

@@ -112,4 +112,3 @@ exports.command = 'run-script';
 exports.desc = 'runs a script in a branch against all cloned repositories';
 exports.input = ['clones'];
 exports.output = 'localBranches';
-
