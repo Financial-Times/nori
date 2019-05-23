@@ -42,3 +42,13 @@ test('`file` command returns the correct data', async () => {
 });
 
 test.todo('`file` command correctly throws an error if the file contents are in an incorrect format');
+
+test('`file` undo removes repos from state', () => {
+	const state = {
+		repos: [{ owner: 'owner', name: 'repo' }]
+	};
+
+	file.undo({}, state);
+
+	expect(state).toEqual({});
+});

@@ -48,28 +48,31 @@ describe('creating pull requests', () => {
 	});
 
 	test('doesn\'t error on backticks in string', () => {
-		expect(prs.handler({
-			templates: {
-				title: 'pull request title ` ',
-				body: 'pull request body'
-			},
-			githubAccessToken
-		}, {
-				repos: [
-					{ owner: 'org', name: 'repo1', remoteBranch: 'branch1' },
-				],
-			}
-		)).resolves.not.toThrow()
+		expect(prs.handler
+			({
+				templates: {
+					title: 'pull request title ` ',
+					body: 'pull request body'
+				},
+				githubAccessToken
+			}, {
+					repos: [
+						{ owner: 'org', name: 'repo1', remoteBranch: 'branch1' },
+					],
+				}
+			)).resolves.not.toThrow()
 	});
 });
 
 describe('undoing pull requests', () => {
-	beforeAll(() => prs.undo({ githubAccessToken }, {
+	const state = {
 		repos: [
 			{ pr: { head: { repo: { owner: { login: 'org' }, name: 'repo1' } }, number: 1 } },
 			{ pr: { head: { repo: { owner: { login: 'org' }, name: 'repo2' } }, number: 2 } },
 		]
-	}));
+	};
+
+	beforeAll(() => prs.undo({ githubAccessToken }, state));
 
 	test('comments on every PR', () => {
 		expect(octokit.issues.createComment).toHaveBeenCalledWith({
@@ -93,5 +96,11 @@ describe('undoing pull requests', () => {
 			owner: 'org', repo: 'repo2', number: 2,
 			state: 'closed'
 		});
+	});
+
+	test('removes PR data from state', () => {
+		expect(state).toEqual({
+			repos: [{}, {}]
+		})
 	});
 });

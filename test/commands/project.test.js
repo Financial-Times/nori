@@ -77,13 +77,17 @@ describe('creating project board', () => {
 	});
 });
 
-test('undo closes the project', async () => {
-	await project.undo({ githubAccessToken }, {
+test('undo closes the project and removes data from state', async () => {
+	const state = {
 		project: { id: 'mock project id' },
-	});
+	};
+
+	await project.undo({ githubAccessToken }, state);
 
 	expect(octokit.projects.update).toHaveBeenCalledWith({
 		project_id: 'mock project id',
 		state: 'closed'
 	});
+
+	expect(state).toEqual({});
 });

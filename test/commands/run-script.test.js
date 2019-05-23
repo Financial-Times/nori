@@ -102,3 +102,4 @@ test('runs script', async () => {
 
 	expect(runProcess).toBeCalledWith(path.resolve('transformation.js'), expect.any(Object));
 });
+

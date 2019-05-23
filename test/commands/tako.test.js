@@ -41,3 +41,13 @@ test('returns the repositories from tako', async () => {
 		])
 	);
 });
+
+test('`tako` undo removes repos from state', () => {
+	const state = {
+		repos: [{ owner: 'owner', name: 'repo' }]
+	};
+
+	tako.undo({}, state);
+
+	expect(state).toEqual({});
+});
