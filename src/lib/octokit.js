@@ -15,7 +15,8 @@ module.exports = token => {
 					if (options.request.retryCount === 0) {
 						return true;
 					}
-				}
+				},
+				onAbuseLimit: () => {},
 			}
 		});
 	}
