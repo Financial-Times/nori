@@ -18,6 +18,7 @@ exports.args = [{
 		if(!templates.title) {
 			return 'Please provide a Pull Request title';
 		}
+		return true
 	}
 }];
 
