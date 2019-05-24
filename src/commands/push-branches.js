@@ -31,3 +31,4 @@ exports.command = 'push-branches';
 exports.desc = 'push local branches to their remotes';
 exports.input = ['repos', 'localBranches'];
 exports.output = 'remoteBranches';
+exports.args = [];
