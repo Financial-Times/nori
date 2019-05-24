@@ -24,6 +24,7 @@ exports.args = [{
 		if (messages.length) {
 			return `Please provide ${toSentence(messages)}`;
 		}
+		return true
 	}
 }];
 
