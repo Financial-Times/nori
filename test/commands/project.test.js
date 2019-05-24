@@ -1,15 +1,8 @@
-const expectOperation = require('../../test-utils/operation');
 const project = require('../../src/commands/project');
 const getOctokit = require('../../src/lib/octokit');
 
 const githubAccessToken = 'mock access token';
 const octokit = getOctokit(githubAccessToken);
-
-test('`project` command module exports an operation object', () => {
-	expect(project).toEqual(
-		expectOperation('project')
-	);
-});
 
 test('correctly throws an error if given incorrect arguments', () => {
 	const projectDataArg = project.args.find(arg => arg.name === 'projectData');

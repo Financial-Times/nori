@@ -1,15 +1,8 @@
 const prs = require('../../src/commands/prs');
-const expectOperation = require('../../test-utils/operation');
 const getOctokit = require('../../src/lib/octokit');
 
 const githubAccessToken = 'mock access token';
 const octokit = getOctokit(githubAccessToken);
-
-test('`prs` command module exports an operation object', () => {
-	expect(prs).toEqual(
-		expectOperation('prs')
-	);
-});
 
 test('correctly throws an error if given incorrect arguments', () => {
 	const templatesArg = prs.args.find(arg => arg.name === 'templates');

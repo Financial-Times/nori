@@ -1,5 +1,4 @@
 const { fs, vol } = require('memfs');
-const expectOperation = require('../../test-utils/operation');
 
 const file = require('../../src/commands/file');
 
@@ -13,12 +12,6 @@ afterEach(() => {
 	vol.reset();
 	fs.access.mockReset();
 	jest.clearAllMocks();
-});
-
-test('`file` command module exports an operation object', () => {
-	expect(file).toEqual(
-		expectOperation('file')
-	);
 });
 
 test('`file` command correctly throws an error if the file does not exist', async () => {

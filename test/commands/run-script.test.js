@@ -1,7 +1,6 @@
 const { fs, vol } = require('memfs');
 const util = require('util');
 const path = require('path');
-const expectOperation = require('../../test-utils/operation');
 
 const runScript = require('../../src/commands/run-script');
 
@@ -19,12 +18,6 @@ afterEach(() => {
 	vol.reset();
 	fs.access.mockReset();
 	jest.clearAllMocks();
-});
-
-test('`run-script` command module exports an operation object', () => {
-	expect(runScript).toEqual(
-		expectOperation('run-script')
-	);
 });
 
 test('errors when `script` is empty', async () => {

@@ -1,5 +1,4 @@
 const clone = require('../../src/commands/clone');
-const expectOperation = require('../../test-utils/operation');
 const { workspacePath } = require('../../src/lib/constants');
 const git = require('@financial-times/git');
 const path = require('path');
@@ -7,12 +6,6 @@ const { vol } = require('memfs');
 const fs = require('mz/fs');
 
 jest.mock('fs', () => require('memfs').fs);
-
-test('`clone` command module exports an operation object', () => {
-	expect(clone).toEqual(
-		expectOperation('clone')
-	);
-});
 
 describe('cloning repos', () => {
 	test('clones every repo into workspace directory', async () => {
