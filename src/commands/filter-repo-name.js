@@ -9,4 +9,8 @@ exports.args = [{
 	type: 'text'
 }];
 
-exports.handler = ({filter, repos}) => repos.filter(repo => repo.name.match(new RegExp(filter)));
+exports.handler = ({ filter }, state) => {
+	state.repos = state.repos.filter(
+		repo => repo.name.match(new RegExp(filter))
+	);
+};

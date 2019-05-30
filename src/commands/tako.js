@@ -11,12 +11,18 @@ exports.args = [{
 	message: '(optional) GitHub topic to filter by'
 }];
 
-exports.handler = ({takoHost, takoToken, topic}) => got(`https://${takoHost}/tako/repositories`, {
-	json: true,
-	headers: takoToken && {
-		authorization: `Bearer ${takoToken}`
-	},
-	query: {topic}
-}).then(
-	({body}) => body.repositories
-);
+exports.handler = async ({ takoHost, takoToken, topic }, state) => {
+	state.repos = await got(`https://${takoHost}/tako/repositories`, {
+		json: true,
+		headers: takoToken && {
+			authorization: `Bearer ${takoToken}`
+		},
+		query: { topic }
+	}).then(
+		({ body }) => body.repositories
+	);
+};
+
+exports.undo = (_, state) => {
+	delete state.repos;
+}

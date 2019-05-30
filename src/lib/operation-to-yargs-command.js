@@ -3,12 +3,11 @@ const types = require('./types');
 const toSentence = require('./to-sentence');
 const operations = require('../operations');
 
-function enquirerToYargs(arg) {
+const enquirerToYargs = yargs => arg => {
 	const option = {
 		// alias: arg.name[0], how can we make sure this is unique?
 		describe: arg.message,
-		coerce: arg.result,
-	}
+	};
 
 	switch (arg.type) {
 		case 'text': {
@@ -30,33 +29,59 @@ function enquirerToYargs(arg) {
 		}
 	}
 
-	return option;
-}
+	yargs.option(arg.name, option)
 
-const enquirerValidate = arg => async argv => {
-	if (arg.validate) {
-		const maybeMessage = await arg.validate(argv[arg.name]);
-		if (typeof maybeMessage === 'string') {
-			throw new Error(maybeMessage);
-		}
+	if (arg.result) {
+		// we could use `yargs.coerce` here if we didn't have to support
+		// async functions like enquirer's `result`
+		yargs.middleware(async argv => ({
+			[arg.name]: await arg.result(argv[arg.name]),
+		}));
 	}
 
-	return {};
+	if (arg.validate) {
+		yargs.middleware(async argv => {
+			const maybeMessage = await arg.validate(argv[arg.name]);
+
+			// if an enquirer `validate` function returns a string,
+			// that's an error to throw. so throw it
+			if (typeof maybeMessage === 'string') {
+				throw new Error(maybeMessage);
+			}
+
+			return {};
+		});
+	}
+
+	return yargs;
+}
+
+const errorOnInvalidOperation = operation => argv => {
+	if (argv.state.fileName && !argv.state.isValidOperation(operation)) {
+		const validCommands = Object.keys(operations).filter(
+			key => argv.state.isValidOperation(operations[key])
+		);
+
+		const validMessage = validCommands.length ? `Valid commands are ${toSentence(validCommands.map(cmd => `'${cmd}'`))}` : '';
+		const message = `'${operation.command}' isn't valid for the provided state. ${validMessage}`;
+
+		throw new Error(message);
+	}
+};
+
+const checkMissingState = operation => async argv => {
+	const missingState = operation.input
+		.map(name => ({ ...types[name], name }))
+		.filter(type => !type.exists( // check if this type is in the state we have
+			type.getFromState(argv.state.state.data)
+		));
+
+
+	return { missingState };
 };
 
 const promptMissingArgs = operation => async argv => {
-	if (!argv.state.isValidOperation(operation)) {
-		const validCommands = Object.keys(operations).filter(key => argv.state.isValidOperation(operations[key]));
-		const message = `'${operation.command}' isn't valid for the provided state. ${validCommands.length ? `Valid commands are ${toSentence(validCommands.map(cmd => `'${cmd}'`))}` : ''}`;
-		throw new Error(message);
-	}
-
-	const argsFromInputTypes = operation.input.map(
-		type => Object.assign({ name: type }, types[type].argument)
-	);
-
-	const allArgs = operation.args.concat(argsFromInputTypes);
-	const missingArgs = allArgs.filter(
+	const missingArgs = operation.args.filter(
 		arg => !(arg.name in argv)
 	);
 
@@ -64,36 +89,47 @@ const promptMissingArgs = operation => async argv => {
 		if (process.stdin.isTTY) {
 			return await prompt(missingArgs);
 		} else {
-			throw new Error(`Command '${operation.command}' requires arguments ${toSentence(missingArgs.map(arg => `'${arg.name}'`))}`);
+			return { missingArgs };
 		}
 	}
 
 	return {};
 };
 
+const errorOnMissing = operation => argv => {
+	let messages = [
+		argv.missingArgs && argv.missingArgs.length && (
+			`arguments ${toSentence(argv.missingArgs.map(arg => `'${arg.name}'`))}`
+		),
+		argv.missingState && argv.missingState.length && (
+			`state ${toSentence(argv.missingState.map(arg => `'${arg.name}'`))}`
+		),
+	].filter(Boolean);
+
+	if (messages.length) {
+		throw new Error(`Command '${operation.command}' requires ${toSentence(messages)}`);
+	}
+
+	return {};
+}
+
 const operationToYargsCommand = operation => Object.assign({}, operation, {
 	builder(yargs) {
 		if (operation.input) {
-			operation.input.forEach(type => yargs
-				.option(type, enquirerToYargs(types[type].argument))
-			);
+			yargs
+				.middleware(errorOnInvalidOperation(operation))
+				.middleware(checkMissingState(operation));
 		}
 
 		if (operation.args) {
-			operation.args.forEach(arg => yargs
-				.option(arg.name, enquirerToYargs(arg))
-				.middleware(enquirerValidate(arg))
-			);
-
+			operation.args.forEach(enquirerToYargs(yargs));
 			yargs.middleware(promptMissingArgs(operation));
 		}
 
-		return yargs;
+		return yargs.middleware(errorOnMissing(operation))
 	},
 
-	handler({ state, ...args }) {
-		return state.runSingleOperation(operation, args);
-	}
+	handler: ({ state, ...args }) => state.runSingleOperation(operation, args),
 });
 
 module.exports = operationToYargsCommand;

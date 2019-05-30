@@ -25,16 +25,14 @@ describe('creating pull requests', () => {
 				title: 'pull request title ${repo.name}',
 				body: 'pull request body ${repo.name}'
 			},
-			repos: [
-				{owner: 'org', name: 'repo1'},
-				{owner: 'org', name: 'repo2'},
-			],
-			branches: [
-				'branch1',
-				'branch2',
-			],
 			githubAccessToken
-		})
+		}, {
+				repos: [
+					{ owner: 'org', name: 'repo1', remoteBranch: 'branch1' },
+					{ owner: 'org', name: 'repo2', remoteBranch: 'branch2' },
+				],
+			}
+		)
 
 		expect(octokit.pulls.create).toHaveBeenCalledWith({
 			owner: 'org', repo: 'repo1', head: 'branch1', base: 'master',
@@ -50,30 +48,31 @@ describe('creating pull requests', () => {
 	});
 
 	test('doesn\'t error on backticks in string', () => {
-		expect(prs.handler({
-			templates: {
-				title: 'pull request title ` ',
-				body: 'pull request body'
-			},
-			repos: [
-				{owner: 'org', name: 'repo1'},
-			],
-			branches: [
-				'branch1',
-			],
-			githubAccessToken
-		})).resolves.not.toThrow()
+		expect(prs.handler
+			({
+				templates: {
+					title: 'pull request title ` ',
+					body: 'pull request body'
+				},
+				githubAccessToken
+			}, {
+					repos: [
+						{ owner: 'org', name: 'repo1', remoteBranch: 'branch1' },
+					],
+				}
+			)).resolves.not.toThrow()
 	});
 });
 
 describe('undoing pull requests', () => {
-	beforeAll(() => prs.undo({
-		prs: [
-			{head: {repo: {owner: {login: 'org'}, name: 'repo1'}}, number: 1},
-			{head: {repo: {owner: {login: 'org'}, name: 'repo2'}}, number: 2},
-		],
-		githubAccessToken
-	}));
+	const state = {
+		repos: [
+			{ pr: { head: { repo: { owner: { login: 'org' }, name: 'repo1' } }, number: 1 } },
+			{ pr: { head: { repo: { owner: { login: 'org' }, name: 'repo2' } }, number: 2 } },
+		]
+	};
+
+	beforeAll(() => prs.undo({ githubAccessToken }, state));
 
 	test('comments on every PR', () => {
 		expect(octokit.issues.createComment).toHaveBeenCalledWith({
@@ -97,5 +96,11 @@ describe('undoing pull requests', () => {
 			owner: 'org', repo: 'repo2', number: 2,
 			state: 'closed'
 		});
+	});
+
+	test('removes PR data from state', () => {
+		expect(state).toEqual({
+			repos: [{}, {}]
+		})
 	});
 });

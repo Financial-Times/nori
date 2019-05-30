@@ -28,7 +28,7 @@ exports.args = [{
 	}
 }];
 
-exports.handler = async ({ projectData, prs, githubAccessToken }) => {
+exports.handler = async ({ projectData, githubAccessToken }, state) => {
 	const octokit = getOctokit(githubAccessToken);
 	const { data: project } = await octokit.projects.createForOrg(projectData);
 	const { data: todoColumn } = await octokit.projects.createColumn({ project_id: project.id, name: 'To do' });
@@ -36,17 +36,25 @@ exports.handler = async ({ projectData, prs, githubAccessToken }) => {
 	await octokit.projects.createColumn({ project_id: project.id, name: 'Done' });
 
 	await Promise.all(
-		prs.map(pr => octokit.projects.createCard({
-			column_id: todoColumn.id,
-			content_id: pr.id,
-			content_type: 'PullRequest'
-		}))
+		state.repos.map(repo => {
+			if (repo.pr) {
+				return octokit.projects.createCard({
+					column_id: todoColumn.id,
+					content_id: repo.pr.id,
+					content_type: 'PullRequest'
+				})
+			}
+		})
 	);
 
-	return project;
+	state.project = project;
 };
 
-exports.undo = ({ project, githubAccessToken }) => getOctokit(githubAccessToken).projects.update({
-	project_id: project.id,
-	state: 'closed'
-});
+exports.undo = async ({ githubAccessToken }, state) => {
+	await getOctokit(githubAccessToken).projects.update({
+		project_id: state.project.id,
+		state: 'closed'
+	});
+
+	delete state.project;
+}

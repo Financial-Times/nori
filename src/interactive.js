@@ -108,41 +108,11 @@ exports.builder = yargs => yargs
 	.middleware(getStateFile)
 	.middleware(State.middleware);
 
-async function runStep({ state, operation, args }) {
-	// get the keys from `data` that are present in
-	// `operation.input`
-	const dataArgs = operation.input.reduce(
-		(args, type) => Object.assign(args, {
-			[type]: state.state.data[type]
-		}),
-		{}
-	);
-
-	const stepData = await operation.handler(
-		Object.assign(dataArgs, args)
-	);
-
-	await state.appendOperation(operation, args, stepData);
-	await state.save();
-}
-
-async function replay({ state, steps }) {
-	for (const step of steps) {
-		await runStep({
-			state,
-			operation: operations[step.name],
-			args: step.args,
-		});
-	}
-}
-
 const promptOperation = ({ state }) => prompt({
 	name: 'choice',
 	message: 'available operations',
 	type: 'select',
-	header: Object.keys(state.state.data).map(
-		type => types[type].shortPreview(state.state.data[type])
-	).filter(Boolean).join(' ∙ '),
+	header: state.shortPreview(),
 	choices: Object.values(operations).map(operation => ({
 		name: operation.command,
 		message: operation.desc,
@@ -154,21 +124,6 @@ const promptOperation = ({ state }) => prompt({
 		{ name: 'done', hint: `your work is autosaved as ${path.basename(state.fileName)}` }
 	]),
 });
-
-async function undo({ state }) {
-	const undoneStep = state.state.steps[state.state.steps.length - 1];
-	const undoneOperation = operations[undoneStep.name];
-
-	if (undoneOperation.undo) {
-		await undoneOperation.undo(state.state.data);
-	}
-
-	const stepsToReplay = await state.unwindOperation(undoneOperation);
-	await state.save();
-
-	// if stepsToReplay is empty this will do nothing
-	await replay({ state, steps: stepsToReplay });
-}
 
 /**
  * yargs handler function.
@@ -194,17 +149,20 @@ exports.handler = async function ({ state, ...argv }) {
 				await prompt(operation.args)
 			);
 
-			await runStep({ state, operation, args });
+			await state.runStep(operation, args);
 		} else if (choice === 'preview') {
-			for (const type in state.state.data) if (state.state.data.hasOwnProperty(type)) {
+			for (const step of state.state.steps) {
+				const type = operations[step.name].output;
 				console.log(`${c.gray('─────')} ${type}`); // eslint-disable-line no-console
 				console.log( // eslint-disable-line no-console
-					types[type].format(state.state.data[type])
+					types[type].format(
+						types[type].getFromState(state.state.data)
+					)
 				);
 			}
 			console.log(c.gray('─────')); // eslint-disable-line no-console
 		} else if (choice === 'undo') {
-			await undo({ state });
+			await state.undo(argv);
 		} else if (choice === 'done') {
 			break;
 		}

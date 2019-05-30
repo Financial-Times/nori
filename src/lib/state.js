@@ -7,6 +7,7 @@ const mkdirp = util.promisify(require('mkdirp'));
 const { workspacePath, noriExtension } = require('./constants');
 const { prompt } = require('enquirer');
 const types = require('./types');
+const { produce } = require('immer');
 
 /**
  * returns the last elements from the array that meet the predicate
@@ -88,10 +89,7 @@ module.exports = class State {
 
 		await stateContainer.load();
 
-		return {
-			state: stateContainer,
-			...stateContainer.state.data
-		};
+		return { state: stateContainer };
 	}
 
 	static async getSortedFiles() {
@@ -128,7 +126,7 @@ module.exports = class State {
 	}
 
 	async load() {
-		if (this.fileName) {
+		if (this.fileName || !process.stdin.isTTY) {
 			const content = await read(this.fileName);
 			try {
 				this.state = JSON.parse(content);
@@ -151,60 +149,88 @@ module.exports = class State {
 		return serialised;
 	}
 
+	addData(data) {
+		Object.assign(this.state.data, data);
+	}
+
 	async runSingleOperation(operation, args) {
 		const formatter = args.json ? serialise : types[operation.output].format;
-
-		const result = await operation.handler(args);
-
-		await this.appendOperation(operation, args, result);
-		const serialisedState = await this.save();
+		const serialisedState = await this.runStep(operation, args);
+		const data = types[operation.output].getFromState(this.state.data);
 
 		if (!process.stdout.isTTY) {
 			// eslint-disable-next-line no-console
 			console.log(serialisedState);
 		} else {
 			// eslint-disable-next-line no-console
-			console.log(formatter(result));
+			console.log(formatter(data));
 		}
 	}
 
-	async appendOperation(operation, args, data) {
+	async runStep(operation, args) {
+		// produce, from immer, lets handlers modify the state as a mutable
+		// object safely. the updated copy is then stored as the new state
+		this.state.data = await produce(this.state.data, async draft => {
+			await operation.handler(args, draft);
+		});
 		this.state.steps.push({ name: operation.command, args });
-		this.state.data[operation.output] = data;
+		return this.save();
+	}
+
+	async undo(args) {
+		const undoneStep = this.state.steps[this.state.steps.length - 1];
+		const stepsToUndo = takeWhileLast(
+			this.state.steps,
+			step => operations[step.name].output === operations[undoneStep.name].output
+		);
+
+		this.state.data = await produce(this.state.data, async draft => {
+			for (const step of stepsToUndo.slice().reverse()) {
+				const operation = operations[step.name];
+				if (operation.undo) {
+					await operation.undo(
+						Object.assign({}, step.args, args),
+						draft
+					);
+				}
+			}
+		});
+
+		this.state.steps.splice(this.state.steps.length - stepsToUndo.length, stepsToUndo.length);
+
+		await this.save();
+
+		// replay all but the last undone step
+		for (const step of stepsToUndo.slice(0, -1)) {
+			await this.runStep(
+				operations[step.name],
+				step.args,
+			);
+		}
 	}
 
 	isValidOperation(operation) {
-		const lastStep = this.state.steps[this.state.steps.length - 1];
-		const operationCanTakeLastOutput = lastStep
-			? operation.input.includes(
-				operations[lastStep.name].output
-			)
-			: operation.input.length === 0;
+		const previousOutputs = new Set(this.state.steps.map(
+			step => operations[step.name].output
+		));
 
-		const dataHasInputs = operation.input.every(type => type in this.state.data);
-		const dataHasOutput = operation.output in this.state.data;
-		const isFilter = operation.input.includes(operation.output);
-
-		// allow an operation if:
-		//   - the output of the last operation is one of the inputs
-		//     - or if there was no last operation, there are no inputs
-		//   - the state.data has all the inputs
-		//   - the data doesn't have the output (i.e. this operation hasn't already been run)
-		//     - *unless* the operation has the same output as one of the inputs (i.e. it can be run multiple times on the same data)
-		return operationCanTakeLastOutput && dataHasInputs && (!dataHasOutput || isFilter);
+		return operation.input.every(type => previousOutputs.has(type));
 	}
 
-	async unwindOperation(operation) {
-		this.state.steps.pop();
-		delete this.state.data[operation.output];
+	shortPreview() {
+		const stepOutputs = [...new Set(
+			this.state.steps.map(
+				step => operations[step.name].output
+			)
+		)]
 
-		const stepsToReplay = takeWhileLast(
-			this.state.steps,
-			step => operations[step.name].output === operation.output
-		);
+		const outputPreviews = stepOutputs.map(
+			type => {
+				const data = types[type].getFromState(this.state.data);
+				return types[type].shortPreview(data);
+			}
+		).filter(Boolean)
 
-		this.state.steps.splice(this.state.steps.length - stepsToReplay.length, stepsToReplay.length);
-
-		return stepsToReplay;
+		return outputPreviews.join(' ∙ ')
 	}
 }

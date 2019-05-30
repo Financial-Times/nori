@@ -6,6 +6,7 @@ const assert = require('assert');
 const fs = require('mz/fs');
 const path = require('path');
 const git = require('@financial-times/git');
+const rmfr = require('rmfr');
 
 const { workspacePath } = require('../lib/constants');
 const runProcess = require('../lib/run-process');
@@ -23,8 +24,8 @@ exports.args = [
  * @param {string} argv.repos
  * @param {string} argv.branch
  */
-exports.handler = async ({ script, repos, branch }) => {
-	if (repos.length === 0) {
+exports.handler = async ({ script, branch }, state) => {
+	if (state.repos.length === 0) {
 		throw new Error('No repos specified');
 	}
 
@@ -41,11 +42,11 @@ exports.handler = async ({ script, repos, branch }) => {
 	}
 
 	console.warn(`-- Script: ${scriptPath}`);
-	console.warn(`-- Target(s):\n\n   ${repos.map(({ name }) => name).join('\n   ')}`);
+	console.warn(`-- Target(s):\n\n   ${state.repos.map(({ name }) => name).join('\n   ')}`);
 
-	const branches = [];
-
-	for (let repository of repos) {
+	// must be serial until https://github.com/Financial-Times/tooling-helpers/issues/74
+	// is resolved (or, add workingDirectory to all the options of the git methods)
+	for (const repository of state.repos) {
 		console.warn('\n===\n');
 
 		const cloneDirectory = path.join(workspacePath, repository.name);
@@ -93,14 +94,31 @@ exports.handler = async ({ script, repos, branch }) => {
 			console.warn(`-- Pushing branch ${branch} to remote 'origin'`);
 			await git.push({ repository: 'origin', refspec: branch });
 
-			branches.push(branch);
+			repository.remoteBranch = branch;
 		} catch (error) {
 			console.warn(new Error(`Error running script for '${repository.name}': ${error.message}`));
 			throw error;
 		}
 	}
+};
 
-	return branches;
+exports.undo = ({ branch }, state) => {
+	Promise.all(state.repos.map(async repo => {
+		const cloneDirectory = path.join(workspacePath, repo.name);
+		// the git push syntax is localbranch:remotebranch. without the colon,
+		// they're the same. with nothing before the colon, it's "push nothing
+		// to the remote branch", i.e. delete it.
+		await git.push({
+			workingDirectory: cloneDirectory,
+			repository: 'origin',
+			refspec: `:${branch}`
+		});
+
+		// i say we take off and nuke the whole site from orbit. it's the only way to be sure
+		await rmfr(cloneDirectory);
+
+		delete repo.remoteBranch;
+	}))
 };
 
 exports.command = 'run-script';

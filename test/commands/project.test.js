@@ -25,13 +25,14 @@ describe('creating project board', () => {
 
 	beforeAll(() => project.handler({
 		projectData,
-		prs: [
-			{id: 'pull request 1'},
-			{id: 'pull request 2'},
-			{id: 'pull request 3'},
-		],
 		githubAccessToken
-	}));
+	}, {
+			repos: [
+				{ pr: { id: 'pull request 1' } },
+				{ pr: { id: 'pull request 2' } },
+				{ pr: { id: 'pull request 3' } },
+			],
+		}));
 
 	test('creates the project board', () => {
 		expect(octokit.projects.createForOrg).toHaveBeenCalledWith(projectData);
@@ -76,14 +77,17 @@ describe('creating project board', () => {
 	});
 });
 
-test('undo closes the project', async () => {
-	await project.undo({
-		project: {id: 'mock project id'},
-		githubAccessToken,
-	});
+test('undo closes the project and removes data from state', async () => {
+	const state = {
+		project: { id: 'mock project id' },
+	};
+
+	await project.undo({ githubAccessToken }, state);
 
 	expect(octokit.projects.update).toHaveBeenCalledWith({
 		project_id: 'mock project id',
 		state: 'closed'
 	});
+
+	expect(state).toEqual({});
 });

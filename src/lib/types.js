@@ -1,35 +1,30 @@
 module.exports = {
 	repos: {
-		argument: {
-			type: 'list',
-			result: repos => repos.map(repo => {
-				const [match, owner, name] = repo.match(/(.+?)\/(.+?)(?:.git)?$/) || [false];
-				if(match) {
-					return {owner, name};
-				}
-
-				throw new Error(`${repo} is not a valid repository`);
-			})
-		},
+		getFromState: state => state.repos,
+		exists: repos => repos && repos.length > 0,
 		format: repos => repos.map(repo => `https://github.com/${repo.owner}/${repo.name}`).join('\n'),
-		shortPreview: repos => repos ? `${repos.length} repositor${repos.length > 1 ? 'ies' : 'y'}` : false,
+		shortPreview: repos => `${repos.length} repositor${repos.length > 1 ? 'ies' : 'y'}`,
 	},
 
 	branches: {
-		argument: {type: 'list'},
-		format: result => result.join('\n'),
-		shortPreview: branches => branches ? `${branches.length} branch${branches.length > 1 ? 'es' : ''}` : false,
+		getFromState: state => state.repos && state.repos.map(repo => repo.remoteBranch).filter(Boolean),
+		exists: branches => branches && branches.length > 0,
+		format: branches => branches.join('\n'),
+		shortPreview: branches => `${branches.length} remote branch${branches.length > 1 ? 'es' : ''}`,
 	},
 
 	prs: {
-		argument: {type: 'list'},
-		format: result => result.map(pr => pr.html_url).join('\n'),
-		shortPreview: prs => prs ? `${prs.length} pull request${prs.length > 1 ? 's' : ''}` : false,
+		getFromState: state => state.prs && state.prs.map(repo => repo.remoteBranch).filter(Boolean),
+		exists: prs => prs && prs.length
+			> 0,
+		format: prs => prs.map(pr => pr.html_url).join('\n'),
+		shortPreview: prs => `${prs.length} pull request${prs.length > 1 ? 's' : ''}`,
 	},
 
 	project: {
-		argument: {type: 'list'},
-		format: result => result.html_url,
-		shortPreview: project => project ? project.html_url : false,
+		getFromState: state => state.project,
+		exists: project => Boolean(project),
+		format: project => project.html_url,
+		shortPreview: project => project.html_url,
 	},
 };

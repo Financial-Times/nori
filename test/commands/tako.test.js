@@ -3,7 +3,7 @@ const expectOperation = require('../../test-utils/operation');
 const got = require('got');
 
 jest.mock('got', () => jest.fn(
-	() => Promise.resolve({body: {repositories: [{owner: 'owner', name: 'name'}]}})
+	() => Promise.resolve({ body: { repositories: [{ owner: 'owner', name: 'name' }] } })
 ));
 
 test('`tako` command module exports an operation object', () => {
@@ -25,12 +25,14 @@ test('calls the tako host you give it with the token and topic you give it', () 
 		headers: {
 			authorization: `Bearer ${takoToken}`
 		},
-		query: {topic}
+		query: { topic }
 	}));
 });
 
 test('returns the repositories from tako', async () => {
-	await expect(tako.handler({})).resolves.toEqual(
+	const state = {}
+	await tako.handler({}, state);
+	expect(state.repos).toEqual(
 		expect.arrayContaining([
 			expect.objectContaining({
 				owner: 'owner',
@@ -38,4 +40,14 @@ test('returns the repositories from tako', async () => {
 			})
 		])
 	);
+});
+
+test('`tako` undo removes repos from state', () => {
+	const state = {
+		repos: [{ owner: 'owner', name: 'repo' }]
+	};
+
+	tako.undo({}, state);
+
+	expect(state).toEqual({});
 });

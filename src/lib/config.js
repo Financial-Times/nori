@@ -1,7 +1,7 @@
 const fs = require('mz/fs');
-const {workspacePath} = require('./constants');
+const { workspacePath } = require('./constants');
 const path = require('path');
-const {prompt} = require('enquirer');
+const { prompt } = require('enquirer');
 const toSentence = require('./to-sentence');
 const util = require('util');
 const mkdirp = util.promisify(require('mkdirp'));
@@ -10,7 +10,7 @@ const configVars = [{
 	name: 'githubAccessToken',
 	message: 'Github access token (https://github.com/settings/tokens/new?scopes=repo&description=Nori)',
 	type: 'password'
-},{
+}, {
 	name: 'takoHost',
 	message: 'Tako hostname',
 	type: 'text',
@@ -41,14 +41,14 @@ module.exports = async function getConfig() {
 
 	try {
 		config = await readConfig();
-	} catch(_) {}
+	} catch (_) { }
 
 	const missingVars = configVars.filter(
 		configVar => !(configVar.name in config)
 	);
 
-	if(missingVars.length) {
-		if(process.stdin.isTTY) {
+	if (missingVars.length) {
+		if (process.stdin.isTTY) {
 			const promptConfig = await prompt(configVars);
 			Object.assign(config, promptConfig);
 			await writeConfig(config);
