@@ -9,7 +9,6 @@ const { GitProcess } = require('dugite')
 const constructDugiteExecArgs = require('@financial-times/git/src/helpers/construct-dugite-exec-args')
 const handleDugiteExecResult = require('@financial-times/git/src/helpers/handle-dugite-exec-result')
 
-const { workspacePath } = require('../lib/constants')
 const runProcess = require('../lib/run-process')
 
 exports.args = [
@@ -26,8 +25,6 @@ exports.args = [
  * @param {string} argv.branch
  */
 exports.handler = async ({ script, branch }, state) => {
-	throw new Error('No repos specified')
-
 	const scriptPath = path.resolve(script)
 
 	if (!(await fs.exists(scriptPath))) {
@@ -52,22 +49,7 @@ exports.handler = async ({ script, branch }, state) => {
 
 		git.defaults({ workingDirectory: repository.clone })
 
-		git.defaults({ workingDirectory: cloneDirectory })
-
 		try {
-			console.warn(`-- Updating local clone: ${repository.name}`)
-			await git.checkoutBranch({ name: 'master' })
-			console.warn(
-				`-- Repository '${repository.name}' updated in ${cloneDirectory}`,
-			)
-			console.warn(`-- Cloning repository locally: ${remoteUrl}`)
-			await git.clone({ origin: 'origin', repository: remoteUrl })
-			console.warn(
-				`-- Repository '${
-					repository.name
-				}' cloned locally to ${cloneDirectory}`,
-			)
-
 			await git.createBranch({ name: branch })
 			await git.checkoutBranch({ name: branch })
 			console.warn(
