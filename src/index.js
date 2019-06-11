@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const operationToYargsCommand = require('./lib/operation-to-yargs-command');
-const State = require('./lib/state');
-const config = require('./lib/config');
+const operationToYargsCommand = require('./lib/operation-to-yargs-command')
+const State = require('./lib/state')
+const config = require('./lib/config')
 
 require('yargs')
 	.option('json', {
@@ -23,5 +23,4 @@ require('yargs')
 	.demandCommand()
 	.strict()
 	.help()
-	.showHelpOnFail(false)
-	.argv;
+	.showHelpOnFail(false).argv

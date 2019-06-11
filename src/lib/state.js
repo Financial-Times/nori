@@ -1,13 +1,13 @@
-const fs = require('mz/fs');
-const path = require('path');
-const operations = require('../operations');
-const getStdin = require('get-stdin');
-const util = require('util');
-const mkdirp = util.promisify(require('mkdirp'));
-const { workspacePath, noriExtension } = require('./constants');
-const { prompt } = require('enquirer');
-const types = require('./types');
-const { produce } = require('immer');
+const fs = require('mz/fs')
+const path = require('path')
+const operations = require('../operations')
+const getStdin = require('get-stdin')
+const util = require('util')
+const mkdirp = util.promisify(require('mkdirp'))
+const { workspacePath, noriExtension } = require('./constants')
+const { prompt } = require('enquirer')
+const types = require('./types')
+const { produce } = require('immer')
 
 /**
  * returns the last elements from the array that meet the predicate
@@ -18,152 +18,147 @@ const { produce } = require('immer');
  * @param {function(T): Boolean} predicate
  * @returns {Array<T>}
  */
-const takeWhileLast = (array, predicate) => (
+const takeWhileLast = (array, predicate) =>
 	array.length && predicate(array[array.length - 1]) // if the function returns true on the last item
-		? takeWhileLast(                                // keep looking back in the array
-			array.slice(0, -1),
-			predicate
-		).concat(                                       // and add the last item back on the end
-			array.slice(-1)
-		)
-		: []                                            // otherwise, stop looking and discard the last item
-);
+		? takeWhileLast(
+				// keep looking back in the array
+				array.slice(0, -1),
+				predicate,
+		  ).concat(
+				// and add the last item back on the end
+				array.slice(-1),
+		  )
+		: [] // otherwise, stop looking and discard the last item
 
 // read from standard input if it's a pipe, or the provided filename if not
-const read = file => process.stdin.isTTY ? fs.readFile(file, 'utf8') : getStdin();
+const read = file =>
+	process.stdin.isTTY ? fs.readFile(file, 'utf8') : getStdin()
 
 // format JSON for humans (interactive terminals) or machines
 const serialise = state => {
-	const spacing = process.stdout.isTTY ? 2 : null;
-	return JSON.stringify(state, null, spacing);
+	const spacing = process.stdout.isTTY ? 2 : null
+	return JSON.stringify(state, null, spacing)
 }
 
 module.exports = class State {
 	static async middleware({ stateFile, state, createStateFile = false }) {
-		await mkdirp(workspacePath);
+		await mkdirp(workspacePath)
 
 		if (stateFile) {
-			const problems = [];
+			const problems = []
 			if (!process.stdin.isTTY) {
-				problems.push('reading state from standard input');
+				problems.push('reading state from standard input')
 			}
 
 			if (!process.stdout.isTTY) {
-				problems.push('piping state to another command or file');
+				problems.push('piping state to another command or file')
 			}
 
 			if (problems.length) {
-				throw new Error(`--state-file is incompatible with ${problems.join(' or ')}`);
+				throw new Error(
+					`--state-file is incompatible with ${problems.join(' or ')}`,
+				)
 			}
 		}
 
-		const stateContainer = state && state.fileName
-			? state
-			: new State({ fileName: stateFile });
+		const stateContainer =
+			state && state.fileName ? state : new State({ fileName: stateFile })
 
 		if (
-			!createStateFile
-			&& stateContainer.fileName
-			&& !await fs.exists(stateContainer.fileName)
+			!createStateFile &&
+			stateContainer.fileName &&
+			!(await fs.exists(stateContainer.fileName))
 		) {
-			const message = `state file '${stateContainer.fileName}' doesn't exist`;
+			const message = `state file '${stateContainer.fileName}' doesn't exist`
 
 			const create = process.stdin.isTTY
 				? (await prompt({
-					name: 'create',
-					message: `${message}. create it?`,
-					type: 'confirm',
-				})).create
-				: false;
+						name: 'create',
+						message: `${message}. create it?`,
+						type: 'confirm',
+				  })).create
+				: false
 
 			if (create) {
-				createStateFile = true;
+				createStateFile = true
 			} else {
-				throw new Error(message);
+				throw new Error(message)
 			}
 		}
 
 		if (createStateFile) {
-			await stateContainer.save();
+			await stateContainer.save()
 		}
 
-		await stateContainer.load();
+		await stateContainer.load()
 
-		return { state: stateContainer };
+		return { state: stateContainer }
 	}
 
 	static async getSortedFiles() {
-		await mkdirp(workspacePath);
+		await mkdirp(workspacePath)
 
-		const stateFiles = (
-			await fs.readdir(workspacePath)
-		).filter(
-			file => file.endsWith(noriExtension)
-		);
+		const stateFiles = (await fs.readdir(workspacePath)).filter(file =>
+			file.endsWith(noriExtension),
+		)
 
 		return (await Promise.all(
 			stateFiles.map(async stateFile => {
-				const { mtime } = await fs.stat(
-					path.join(workspacePath, stateFile)
-				);
+				const { mtime } = await fs.stat(path.join(workspacePath, stateFile))
 
 				return {
 					stateFile,
 					mtime, // time the file was last modified as a javascript Date
-				};
-			})
-		)).sort(
-			({ mtime: a }, { mtime: b }) => b - a
-		);
+				}
+			}),
+		)).sort(({ mtime: a }, { mtime: b }) => b - a)
 	}
 
-	constructor({
-		fileName,
-		state = { data: {}, steps: [] }
-	}) {
-		this.state = state;
-		this.fileName = fileName;
+	constructor({ fileName, state = { data: {}, steps: [] } }) {
+		this.state = state
+		this.fileName = fileName
 	}
 
 	async load() {
 		if (this.fileName || !process.stdin.isTTY) {
-			const content = await read(this.fileName);
+			const content = await read(this.fileName)
 			try {
-				this.state = JSON.parse(content);
+				this.state = JSON.parse(content)
 			} catch (_) {
-				throw new Error(`${process.stdin.isTTY ? this.fileName : 'Standard input'} couldn't be parsed as JSON`);
+				throw new Error(
+					`${
+						process.stdin.isTTY ? this.fileName : 'Standard input'
+					} couldn't be parsed as JSON`,
+				)
 			}
 		}
 	}
 
 	async save() {
-		const serialised = serialise(this.state);
+		const serialised = serialise(this.state)
 
 		if (this.fileName) {
-			await fs.writeFile(
-				this.fileName,
-				serialised
-			);
+			await fs.writeFile(this.fileName, serialised)
 		}
 
-		return serialised;
+		return serialised
 	}
 
 	addData(data) {
-		Object.assign(this.state.data, data);
+		Object.assign(this.state.data, data)
 	}
 
 	async runSingleOperation(operation, args) {
-		const formatter = args.json ? serialise : types[operation.output].format;
-		const serialisedState = await this.runStep(operation, args);
-		const data = types[operation.output].getFromState(this.state.data);
+		const formatter = args.json ? serialise : types[operation.output].format
+		const serialisedState = await this.runStep(operation, args)
+		const data = types[operation.output].getFromState(this.state.data)
 
 		if (!process.stdout.isTTY) {
 			// eslint-disable-next-line no-console
-			console.log(serialisedState);
+			console.log(serialisedState)
 		} else {
 			// eslint-disable-next-line no-console
-			console.log(formatter(data));
+			console.log(formatter(data))
 		}
 	}
 
@@ -171,65 +166,61 @@ module.exports = class State {
 		// produce, from immer, lets handlers modify the state as a mutable
 		// object safely. the updated copy is then stored as the new state
 		this.state.data = await produce(this.state.data, async draft => {
-			await operation.handler(args, draft);
-		});
-		this.state.steps.push({ name: operation.command, args });
-		return this.save();
+			await operation.handler(args, draft)
+		})
+		this.state.steps.push({ name: operation.command, args })
+		return this.save()
 	}
 
 	async undo(args) {
-		const undoneStep = this.state.steps[this.state.steps.length - 1];
+		const undoneStep = this.state.steps[this.state.steps.length - 1]
 		const stepsToUndo = takeWhileLast(
 			this.state.steps,
-			step => operations[step.name].output === operations[undoneStep.name].output
-		);
+			step =>
+				operations[step.name].output === operations[undoneStep.name].output,
+		)
 
 		this.state.data = await produce(this.state.data, async draft => {
 			for (const step of stepsToUndo.slice().reverse()) {
-				const operation = operations[step.name];
+				const operation = operations[step.name]
 				if (operation.undo) {
-					await operation.undo(
-						Object.assign({}, step.args, args),
-						draft
-					);
+					await operation.undo(Object.assign({}, step.args, args), draft)
 				}
 			}
-		});
+		})
 
-		this.state.steps.splice(this.state.steps.length - stepsToUndo.length, stepsToUndo.length);
+		this.state.steps.splice(
+			this.state.steps.length - stepsToUndo.length,
+			stepsToUndo.length,
+		)
 
-		await this.save();
+		await this.save()
 
 		// replay all but the last undone step
 		for (const step of stepsToUndo.slice(0, -1)) {
-			await this.runStep(
-				operations[step.name],
-				step.args,
-			);
+			await this.runStep(operations[step.name], step.args)
 		}
 	}
 
 	isValidOperation(operation) {
-		const previousOutputs = new Set(this.state.steps.map(
-			step => operations[step.name].output
-		));
+		const previousOutputs = new Set(
+			this.state.steps.map(step => operations[step.name].output),
+		)
 
-		return operation.input.every(type => previousOutputs.has(type));
+		return operation.input.every(type => previousOutputs.has(type))
 	}
 
 	shortPreview() {
-		const stepOutputs = [...new Set(
-			this.state.steps.map(
-				step => operations[step.name].output
-			)
-		)]
+		const stepOutputs = [
+			...new Set(this.state.steps.map(step => operations[step.name].output)),
+		]
 
-		const outputPreviews = stepOutputs.map(
-			type => {
-				const data = types[type].getFromState(this.state.data);
-				return types[type].shortPreview(data);
-			}
-		).filter(Boolean)
+		const outputPreviews = stepOutputs
+			.map(type => {
+				const data = types[type].getFromState(this.state.data)
+				return types[type].shortPreview(data)
+			})
+			.filter(Boolean)
 
 		return outputPreviews.join(' ∙ ')
 	}

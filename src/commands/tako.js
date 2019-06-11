@@ -1,28 +1,28 @@
-const got = require('got');
+const got = require('got')
 
-exports.command = 'tako';
-exports.desc = 'get a list of repos from a tako instance';
-exports.input = [];
-exports.output = 'repos';
+exports.command = 'tako'
+exports.desc = 'get a list of repos from a tako instance'
+exports.input = []
+exports.output = 'repos'
 
-exports.args = [{
-	name: 'topic',
-	type: 'text',
-	message: '(optional) GitHub topic to filter by'
-}];
+exports.args = [
+	{
+		name: 'topic',
+		type: 'text',
+		message: '(optional) GitHub topic to filter by',
+	},
+]
 
 exports.handler = async ({ takoHost, takoToken, topic }, state) => {
 	state.repos = await got(`https://${takoHost}/tako/repositories`, {
 		json: true,
 		headers: takoToken && {
-			authorization: `Bearer ${takoToken}`
+			authorization: `Bearer ${takoToken}`,
 		},
-		query: { topic }
-	}).then(
-		({ body }) => body.repositories
-	);
-};
+		query: { topic },
+	}).then(({ body }) => body.repositories)
+}
 
 exports.undo = (_, state) => {
-	delete state.repos;
+	delete state.repos
 }

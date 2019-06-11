@@ -5,4 +5,4 @@ module.exports = {
 	'run-script': require('./commands/run-script'),
 	prs: require('./commands/prs'),
 	project: require('./commands/project'),
-};
+}
