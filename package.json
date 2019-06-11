@@ -1,75 +1,75 @@
 {
-  "name": "nori",
-  "version": "2.0.0-beta.3",
-  "description": "",
-  "bin": "src/index.js",
-  "scripts": {
-    "test": "npm run lint && npm run unit-test",
-    "unit-test": "jest",
-    "lint": "eslint src/ test/",
-    "lint-fix": "eslint --fix src/ test/",
-    "eslint-check": "eslint --print-config . | eslint-config-prettier-check"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git@github.com:Financial-Times/transformation-runner.git"
-  },
-  "author": "",
-  "license": "MIT",
-  "dependencies": {
-    "@financial-times/git": "^1.0.0",
-    "@octokit/plugin-retry": "^2.2.0",
-    "@octokit/plugin-throttling": "^2.4.0",
-    "@octokit/rest": "^16.25.1",
-    "ansi-colors": "^3.2.4",
-    "array-to-sentence": "^2.0.0",
-    "dugite": "^1.88.0-beta.0",
-    "enquirer": "^2.3.0",
-    "get-stdin": "^6.0.0",
-    "got": "^9.6.0",
-    "immer": "^3.1.2",
-    "is-url": "^1.2.4",
-    "mkdirp": "^0.5.1",
-    "mz": "^2.7.0",
-    "parse-github-url": "^1.0.2",
-    "rmfr": "^2.0.0",
-    "tiny-relative-date": "^1.3.0",
-    "yargs": "^13.2.2"
-  },
-  "devDependencies": {
-    "@quarterto/eslint-config": "^1.4.0",
-    "@quarterto/prettier": "^1.1.0",
-    "dotenv": "^7.0.0",
-    "eslint": "^5.16.0",
-    "eslint-config-prettier": "^4.1.0",
-    "eslint-plugin-no-only-tests": "^2.1.0",
-    "husky": "^2.3.0",
-    "jest": "^24.7.1",
-    "jest-junit": "^6.2.1",
-    "lint-staged": "^8.1.7",
-    "memfs": "^2.15.2",
-    "nock": "^10.0.6",
-    "precise-commits": "^1.0.2",
-    "prettier": "^1.17.0"
-  },
-  "engines": {
-    "node": "8.15.0"
-  },
-  "eslintConfig": {
-    "extends": [
-      "@quarterto"
-    ]
-  },
-  "prettier": "@quarterto/prettier",
-  "husky": {
-    "hooks": {
-      "pre-commit": "lint-staged"
-    }
-  },
-  "lint-staged": {
-    "*": [
-      "precise-commits",
-      "git add"
-    ]
-  }
+	"name": "nori",
+	"version": "2.0.0-beta.3",
+	"description": "",
+	"bin": "src/index.js",
+	"scripts": {
+		"test": "npm run lint && npm run unit-test",
+		"unit-test": "jest",
+		"lint": "eslint src/ test/",
+		"lint-fix": "eslint --fix src/ test/",
+		"eslint-check": "eslint --print-config . | eslint-config-prettier-check"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git@github.com:Financial-Times/transformation-runner.git"
+	},
+	"author": "",
+	"license": "MIT",
+	"dependencies": {
+		"@financial-times/git": "^1.0.0",
+		"@octokit/plugin-retry": "^2.2.0",
+		"@octokit/plugin-throttling": "^2.4.0",
+		"@octokit/rest": "^16.25.1",
+		"ansi-colors": "^3.2.4",
+		"array-to-sentence": "^2.0.0",
+		"dugite": "^1.88.0-beta.0",
+		"enquirer": "^2.3.0",
+		"get-stdin": "^6.0.0",
+		"got": "^9.6.0",
+		"immer": "^3.1.2",
+		"is-url": "^1.2.4",
+		"mkdirp": "^0.5.1",
+		"mz": "^2.7.0",
+		"parse-github-url": "^1.0.2",
+		"rmfr": "^2.0.0",
+		"tiny-relative-date": "^1.3.0",
+		"yargs": "^13.2.2"
+	},
+	"devDependencies": {
+		"@quarterto/eslint-config": "^1.4.0",
+		"@quarterto/prettier": "^1.1.0",
+		"dotenv": "^7.0.0",
+		"eslint": "^5.16.0",
+		"eslint-config-prettier": "^4.1.0",
+		"eslint-plugin-no-only-tests": "^2.1.0",
+		"husky": "^2.3.0",
+		"jest": "^24.7.1",
+		"jest-junit": "^6.2.1",
+		"lint-staged": "^8.1.7",
+		"memfs": "^2.15.2",
+		"nock": "^10.0.6",
+		"precise-commits": "^1.0.2",
+		"prettier": "^1.17.0"
+	},
+	"engines": {
+		"node": "8.15.0"
+	},
+	"eslintConfig": {
+		"extends": [
+			"@quarterto"
+		]
+	},
+	"prettier": "@quarterto/prettier",
+	"husky": {
+		"hooks": {
+			"pre-commit": "lint-staged"
+		}
+	},
+	"lint-staged": {
+		"*": [
+			"precise-commits",
+			"git add"
+		]
+	}
 }
