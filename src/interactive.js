@@ -161,8 +161,8 @@ exports.handler = async function({ state, ...argv }) {
 			for (const step of state.state.steps) {
 				const type = operations[step.name].output
 				console.log(`${c.gray('─────')} ${type}`) // eslint-disable-line no-console
+				// eslint-disable-next-line no-console
 				console.log(
-					// eslint-disable-line no-console
 					types[type].format(types[type].getFromState(state.state.data)),
 				)
 			}
