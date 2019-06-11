@@ -68,7 +68,7 @@
 	},
 	"lint-staged": {
 		"*": [
-			"precise-commits",
+			"prettier --write",
 			"git add"
 		]
 	}

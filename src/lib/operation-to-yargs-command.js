@@ -1,31 +1,31 @@
-const { prompt } = require('enquirer');
-const types = require('./types');
-const toSentence = require('./to-sentence');
-const operations = require('../operations');
+const { prompt } = require('enquirer')
+const types = require('./types')
+const toSentence = require('./to-sentence')
+const operations = require('../operations')
 
 const enquirerToYargs = yargs => arg => {
 	const option = {
 		// alias: arg.name[0], how can we make sure this is unique?
 		describe: arg.message,
-	};
+	}
 
 	switch (arg.type) {
 		case 'text': {
-			option.type = 'string';
-			break;
+			option.type = 'string'
+			break
 		}
 		case 'confirm': {
-			option.type = 'boolean';
-			break;
+			option.type = 'boolean'
+			break
 		}
 		case 'list': {
-			option.type = 'array';
-			break;
+			option.type = 'array'
+			break
 		}
 		case 'select': {
-			option.type = 'string';
-			option.choices = arg.choices.map(choice => choice.name || choice);
-			break;
+			option.type = 'string'
+			option.choices = arg.choices.map(choice => choice.name || choice)
+			break
 		}
 	}
 
@@ -36,100 +36,108 @@ const enquirerToYargs = yargs => arg => {
 		// async functions like enquirer's `result`
 		yargs.middleware(async argv => ({
 			[arg.name]: await arg.result(argv[arg.name]),
-		}));
+		}))
 	}
 
 	if (arg.validate) {
 		yargs.middleware(async argv => {
-			const maybeMessage = await arg.validate(argv[arg.name]);
+			const maybeMessage = await arg.validate(argv[arg.name])
 
 			// if an enquirer `validate` function returns a string,
 			// that's an error to throw. so throw it
 			if (typeof maybeMessage === 'string') {
-				throw new Error(maybeMessage);
+				throw new Error(maybeMessage)
 			}
 
-			return {};
-		});
+			return {}
+		})
 	}
 
-	return yargs;
+	return yargs
 }
 
 const errorOnInvalidOperation = operation => argv => {
 	if (argv.state.fileName && !argv.state.isValidOperation(operation)) {
-		const validCommands = Object.keys(operations).filter(
-			key => argv.state.isValidOperation(operations[key])
-		);
+		const validCommands = Object.keys(operations).filter(key =>
+			argv.state.isValidOperation(operations[key]),
+		)
 
-		const validMessage = validCommands.length ? `Valid commands are ${toSentence(validCommands.map(cmd => `'${cmd}'`))}` : '';
-		const message = `'${operation.command}' isn't valid for the provided state. ${validMessage}`;
+		const validMessage = validCommands.length
+			? `Valid commands are ${toSentence(validCommands.map(cmd => `'${cmd}'`))}`
+			: ''
+		const message = `'${
+			operation.command
+		}' isn't valid for the provided state. ${validMessage}`
 
-		throw new Error(message);
+		throw new Error(message)
 	}
-};
+}
 
 const checkMissingState = operation => async argv => {
 	const missingState = operation.input
 		.map(name => ({ ...types[name], name }))
-		.filter(type => !type.exists( // check if this type is in the state we have
-			type.getFromState(argv.state.state.data)
-		));
+		.filter(
+			type =>
+				!type.exists(
+					// check if this type is in the state we have
+					type.getFromState(argv.state.state.data),
+				),
+		)
 
-
-	return { missingState };
-};
+	return { missingState }
+}
 
 const promptMissingArgs = operation => async argv => {
-	const missingArgs = operation.args.filter(
-		arg => !(arg.name in argv)
-	);
+	const missingArgs = operation.args.filter(arg => !(arg.name in argv))
 
 	if (missingArgs.length) {
 		if (process.stdin.isTTY) {
-			return await prompt(missingArgs);
+			return await prompt(missingArgs)
 		} else {
-			return { missingArgs };
+			return { missingArgs }
 		}
 	}
 
-	return {};
-};
+	return {}
+}
 
 const errorOnMissing = operation => argv => {
 	let messages = [
-		argv.missingArgs && argv.missingArgs.length && (
-			`arguments ${toSentence(argv.missingArgs.map(arg => `'${arg.name}'`))}`
-		),
-		argv.missingState && argv.missingState.length && (
-			`state ${toSentence(argv.missingState.map(arg => `'${arg.name}'`))}`
-		),
-	].filter(Boolean);
+		argv.missingArgs &&
+			argv.missingArgs.length &&
+			`arguments ${toSentence(argv.missingArgs.map(arg => `'${arg.name}'`))}`,
+		argv.missingState &&
+			argv.missingState.length &&
+			`state ${toSentence(argv.missingState.map(arg => `'${arg.name}'`))}`,
+	].filter(Boolean)
 
 	if (messages.length) {
-		throw new Error(`Command '${operation.command}' requires ${toSentence(messages)}`);
+		throw new Error(
+			`Command '${operation.command}' requires ${toSentence(messages)}`,
+		)
 	}
 
-	return {};
+	return {}
 }
 
-const operationToYargsCommand = operation => Object.assign({}, operation, {
-	builder(yargs) {
-		if (operation.input) {
-			yargs
-				.middleware(errorOnInvalidOperation(operation))
-				.middleware(checkMissingState(operation));
-		}
+const operationToYargsCommand = operation =>
+	Object.assign({}, operation, {
+		builder(yargs) {
+			if (operation.input) {
+				yargs
+					.middleware(errorOnInvalidOperation(operation))
+					.middleware(checkMissingState(operation))
+			}
 
-		if (operation.args) {
-			operation.args.forEach(enquirerToYargs(yargs));
-			yargs.middleware(promptMissingArgs(operation));
-		}
+			if (operation.args) {
+				operation.args.forEach(enquirerToYargs(yargs))
+				yargs.middleware(promptMissingArgs(operation))
+			}
 
-		return yargs.middleware(errorOnMissing(operation))
-	},
+			return yargs.middleware(errorOnMissing(operation))
+		},
 
-	handler: ({ state, ...args }) => state.runSingleOperation(operation, args),
-});
+		handler: ({ state, ...args }) => state.runSingleOperation(operation, args),
+	})
 
-module.exports = operationToYargsCommand;
+module.exports = operationToYargsCommand
