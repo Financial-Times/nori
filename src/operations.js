@@ -6,5 +6,6 @@ module.exports = {
 	'run-script': require('./commands/run-script'),
 	'push-branches': require('./commands/push-branches'),
 	prs: require('./commands/prs'),
-	project: require('./commands/project'),
+	'create-project': require('./commands/create-project'),
+	'add-to-project': require('./commands/add-to-project'),
 }
