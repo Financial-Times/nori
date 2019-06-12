@@ -15,7 +15,7 @@ test('correctly throws an error if given incorrect arguments', () => {
 	const templatesArg = prs.args.find(arg => arg.name === 'templates');
 
 	expect(templatesArg.validate({})).toBe('Please provide a Pull Request title');
-	expect(templatesArg.validate({ title: 'foo' })).toBeTruthy();
+	expect(templatesArg.validate({ title: 'foo' })).toEqual(true);
 });
 
 describe('creating pull requests', () => {
