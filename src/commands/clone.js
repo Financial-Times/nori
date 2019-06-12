@@ -8,7 +8,7 @@ const { workspacePath } = require('../lib/constants')
 exports.handler = async (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
-			const cloneDirectory = path.join(workspacePath, repo.name)
+			const cloneDirectory = path.join(workspacePath, repo.owner, repo.name)
 			const remoteUrl = `git@github.com:${repo.owner}/${repo.name}.git`
 
 			if (await fs.exists(cloneDirectory)) {
