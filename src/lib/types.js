@@ -43,7 +43,7 @@ module.exports = {
 
 	prs: {
 		getFromState: state =>
-			state.prs && state.prs.map(repo => repo.remoteBranch).filter(Boolean),
+			state.repos && state.repos.map(repo => repo.pr).filter(Boolean),
 		exists: prs => prs && prs.length > 0,
 		format: prs => prs.map(pr => pr.html_url).join('\n'),
 		shortPreview: prs =>
