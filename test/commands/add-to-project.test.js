@@ -53,12 +53,12 @@ test('undo archives cards and removes data from state', async () => {
 
 	await addToProject.undo({ githubAccessToken }, state)
 
-	expect(octokit.projects.updateCard).toHaveBeenCalledWith({
+	expect(octokit.projects.deleteCard).toHaveBeenCalledWith({
 		card_id: 1,
 		archived: true,
 	})
 
-	expect(octokit.projects.updateCard).toHaveBeenCalledWith({
+	expect(octokit.projects.deleteCard).toHaveBeenCalledWith({
 		card_id: 2,
 		archived: true,
 	})

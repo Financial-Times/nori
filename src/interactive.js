@@ -156,7 +156,7 @@ exports.handler = async function({ state, ...argv }) {
 			const operation = operations[choice]
 			const promptArgs =
 				typeof operation.args === 'function'
-					? await operation.args(state)
+					? await operation.args(state.state.data)
 					: operation.args
 
 			const args = Object.assign({}, argv, await prompt(promptArgs))

@@ -7,7 +7,7 @@ exports.input = ['prs', 'project']
 exports.output = 'projectCards'
 exports.args = state => [
 	{
-		type: 'list',
+		type: 'select',
 		name: 'column',
 		message: 'Column to add cards to',
 		choices: state.project.columns.map(column => ({
@@ -23,11 +23,11 @@ exports.handler = async ({ column, githubAccessToken }, state) => {
 	await Promise.all(
 		state.repos.map(async repo => {
 			if (repo.pr) {
-				repo.card = await octokit.projects.createCard({
+				repo.card = (await octokit.projects.createCard({
 					column_id: column,
 					content_id: repo.pr.id,
 					content_type: 'PullRequest',
-				})
+				})).data
 			}
 		}),
 	)
@@ -38,9 +38,8 @@ exports.undo = async ({ githubAccessToken }, state) => {
 	await Promise.all(
 		state.repos.map(async repo => {
 			if (repo.card) {
-				octokit.projects.updateCard({
+				await octokit.projects.deleteCard({
 					card_id: repo.card.id,
-					archived: true,
 				})
 
 				delete repo.card

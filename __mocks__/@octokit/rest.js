@@ -16,7 +16,7 @@ module.exports = function Octokit() {
 				}),
 			),
 			createCard: jest.fn(),
-			updateCard: jest.fn(),
+			deleteCard: jest.fn(),
 			update: jest.fn(),
 		},
 		pulls: {

@@ -45,7 +45,7 @@ exports.handler = async ({ projectData, githubAccessToken }, state) => {
 			project_id: project.id,
 			name: 'Done',
 		}),
-	]
+	].map(column => column.data)
 
 	state.project = project
 }
