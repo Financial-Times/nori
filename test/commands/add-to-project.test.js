@@ -55,12 +55,10 @@ test('undo archives cards and removes data from state', async () => {
 
 	expect(octokit.projects.deleteCard).toHaveBeenCalledWith({
 		card_id: 1,
-		archived: true,
 	})
 
 	expect(octokit.projects.deleteCard).toHaveBeenCalledWith({
 		card_id: 2,
-		archived: true,
 	})
 
 	expect(state.repos).toEqual([{}, {}])
