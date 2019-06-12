@@ -154,7 +154,12 @@ exports.handler = async function({ state, ...argv }) {
 
 		if (choice in operations) {
 			const operation = operations[choice]
-			const args = Object.assign({}, argv, await prompt(operation.args))
+			const promptArgs =
+				typeof operation.args === 'function'
+					? await operation.args(state)
+					: operation.args
+
+			const args = Object.assign({}, argv, await prompt(promptArgs))
 
 			await state.runStep(operation, args)
 		} else if (choice === 'preview') {
