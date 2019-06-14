@@ -29,9 +29,9 @@ exports.handler = async ({ projectUrl, githubAccessToken }, state) => {
 
 	const octokit = getOctokit(githubAccessToken)
 
-	// shit me it needs to paginate
-	const { data: projects } = await octokit.projects.listForOrg({ org })
-	console.log(projects)
+	const projects = await octokit.paginate(
+		octokit.projects.listForOrg.endpoint.merge({ org }),
+	)
 	const project = projects.find(
 		project => project.number === parseInt(number, 10),
 	)
@@ -42,7 +42,7 @@ exports.handler = async ({ projectUrl, githubAccessToken }, state) => {
 		)
 	}
 
-	project.columns = (await octokit.projects.getColumns({
+	project.columns = (await octokit.projects.listColumns({
 		project_id: project.id,
 	})).data
 
