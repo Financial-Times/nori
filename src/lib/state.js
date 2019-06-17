@@ -203,11 +203,26 @@ module.exports = class State {
 	}
 
 	isValidOperation(operation) {
+		/*
+		an operation should only be available if we have the right data for it, i.e.
+		if all of its inputs are the output of a previous operation.
+
+		if the operation isn't a filter (i.e. it has different output to its inputs),
+		it should only be available if something that outputs the same as it hasn't
+		been run already (i
+		*/
+
 		const previousOutputs = new Set(
 			this.state.steps.map(step => operations[step.name].output),
 		)
 
-		return operation.input.every(type => previousOutputs.has(type))
+		const hasAllInputs = operation.input.every(type =>
+			previousOutputs.has(type),
+		)
+		const isFilter = operation.input.includes(operation.output)
+		const doesntHaveOutput = !previousOutputs.has(operation.output)
+
+		return hasAllInputs && (isFilter || doesntHaveOutput)
 	}
 
 	shortPreview() {

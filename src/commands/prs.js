@@ -4,7 +4,7 @@ const toSentence = require('../lib/to-sentence')
 exports.command = 'prs'
 exports.desc = 'create Github pull requests for pushed branches'
 
-exports.input = ['repos', 'branches']
+exports.input = ['repos', 'remoteBranches']
 exports.output = 'prs'
 
 exports.args = [

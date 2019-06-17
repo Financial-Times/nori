@@ -10,18 +10,40 @@ module.exports = {
 			`${repos.length} repositor${repos.length > 1 ? 'ies' : 'y'}`,
 	},
 
-	branches: {
+	remoteBranches: {
 		getFromState: state =>
 			state.repos && state.repos.map(repo => repo.remoteBranch).filter(Boolean),
-		exists: branches => branches && branches.length > 0,
-		format: branches => branches.join('\n'),
-		shortPreview: branches =>
-			`${branches.length} remote branch${branches.length > 1 ? 'es' : ''}`,
+		exists: remoteBranches => remoteBranches && remoteBranches.length > 0,
+		format: remoteBranches => remoteBranches.join('\n'),
+		shortPreview: remoteBranches =>
+			`${remoteBranches.length} remote branch${
+				remoteBranches.length > 1 ? 'es' : ''
+			}`,
+	},
+
+	localBranches: {
+		getFromState: state =>
+			state.repos && state.repos.map(repo => repo.localBranch).filter(Boolean),
+		exists: localBranches => localBranches && localBranches.length > 0,
+		format: localBranches => localBranches.join('\n'),
+		shortPreview: localBranches =>
+			`${localBranches.length} local branch${
+				localBranches.length > 1 ? 'es' : ''
+			}`,
+	},
+
+	clones: {
+		getFromState: state =>
+			state.repos && state.repos.map(repo => repo.clone).filter(Boolean),
+		exists: clones => clones && clones.length > 0,
+		format: clones => clones.join('\n'),
+		shortPreview: clones =>
+			`${clones.length} cloned repo${clones.length > 1 ? 's' : ''}`,
 	},
 
 	prs: {
 		getFromState: state =>
-			state.prs && state.prs.map(repo => repo.remoteBranch).filter(Boolean),
+			state.repos && state.repos.map(repo => repo.pr).filter(Boolean),
 		exists: prs => prs && prs.length > 0,
 		format: prs => prs.map(pr => pr.html_url).join('\n'),
 		shortPreview: prs =>

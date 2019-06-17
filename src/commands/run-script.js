@@ -1,14 +1,14 @@
-#!/usr/bin/env node
-
 /* eslint-disable no-console */
 
 const assert = require('assert')
 const fs = require('mz/fs')
 const path = require('path')
 const git = require('@financial-times/git')
-const rmfr = require('rmfr')
 
-const { workspacePath } = require('../lib/constants')
+const { GitProcess } = require('dugite')
+const constructDugiteExecArgs = require('@financial-times/git/src/helpers/construct-dugite-exec-args')
+const handleDugiteExecResult = require('@financial-times/git/src/helpers/handle-dugite-exec-result')
+
 const runProcess = require('../lib/run-process')
 
 exports.args = [
@@ -25,10 +25,6 @@ exports.args = [
  * @param {string} argv.branch
  */
 exports.handler = async ({ script, branch }, state) => {
-	if (state.repos.length === 0) {
-		throw new Error('No repos specified')
-	}
-
 	const scriptPath = path.resolve(script)
 
 	if (!(await fs.exists(scriptPath))) {
@@ -51,30 +47,9 @@ exports.handler = async ({ script, branch }, state) => {
 	for (const repository of state.repos) {
 		console.warn('\n===\n')
 
-		const cloneDirectory = path.join(workspacePath, repository.name)
-		const remoteUrl = `git@github.com:${repository.owner}/${
-			repository.name
-		}.git`
-
-		git.defaults({ workingDirectory: cloneDirectory })
+		git.defaults({ workingDirectory: repository.clone })
 
 		try {
-			if (await fs.exists(cloneDirectory)) {
-				console.warn(`-- Updating local clone: ${repository.name}`)
-				await git.checkoutBranch({ name: 'master' })
-				console.warn(
-					`-- Repository '${repository.name}' updated in ${cloneDirectory}`,
-				)
-			} else {
-				console.warn(`-- Cloning repository locally: ${remoteUrl}`)
-				await git.clone({ origin: 'origin', repository: remoteUrl })
-				console.warn(
-					`-- Repository '${
-						repository.name
-					}' cloned locally to ${cloneDirectory}`,
-				)
-			}
-
 			await git.createBranch({ name: branch })
 			await git.checkoutBranch({ name: branch })
 			console.warn(
@@ -83,7 +58,7 @@ exports.handler = async ({ script, branch }, state) => {
 
 			const contextForScript = {
 				TRANSFORMATION_RUNNER_RUNNING: true,
-				TRANSFORMATION_RUNNER_TARGET: remoteUrl,
+				// TRANSFORMATION_RUNNER_TARGET: remoteUrl, // TODO do we need this? and the other variables?
 				TRANSFORMATION_RUNNER_TARGET_NAME: repository.name,
 			}
 
@@ -95,15 +70,13 @@ exports.handler = async ({ script, branch }, state) => {
 			console.warn(`-- Running script against local repository...\n`)
 
 			const scriptOutput = await runProcess(scriptPath, {
-				cwd: cloneDirectory,
+				cwd: repository.clone,
 				env: scriptEnv,
 			})
 
 			console.warn(scriptOutput)
-			console.warn(`-- Pushing branch ${branch} to remote 'origin'`)
-			await git.push({ repository: 'origin', refspec: branch })
 
-			repository.remoteBranch = branch
+			repository.localBranch = branch
 		} catch (error) {
 			console.warn(
 				new Error(
@@ -115,28 +88,36 @@ exports.handler = async ({ script, branch }, state) => {
 	}
 }
 
-exports.undo = ({ branch }, state) => {
-	Promise.all(
-		state.repos.map(async repo => {
-			const cloneDirectory = path.join(workspacePath, repo.name)
-			// the git push syntax is localbranch:remotebranch. without the colon,
-			// they're the same. with nothing before the colon, it's "push nothing
-			// to the remote branch", i.e. delete it.
-			await git.push({
-				workingDirectory: cloneDirectory,
-				repository: 'origin',
-				refspec: `:${branch}`,
-			})
+//TODO: this should be part of @financial-times/git
+async function deleteBranch({ branch, workingDirectory }) {
+	const dugiteExecArgs = constructDugiteExecArgs({
+		command: 'branch',
+		options: {
+			'-D': true,
+		},
+		positional: [branch],
+	})
 
-			// i say we take off and nuke the whole site from orbit. it's the only way to be sure
-			await rmfr(cloneDirectory)
-
-			delete repo.remoteBranch
-		}),
+	const dugiteExecResult = await GitProcess.exec(
+		dugiteExecArgs,
+		workingDirectory,
 	)
+
+	return handleDugiteExecResult({ dugiteExecResult, dugiteExecArgs })
 }
 
+exports.undo = (_, state) =>
+	Promise.all(
+		state.repos.map(async repo => {
+			await deleteBranch({
+				branch: repo.localBranch,
+				workingDirectory: repo.clone,
+			})
+
+			delete repo.localBranch
+		}),
+	)
 exports.command = 'run-script'
-exports.desc = 'clone repositories and run a script against them'
-exports.input = ['repos']
-exports.output = 'branches'
+exports.desc = 'runs a script in a branch against all cloned repositories'
+exports.input = ['clones']
+exports.output = 'localBranches'
