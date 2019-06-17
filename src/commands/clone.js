@@ -19,8 +19,8 @@ exports.handler = async (_, state) =>
 			} else {
 				await git.clone({
 					origin: 'origin',
-					repo: remoteUrl,
-					workingDirectory: cloneDirectory,
+					repository: remoteUrl,
+					directory: cloneDirectory,
 				})
 			}
 
