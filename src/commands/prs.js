@@ -1,4 +1,5 @@
 const octokit = require('../lib/octokit')
+const toSentence = require('../lib/to-sentence')
 
 exports.command = 'prs'
 exports.desc = 'create Github pull requests for pushed branches'
@@ -13,8 +14,14 @@ exports.args = [
 		message: 'Pull Request details',
 		choices: [{ name: 'title' }, { name: 'body' }],
 		validate: templates => {
-			if (!templates.title) {
-				return 'Please provide a Pull Request title'
+			const { title, body } = templates
+			const messages = [
+				!title && 'a Pull Request title',
+				!body && 'a Pull Request body',
+			].filter(Boolean)
+
+			if (messages.length) {
+				return `Please provide ${toSentence(messages)}`
 			}
 			return true
 		},

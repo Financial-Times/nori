@@ -7,8 +7,15 @@ const octokit = getOctokit(githubAccessToken)
 test('correctly throws an error if given incorrect arguments', () => {
 	const templatesArg = prs.args.find(arg => arg.name === 'templates')
 
-	expect(templatesArg.validate({})).toBe('Please provide a Pull Request title')
-	expect(templatesArg.validate({ title: 'foo' })).toBeTruthy()
+	expect(templatesArg.validate({})).toBe(
+		'Please provide a Pull Request title and a Pull Request body',
+	)
+	expect(templatesArg.validate({ title: 'foo' })).toBe(
+		'Please provide a Pull Request body',
+	)
+	expect(templatesArg.validate({ title: 'foo', body: 'bar body' })).toEqual(
+		true,
+	)
 })
 
 describe('creating pull requests', () => {
