@@ -21,14 +21,14 @@ describe('cloning repos', () => {
 
 		expect(git.clone).toHaveBeenCalledWith({
 			origin: 'origin',
-			repo: 'git@github.com:org/repo1.git',
-			workingDirectory: path.join(workspacePath, 'org', 'repo1'),
+			repository: 'git@github.com:org/repo1.git',
+			directory: path.join(workspacePath, 'org', 'repo1'),
 		})
 
 		expect(git.clone).toHaveBeenCalledWith({
 			origin: 'origin',
-			repo: 'git@github.com:org/repo2.git',
-			workingDirectory: path.join(workspacePath, 'org', 'repo2'),
+			repository: 'git@github.com:org/repo2.git',
+			directory: path.join(workspacePath, 'org', 'repo2'),
 		})
 	})
 })
