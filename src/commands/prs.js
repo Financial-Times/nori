@@ -65,14 +65,14 @@ exports.undo = ({ githubAccessToken }, state) =>
 			await octokit(githubAccessToken).issues.createComment({
 				owner: repo.pr.head.repo.owner.login,
 				repo: repo.pr.head.repo.name,
-				number: repo.pr.number,
+				issue_number: repo.pr.number,
 				body: 'automatically closed 🤖', //TODO prompt for template?
 			})
 
 			await octokit(githubAccessToken).pulls.update({
 				owner: repo.pr.head.repo.owner.login,
 				repo: repo.pr.head.repo.name,
-				number: repo.pr.number,
+				pull_number: repo.pr.number,
 				state: 'closed',
 			})
 

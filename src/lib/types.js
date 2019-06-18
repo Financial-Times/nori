@@ -56,4 +56,18 @@ module.exports = {
 		format: project => project.html_url,
 		shortPreview: project => project.html_url,
 	},
+
+	projectCards: {
+		getFromState: state =>
+			state.repos && state.repos.map(repo => repo.card).filter(Boolean),
+		exists: cards => cards && cards.length > 0,
+		format: cards =>
+			cards.map(
+				card =>
+					`${card.project_url.replace('api.github.com', 'github.com')}#card-${
+						card.id
+					}`,
+			),
+		shortPreview: cards => `${cards.length} card${cards.length > 1 ? 's' : ''}`,
+	},
 }

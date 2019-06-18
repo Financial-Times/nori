@@ -1,11 +1,10 @@
 const getOctokit = require('../lib/octokit')
 const toSentence = require('../lib/to-sentence')
 
-exports.command = 'project'
-exports.desc =
-	'create a Github project board and attach the pull requests to it'
+exports.command = 'create-project'
+exports.desc = 'create a Github project board'
 
-exports.input = ['prs']
+exports.input = []
 exports.output = 'project'
 
 exports.args = [
@@ -31,27 +30,22 @@ exports.args = [
 exports.handler = async ({ projectData, githubAccessToken }, state) => {
 	const octokit = getOctokit(githubAccessToken)
 	const { data: project } = await octokit.projects.createForOrg(projectData)
-	const { data: todoColumn } = await octokit.projects.createColumn({
-		project_id: project.id,
-		name: 'To do',
-	})
-	await octokit.projects.createColumn({
-		project_id: project.id,
-		name: 'In progress',
-	})
-	await octokit.projects.createColumn({ project_id: project.id, name: 'Done' })
 
-	await Promise.all(
-		state.repos.map(repo => {
-			if (repo.pr) {
-				return octokit.projects.createCard({
-					column_id: todoColumn.id,
-					content_id: repo.pr.id,
-					content_type: 'PullRequest',
-				})
-			}
+	// do these in series so they're in the right order on the board
+	project.columns = [
+		await octokit.projects.createColumn({
+			project_id: project.id,
+			name: 'To do',
 		}),
-	)
+		await octokit.projects.createColumn({
+			project_id: project.id,
+			name: 'In progress',
+		}),
+		await octokit.projects.createColumn({
+			project_id: project.id,
+			name: 'Done',
+		}),
+	].map(column => column.data)
 
 	state.project = project
 }

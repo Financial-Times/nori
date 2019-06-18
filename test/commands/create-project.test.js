@@ -1,4 +1,4 @@
-const project = require('../../src/commands/project')
+const project = require('../../src/commands/create-project')
 const getOctokit = require('../../src/lib/octokit')
 
 const githubAccessToken = 'mock access token'
@@ -59,29 +59,6 @@ describe('creating project board', () => {
 		expect(octokit.projects.createColumn).toHaveBeenCalledWith({
 			project_id,
 			name: 'Done',
-		})
-	})
-
-	test('adds every Pull Request to the board it created', async () => {
-		const column_id = (await octokit.projects.createColumn.mock.results[0]
-			.value).data.id
-
-		expect(octokit.projects.createCard).toHaveBeenCalledWith({
-			column_id,
-			content_id: 'pull request 1',
-			content_type: 'PullRequest',
-		})
-
-		expect(octokit.projects.createCard).toHaveBeenCalledWith({
-			column_id,
-			content_id: 'pull request 2',
-			content_type: 'PullRequest',
-		})
-
-		expect(octokit.projects.createCard).toHaveBeenCalledWith({
-			column_id,
-			content_id: 'pull request 3',
-			content_type: 'PullRequest',
 		})
 	})
 })
