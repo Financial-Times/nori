@@ -97,14 +97,14 @@ describe('undoing pull requests', () => {
 		expect(octokit.issues.createComment).toHaveBeenCalledWith({
 			owner: 'org',
 			repo: 'repo1',
-			number: 1,
+			issue_number: 1,
 			body: 'automatically closed 🤖',
 		})
 
 		expect(octokit.issues.createComment).toHaveBeenCalledWith({
 			owner: 'org',
 			repo: 'repo2',
-			number: 2,
+			pull_number: 2,
 			body: 'automatically closed 🤖',
 		})
 	})
