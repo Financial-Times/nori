@@ -10,10 +10,10 @@ test('correctly throws an error if given incorrect arguments', () => {
 	expect(templatesArg.validate({})).toBe(
 		'Please provide a Pull Request title and a Pull Request body',
 	)
-	expect(templatesArg.validate({ title: 'foo' })).toBe(
+	expect(templatesArg.validate({ title: 'PR title' })).toBe(
 		'Please provide a Pull Request body',
 	)
-	expect(templatesArg.validate({ title: 'foo', body: 'bar body' })).toEqual(
+	expect(templatesArg.validate({ title: 'PR title', body: 'PR body' })).toEqual(
 		true,
 	)
 })

@@ -10,17 +10,19 @@ test('correctly throws an error if given incorrect arguments', () => {
 	expect(projectDataArg.validate({})).toBe(
 		'Please provide a project name and a GitHub organisation to create the project in',
 	)
-	expect(projectDataArg.validate({ name: 'foo' })).toBe(
+	expect(projectDataArg.validate({ name: 'project name' })).toBe(
 		'Please provide a GitHub organisation to create the project in',
 	)
-	expect(projectDataArg.validate({ org: 'foo' })).toBe(
+	expect(projectDataArg.validate({ org: 'project org' })).toBe(
 		'Please provide a project name',
 	)
-	expect(projectDataArg.validate({ name: 'foo', org: 'foo' })).toEqual(true)
+	expect(
+		projectDataArg.validate({ name: 'project name', org: 'project org' }),
+	).toEqual(true)
 })
 
 describe('creating project board', () => {
-	const projectData = { name: 'foo', org: 'foo' }
+	const projectData = { name: 'project name', org: 'project org' }
 
 	beforeAll(() =>
 		project.handler(
