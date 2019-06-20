@@ -1,4 +1,5 @@
 const getOctokit = require('../lib/octokit')
+const logger = require('../lib/logger')
 
 exports.command = 'add-to-project'
 exports.desc = 'add pull requests to a Github project'
@@ -23,11 +24,30 @@ exports.handler = async ({ column, githubAccessToken }, state) => {
 	await Promise.all(
 		state.repos.map(async repo => {
 			if (repo.pr) {
-				repo.card = (await octokit.projects.createCard({
-					column_id: column,
-					content_id: repo.pr.id,
-					content_type: 'PullRequest',
-				})).data
+				logger.log(repo.pr.html_url, {
+					message: `creating card for ${repo.pr.html_url}`,
+				})
+
+				repo.card = await octokit.projects
+					.createCard({
+						column_id: column,
+						content_id: repo.pr.id,
+						content_type: 'PullRequest',
+					})
+					.then(response => {
+						logger.log(repo.pr.html_url, {
+							status: 'done',
+							message: `created card for ${repo.pr.html_url}`,
+						})
+						return response.data
+					})
+					.catch(error => {
+						logger.log(repo.pr.html_url, {
+							status: 'fail',
+							message: `error creating card for ${repo.pr.html_url}`,
+							error,
+						})
+					})
 			}
 		}),
 	)
@@ -38,8 +58,15 @@ exports.undo = async ({ githubAccessToken }, state) => {
 	await Promise.all(
 		state.repos.map(async repo => {
 			if (repo.card) {
+				logger.log(repo.pr.html_url, {
+					message: `deleting card for ${repo.pr.html_url}`,
+				})
 				await octokit.projects.deleteCard({
 					card_id: repo.card.id,
+				})
+				logger.log(repo.pr.html_url, {
+					status: 'done',
+					message: `deleted card for ${repo.pr.html_url}`,
 				})
 
 				delete repo.card

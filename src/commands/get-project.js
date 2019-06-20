@@ -1,4 +1,5 @@
 const getOctokit = require('../lib/octokit')
+const logger = require('../lib/logger')
 
 exports.command = 'get-project'
 exports.desc = 'get a Github project board'
@@ -29,6 +30,7 @@ exports.handler = async ({ projectUrl, githubAccessToken }, state) => {
 
 	const octokit = getOctokit(githubAccessToken)
 
+	logger.log(projectUrl, { message: `loading project ${project}` })
 	const projects = await octokit.paginate(
 		octokit.projects.listForOrg.endpoint.merge({ org }),
 	)
@@ -41,10 +43,16 @@ exports.handler = async ({ projectUrl, githubAccessToken }, state) => {
 			`There's no project #${number} in ${org}. Check https://github.com/orgs/${org}/projects/${number}`,
 		)
 	}
+	logger.log(projectUrl, { message: `loading columns for ${project}` })
 
 	project.columns = (await octokit.projects.listColumns({
 		project_id: project.id,
 	})).data
+
+	logger.log(projectUrl, {
+		status: 'done',
+		message: `loaded project ${project}`,
+	})
 
 	state.project = project
 }

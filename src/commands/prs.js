@@ -1,5 +1,6 @@
 const octokit = require('../lib/octokit')
 const toSentence = require('../lib/to-sentence')
+const logger = require('../lib/logger')
 
 exports.command = 'prs'
 exports.desc = 'create Github pull requests for pushed branches'
@@ -44,6 +45,9 @@ exports.handler = async (
 	await Promise.all(
 		state.repos.map(async repo => {
 			if (repo.remoteBranch) {
+				const repoLabel = `${repo.owner}/${repo.name}`
+				logger.log(repoLabel, { message: `creating PR for ${repoLabel}` })
+
 				repo.pr = await octokit(githubAccessToken)
 					.pulls.create({
 						owner: repo.owner,
@@ -53,7 +57,20 @@ exports.handler = async (
 						title: titleTemplate(repo),
 						body: bodyTemplate(repo),
 					})
-					.then(response => response.data)
+					.then(response => {
+						logger.log(repoLabel, {
+							status: 'done',
+							message: `created ${response.data.html_url}`,
+						})
+						return response.data
+					})
+					.catch(error => {
+						logger.log(repoLabel, {
+							status: 'fail',
+							message: `error creating PR for ${repoLabel}`,
+							error,
+						})
+					})
 			}
 		}),
 	)
@@ -62,20 +79,27 @@ exports.handler = async (
 exports.undo = ({ githubAccessToken }, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
-			await octokit(githubAccessToken).issues.createComment({
-				owner: repo.pr.head.repo.owner.login,
-				repo: repo.pr.head.repo.name,
-				issue_number: repo.pr.number,
-				body: 'automatically closed 🤖', //TODO prompt for template?
-			})
+			if (repo.pr) {
+				logger.log(repo.pr.html_url, { message: `closing ${repo.pr.html_url}` })
+				await octokit(githubAccessToken).issues.createComment({
+					owner: repo.pr.head.repo.owner.login,
+					repo: repo.pr.head.repo.name,
+					issue_number: repo.pr.number,
+					body: 'automatically closed 🤖', //TODO prompt for template?
+				})
 
-			await octokit(githubAccessToken).pulls.update({
-				owner: repo.pr.head.repo.owner.login,
-				repo: repo.pr.head.repo.name,
-				pull_number: repo.pr.number,
-				state: 'closed',
-			})
+				await octokit(githubAccessToken).pulls.update({
+					owner: repo.pr.head.repo.owner.login,
+					repo: repo.pr.head.repo.name,
+					pull_number: repo.pr.number,
+					state: 'closed',
+				})
+				logger.log(repo.pr.html_url, {
+					status: 'done',
+					message: `closed ${repo.pr.html_url}`,
+				})
 
-			delete repo.pr
+				delete repo.pr
+			}
 		}),
 	)

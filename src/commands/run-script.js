@@ -1,5 +1,3 @@
-/* eslint-disable no-console */
-
 const assert = require('assert')
 const fs = require('mz/fs')
 const path = require('path')
@@ -10,6 +8,7 @@ const constructDugiteExecArgs = require('@financial-times/git/src/helpers/constr
 const handleDugiteExecResult = require('@financial-times/git/src/helpers/handle-dugite-exec-result')
 
 const runProcess = require('../lib/run-process')
+const logger = require('../lib/logger')
 
 exports.args = [
 	{ type: 'text', name: 'script', message: 'path to a script' },
@@ -37,24 +36,18 @@ exports.handler = async ({ script, branch }, state) => {
 		assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`)
 	}
 
-	console.warn(`-- Script: ${scriptPath}`)
-	console.warn(
-		`-- Target(s):\n\n   ${state.repos.map(({ name }) => name).join('\n   ')}`,
-	)
-
 	// must be serial until https://github.com/Financial-Times/tooling-helpers/issues/74
 	// is resolved (or, add workingDirectory to all the options of the git methods)
 	for (const repository of state.repos) {
-		console.warn('\n===\n')
-
+		const repoLabel = `${repository.owner}/${repository.name}`
 		git.defaults({ workingDirectory: repository.clone })
 
 		try {
+			logger.log(repoLabel, {
+				message: `creating branch ${branch} in ${repoLabel}`,
+			})
 			await git.createBranch({ name: branch })
 			await git.checkoutBranch({ name: branch })
-			console.warn(
-				`-- Created and checked out new branch in local repository: ${branch}`,
-			)
 
 			const contextForScript = {
 				TRANSFORMATION_RUNNER_RUNNING: true,
@@ -67,22 +60,31 @@ exports.handler = async ({ script, branch }, state) => {
 				...contextForScript,
 			}
 
-			console.warn(`-- Running script against local repository...\n`)
+			logger.log(repoLabel, {
+				message: `running ${scriptPath} in ${repoLabel}`,
+			})
 
 			const scriptOutput = await runProcess(scriptPath, {
 				cwd: repository.clone,
 				env: scriptEnv,
 			})
 
+			logger.log(repoLabel, {
+				status: 'done',
+				message: `run script in ${repoLabel}:`,
+			})
+
+			// eslint-disable-next-line no-console
 			console.warn(scriptOutput)
 
 			repository.localBranch = branch
 		} catch (error) {
-			console.warn(
-				new Error(
-					`Error running script for '${repository.name}': ${error.message}`,
-				),
-			)
+			logger.log(repoLabel, {
+				status: 'fail',
+				message: `error running script for ${repoLabel}`,
+				error,
+			})
+
 			throw error
 		}
 	}
@@ -109,12 +111,22 @@ async function deleteBranch({ branch, workingDirectory }) {
 exports.undo = (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
-			await deleteBranch({
-				branch: repo.localBranch,
-				workingDirectory: repo.clone,
-			})
+			const repoLabel = `${repo.owner}/${repo.name}`
+			if (repo.localBranch) {
+				logger.log(repoLabel, {
+					message: `deleting branch ${repo.localBranch} in ${repoLabel}`,
+				})
+				await deleteBranch({
+					branch: repo.localBranch,
+					workingDirectory: repo.clone,
+				})
+				logger.log(repoLabel, {
+					status: 'done',
+					message: `deleted branch ${repo.localBranch} in ${repoLabel}:`,
+				})
 
-			delete repo.localBranch
+				delete repo.localBranch
+			}
 		}),
 	)
 exports.command = 'run-script'

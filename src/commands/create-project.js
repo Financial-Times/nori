@@ -1,5 +1,6 @@
 const getOctokit = require('../lib/octokit')
 const toSentence = require('../lib/to-sentence')
+const logger = require('../lib/logger')
 
 exports.command = 'create-project'
 exports.desc = 'create a Github project board'
@@ -29,8 +30,12 @@ exports.args = [
 
 exports.handler = async ({ projectData, githubAccessToken }, state) => {
 	const octokit = getOctokit(githubAccessToken)
+	logger.log('project', {
+		message: `creating project ${projectData.name} in ${projectData.org}`,
+	})
 	const { data: project } = await octokit.projects.createForOrg(projectData)
 
+	logger.log('project', { message: `creating columns for ${projectData.name}` })
 	// do these in series so they're in the right order on the board
 	project.columns = [
 		await octokit.projects.createColumn({
@@ -46,6 +51,10 @@ exports.handler = async ({ projectData, githubAccessToken }, state) => {
 			name: 'Done',
 		}),
 	].map(column => column.data)
+	logger.log('project', {
+		status: 'done',
+		message: `created project ${project.html_url}`,
+	})
 
 	state.project = project
 }
