@@ -5,7 +5,7 @@ exports.handler = async (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
 			const repoLabel = `${repo.owner}/${repo.name}`
-			logger.log(repoLabel, {
+			logger.log(`push ${repoLabel}`, {
 				message: `pushing ${repo.localBranch} to ${repoLabel}`,
 			})
 			await git.push({
@@ -13,7 +13,7 @@ exports.handler = async (_, state) =>
 				refspec: repo.localBranch,
 				workingDirectory: repo.clone,
 			})
-			logger.log(repoLabel, {
+			logger.log(`push ${repoLabel}`, {
 				status: 'done',
 				message: `pushed ${repo.localBranch} to ${repoLabel}`,
 			})
@@ -21,12 +21,12 @@ exports.handler = async (_, state) =>
 		}),
 	)
 
-exports.undo = (_, state) => {
+exports.undo = (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
 			if (repo.remoteBranch) {
 				const repoLabel = `${repo.owner}/${repo.name}`
-				logger.log(repoLabel, {
+				logger.log(`undo push ${repoLabel}`, {
 					message: `deleting ${repo.remoteBranch} on ${repoLabel}`,
 				})
 				// the git push syntax is localbranch:remotebranch. without the colon,
@@ -37,7 +37,7 @@ exports.undo = (_, state) => {
 					repository: 'origin',
 					refspec: `:${repo.remoteBranch}`,
 				})
-				logger.log(repoLabel, {
+				logger.log(`undo push ${repoLabel}`, {
 					status: 'done',
 					message: `deleted ${repo.remoteBranch} on ${repoLabel}`,
 				})
@@ -46,7 +46,6 @@ exports.undo = (_, state) => {
 			}
 		}),
 	)
-}
 
 exports.command = 'push-branches'
 exports.desc = 'push local branches to their remotes'

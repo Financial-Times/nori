@@ -46,7 +46,9 @@ exports.handler = async (
 		state.repos.map(async repo => {
 			if (repo.remoteBranch) {
 				const repoLabel = `${repo.owner}/${repo.name}`
-				logger.log(repoLabel, { message: `creating PR for ${repoLabel}` })
+				logger.log(`create pr ${repoLabel}`, {
+					message: `creating PR for ${repoLabel}`,
+				})
 
 				repo.pr = await octokit(githubAccessToken)
 					.pulls.create({
@@ -58,14 +60,14 @@ exports.handler = async (
 						body: bodyTemplate(repo),
 					})
 					.then(response => {
-						logger.log(repoLabel, {
+						logger.log(`create pr ${repoLabel}`, {
 							status: 'done',
 							message: `created ${response.data.html_url}`,
 						})
 						return response.data
 					})
 					.catch(error => {
-						logger.log(repoLabel, {
+						logger.log(`create pr ${repoLabel}`, {
 							status: 'fail',
 							message: `error creating PR for ${repoLabel}`,
 							error,
@@ -80,7 +82,9 @@ exports.undo = ({ githubAccessToken }, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
 			if (repo.pr) {
-				logger.log(repo.pr.html_url, { message: `closing ${repo.pr.html_url}` })
+				logger.log(`undo pr ${repo.pr.html_url}`, {
+					message: `closing ${repo.pr.html_url}`,
+				})
 				await octokit(githubAccessToken).issues.createComment({
 					owner: repo.pr.head.repo.owner.login,
 					repo: repo.pr.head.repo.name,
@@ -94,7 +98,7 @@ exports.undo = ({ githubAccessToken }, state) =>
 					pull_number: repo.pr.number,
 					state: 'closed',
 				})
-				logger.log(repo.pr.html_url, {
+				logger.log(`undo pr ${repo.pr.html_url}`, {
 					status: 'done',
 					message: `closed ${repo.pr.html_url}`,
 				})

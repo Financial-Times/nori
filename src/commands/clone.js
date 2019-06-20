@@ -20,18 +20,18 @@ exports.handler = async (_, state) =>
 				})
 			} else {
 				try {
-					logger.log(repoLabel, { message: `cloning ${repoLabel}` })
+					logger.log(`clone ${repoLabel}`, { message: `cloning ${repoLabel}` })
 					await git.clone({
 						origin: 'origin',
 						repository: remoteUrl,
 						directory: cloneDirectory,
 					})
-					logger.log(repoLabel, {
+					logger.log(`clone ${repoLabel}`, {
 						status: 'done',
 						message: `cloned ${repoLabel}`,
 					})
 				} catch (error) {
-					logger.log(repoLabel, {
+					logger.log(`clone ${repoLabel}`, {
 						status: 'fail',
 						message: `error cloning ${repoLabel}`,
 						error,
@@ -43,7 +43,7 @@ exports.handler = async (_, state) =>
 		}),
 	)
 
-exports.undo = (_, state) => {
+exports.undo = (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
 			// i say we take off and nuke the whole site from orbit. it's the only way to be sure
@@ -51,7 +51,6 @@ exports.undo = (_, state) => {
 			delete repo.clone
 		}),
 	)
-}
 
 exports.command = 'clone'
 exports.desc = 'clone repositories'
