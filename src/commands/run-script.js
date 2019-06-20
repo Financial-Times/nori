@@ -9,6 +9,7 @@ const handleDugiteExecResult = require('@financial-times/git/src/helpers/handle-
 
 const runProcess = require('../lib/run-process')
 const logger = require('../lib/logger')
+const styles = require('../lib/styles')
 
 exports.args = [
 	{ type: 'text', name: 'script', message: 'path to a script' },
@@ -26,6 +27,7 @@ exports.args = [
 exports.handler = async ({ script, branch }, state) => {
 	const scriptPath = path.resolve(script)
 
+	// TODO move these to args verify
 	if (!(await fs.exists(scriptPath))) {
 		assert(false, `Script does not exist: ${scriptPath}`)
 	}
@@ -44,7 +46,9 @@ exports.handler = async ({ script, branch }, state) => {
 
 		try {
 			logger.log(repoLabel, {
-				message: `creating branch ${branch} in ${repoLabel}`,
+				message: `creating branch ${styles.branch(branch)} in ${styles.repo(
+					repoLabel,
+				)}`,
 			})
 			await git.createBranch({ name: branch })
 			await git.checkoutBranch({ name: branch })
@@ -61,7 +65,9 @@ exports.handler = async ({ script, branch }, state) => {
 			}
 
 			logger.log(repoLabel, {
-				message: `running ${scriptPath} in ${repoLabel}`,
+				message: `running ${styles.url(scriptPath)} in ${styles.repo(
+					repoLabel,
+				)}`,
 			})
 
 			const scriptOutput = await runProcess(scriptPath, {
@@ -71,7 +77,7 @@ exports.handler = async ({ script, branch }, state) => {
 
 			logger.log(repoLabel, {
 				status: 'done',
-				message: `run script in ${repoLabel}:`,
+				message: `run script in ${styles.repo(repoLabel)}:`,
 			})
 
 			// eslint-disable-next-line no-console
@@ -81,7 +87,7 @@ exports.handler = async ({ script, branch }, state) => {
 		} catch (error) {
 			logger.log(repoLabel, {
 				status: 'fail',
-				message: `error running script for ${repoLabel}`,
+				message: `error running script for ${styles.repo(repoLabel)}`,
 				error,
 			})
 
@@ -111,25 +117,28 @@ async function deleteBranch({ branch, workingDirectory }) {
 exports.undo = (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
-			const repoLabel = `${repo.owner}/${repo.name}`
 			if (repo.localBranch) {
-				logger.log(repoLabel, {
-					message: `deleting branch ${repo.localBranch} in ${repoLabel}`,
-				})
-				await deleteBranch({
-					branch: repo.localBranch,
+				// checkout master first because you can't delete the branch you're on
+				await git.checkoutBranch({
+					name: 'master',
 					workingDirectory: repo.clone,
 				})
-				logger.log(repoLabel, {
-					status: 'done',
-					message: `deleted branch ${repo.localBranch} in ${repoLabel}:`,
-				})
+
+				logger.logPromise(
+					await deleteBranch({
+						branch: repo.localBranch,
+						workingDirectory: repo.clone,
+					}),
+					`deleting branch ${styles.branch(repo.localBranch)} in ${styles.repo(
+						`${repo.owner}/${repo.name}`,
+					)}`,
+				)
 
 				delete repo.localBranch
 			}
 		}),
 	)
 exports.command = 'run-script'
-exports.desc = 'runs a script in a branch against all cloned repositories'
+exports.desc = 'run a script in a branch against all cloned repositories'
 exports.input = ['clones']
 exports.output = 'localBranches'

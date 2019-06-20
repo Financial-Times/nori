@@ -5,6 +5,7 @@ const rmfr = require('rmfr')
 
 const { workspacePath } = require('../lib/constants')
 const logger = require('../lib/logger')
+const styles = require('../lib/styles')
 
 exports.handler = async (_, state) =>
 	Promise.all(
@@ -19,24 +20,14 @@ exports.handler = async (_, state) =>
 					workingDirectory: cloneDirectory,
 				})
 			} else {
-				try {
-					logger.log(`clone ${repoLabel}`, { message: `cloning ${repoLabel}` })
-					await git.clone({
+				await logger.logPromise(
+					git.clone({
 						origin: 'origin',
 						repository: remoteUrl,
 						directory: cloneDirectory,
-					})
-					logger.log(`clone ${repoLabel}`, {
-						status: 'done',
-						message: `cloned ${repoLabel}`,
-					})
-				} catch (error) {
-					logger.log(`clone ${repoLabel}`, {
-						status: 'fail',
-						message: `error cloning ${repoLabel}`,
-						error,
-					})
-				}
+					}),
+					`cloning ${styles.repo(repoLabel)}`,
+				)
 			}
 
 			repo.clone = cloneDirectory
