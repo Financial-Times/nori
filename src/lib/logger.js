@@ -13,6 +13,14 @@ class CustomKomatsu extends Komatsu {
 			spinner,
 		)}${this.renderError(spinner)}`
 	}
+
+	log(promise, options) {
+		if (process.env.NODE_ENV === 'test') {
+			return promise
+		}
+
+		return super.log(promise, options)
+	}
 }
 
 module.exports = new CustomKomatsu()
