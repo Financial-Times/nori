@@ -5,6 +5,10 @@ const { prompt } = require('enquirer')
 const toSentence = require('./to-sentence')
 const util = require('util')
 const mkdirp = util.promisify(require('mkdirp'))
+const {
+	validateTakoHostname,
+	formatTakoHostname,
+} = require('./is-tako-hostname')
 
 const configVars = [
 	{
@@ -17,6 +21,12 @@ const configVars = [
 		name: 'takoHost',
 		message: 'Tako hostname',
 		type: 'text',
+		validate: hostname => {
+			return validateTakoHostname(hostname)
+		},
+		result: hostname => {
+			return formatTakoHostname(hostname)
+		},
 	},
 	{
 		name: 'takoToken',
