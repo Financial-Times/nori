@@ -1,4 +1,3 @@
-const assert = require('assert')
 const fs = require('mz/fs')
 const path = require('path')
 const git = require('@financial-times/git')
@@ -12,7 +11,27 @@ const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 
 exports.args = [
-	{ type: 'text', name: 'script', message: 'path to a script' },
+	{
+		type: 'text',
+		name: 'script',
+		message: 'path to a script',
+		verify: async script => {
+			const scriptPath = path.resolve(script)
+
+			// TODO move these to args verify
+			if (!(await fs.exists(scriptPath))) {
+				return `${script} does not exist`
+			}
+
+			try {
+				await fs.access(scriptPath, fs.constants.X_OK)
+			} catch (_) {
+				return `${script} is not executable (try \`chmod +x\`)`
+			}
+
+			return true
+		},
+	},
 	{ type: 'text', name: 'branch', message: 'branch to create' },
 ]
 
@@ -26,17 +45,6 @@ exports.args = [
  */
 exports.handler = async ({ script, branch }, state) => {
 	const scriptPath = path.resolve(script)
-
-	// TODO move these to args verify
-	if (!(await fs.exists(scriptPath))) {
-		assert(false, `Script does not exist: ${scriptPath}`)
-	}
-
-	try {
-		await fs.access(scriptPath, fs.constants.X_OK)
-	} catch (_) {
-		assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`)
-	}
 
 	// must be serial until https://github.com/Financial-Times/tooling-helpers/issues/74
 	// is resolved (or, add workingDirectory to all the options of the git methods)
