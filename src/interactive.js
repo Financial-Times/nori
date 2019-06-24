@@ -10,6 +10,7 @@ const operations = require('./operations')
 const { workspacePath, noriExtension } = require('./lib/constants')
 const toSentence = require('./lib/to-sentence')
 const c = require('ansi-colors')
+const art = require('./lib/art')
 
 const promptStateFile = ({ stateFiles }) =>
 	prompt([
@@ -148,6 +149,9 @@ exports.handler = async function({ state, ...argv }) {
 	// save the state file so it gets created if it's new
 	// or its last modified time gets updated if it's not
 	await state.save()
+
+	// eslint-disable-next-line no-console
+	console.log(art.banner)
 
 	while (true) {
 		const { choice } = await promptOperation({ state })
