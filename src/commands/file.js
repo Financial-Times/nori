@@ -11,9 +11,19 @@ exports.args = [
 		name: 'file',
 		type: 'text',
 		message: 'path to a text file of repositories',
-		validate: async input =>
-			(await fs.exists(path.resolve(input))) ||
-			'Please enter a path to a text file containing a line-separated list of repositories',
+		validate: async input => {
+			try {
+				const stat = await fs.lstat(path.resolve(input))
+
+				if (!stat.isFile()) {
+					return 'Please enter a path to a text file containing a line-separated list of repositories'
+				}
+			} catch (error) {
+				return 'Please enter a path to a text file containing a line-separated list of repositories'
+			}
+
+			return true
+		},
 	},
 ]
 
