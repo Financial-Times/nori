@@ -40,7 +40,13 @@ const promptStateFile = ({ stateFiles }) =>
 			name: 'newStateFile',
 			message: 'create a session',
 			type: 'text',
-			validate: fileName => Boolean(fileName) || 'Please enter a session name',
+			validate(fileName) {
+				if (this.skipped || fileName) {
+					return true
+				}
+
+				return 'Please enter a session name'
+			},
 			result: fileName =>
 				fileName.endsWith(noriExtension) ? fileName : fileName + noriExtension,
 			skip() {
@@ -116,6 +122,7 @@ async function getStateFile({ stateFile }) {
 
 		const stateFileName =
 			selectedStateFile === 'new' ? newStateFile : selectedStateFile
+
 		return {
 			stateFile: path.join(workspacePath, stateFileName),
 			createStateFile: selectedStateFile === 'new',
