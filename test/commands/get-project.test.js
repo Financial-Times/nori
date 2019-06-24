@@ -4,6 +4,10 @@ const getOctokit = require('../../src/lib/octokit')
 const githubAccessToken = 'mock access token'
 const octokit = getOctokit(githubAccessToken)
 
+jest.mock('../../src/lib/config.js', () => () => ({
+	githubAccessToken: 'mock access token',
+}))
+
 test('correctly throws an error if given incorrect arguments', () => {
 	const projectUrlArg = project.args.find(arg => arg.name === 'projectUrl')
 

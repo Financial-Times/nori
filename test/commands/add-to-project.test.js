@@ -4,6 +4,10 @@ const getOctokit = require('../../src/lib/octokit')
 const githubAccessToken = 'mock access token'
 const octokit = getOctokit(githubAccessToken)
 
+jest.mock('../../src/lib/config.js', () => () => ({
+	githubAccessToken: 'mock access token',
+}))
+
 describe('adding to project', () => {
 	beforeAll(() =>
 		addToProject.handler(

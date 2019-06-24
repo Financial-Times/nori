@@ -69,7 +69,11 @@ module.exports = async function getConfig(...keys) {
 			Object.assign(config, promptConfig)
 			await writeConfig(config)
 		} else {
-			throw new Error(`Config vars ${toSentence(missingVars)} missing`)
+			throw new Error(
+				`Config vars ${toSentence(
+					missingVars.map(missing => missing.name),
+				)} missing`,
+			)
 		}
 	}
 

@@ -9,22 +9,26 @@ jest.mock('got', () =>
 	),
 )
 
-test('calls the tako host you give it with the token and topic you give it', () => {
-	const takoHost = 'mock-tako-host'
-	const takoToken = 'mock-tako-token'
+jest.mock('../../src/lib/config.js', () => () => ({
+	takoHost: 'mock-tako-host',
+	takoToken: 'mock-tako-token',
+}))
+
+test('calls the tako host you give it with the token and topic you give it', async () => {
 	const topic = 'topic'
 
-	tako.handler({
-		takoHost,
-		takoToken,
-		topic,
-	})
+	await tako.handler(
+		{
+			topic,
+		},
+		{},
+	)
 
 	expect(got).toHaveBeenCalledWith(
-		`https://${takoHost}/tako/repositories`,
+		'https://mock-tako-host/tako/repositories',
 		expect.objectContaining({
 			headers: {
-				authorization: `Bearer ${takoToken}`,
+				authorization: `Bearer mock-tako-token`,
 			},
 			query: { topic },
 		}),
