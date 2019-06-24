@@ -1,3 +1,4 @@
+const getConfig = require('../lib/config')
 const got = require('got')
 
 exports.command = 'tako'
@@ -13,7 +14,9 @@ exports.args = [
 	},
 ]
 
-exports.handler = async ({ takoHost, takoToken, topic }, state) => {
+exports.handler = async ({ topic }, state) => {
+	const { takoHost, takoToken } = await getConfig('takoHost', 'takoToken')
+
 	state.repos = await got(`https://${takoHost}/tako/repositories`, {
 		json: true,
 		headers: takoToken && {

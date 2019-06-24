@@ -2,7 +2,6 @@
 
 const operationToYargsCommand = require('./lib/operation-to-yargs-command')
 const State = require('./lib/state')
-const config = require('./lib/config')
 
 require('yargs')
 	.option('json', {
@@ -16,7 +15,6 @@ require('yargs')
 		type: 'string',
 		global: true,
 	})
-	.middleware(config)
 	.middleware(State.middleware)
 	.command(require('./interactive'))
 	.commandDir('commands', { visit: operationToYargsCommand })

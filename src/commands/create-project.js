@@ -2,6 +2,7 @@ const getOctokit = require('../lib/octokit')
 const toSentence = require('../lib/to-sentence')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
+const getConfig = require('../lib/config')
 
 exports.command = 'create-project'
 exports.desc = 'create a Github project board'
@@ -29,7 +30,8 @@ exports.args = [
 	},
 ]
 
-exports.handler = async ({ projectData, githubAccessToken }, state) => {
+exports.handler = async ({ projectData }, state) => {
+	const { githubAccessToken } = await getConfig('githubAccessToken')
 	const octokit = getOctokit(githubAccessToken)
 
 	logger.log('project', {
@@ -66,7 +68,8 @@ exports.handler = async ({ projectData, githubAccessToken }, state) => {
 	state.project = project
 }
 
-exports.undo = async ({ githubAccessToken }, state) => {
+exports.undo = async (_, state) => {
+	const { githubAccessToken } = await getConfig('githubAccessToken')
 	await logger.logPromise(
 		getOctokit(githubAccessToken).projects.update({
 			project_id: state.project.id,
