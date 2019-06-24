@@ -48,7 +48,7 @@ describe('adding to project', () => {
 test('undo archives cards and removes data from state', async () => {
 	const state = {
 		project: { id: 'mock project id' },
-		repos: [{ card: { id: 1 } }, { card: { id: 2 } }],
+		repos: [{ card: { id: 1 }, pr: {} }, { card: { id: 2 }, pr: {} }],
 	}
 
 	await addToProject.undo({ githubAccessToken }, state)
@@ -61,5 +61,5 @@ test('undo archives cards and removes data from state', async () => {
 		card_id: 2,
 	})
 
-	expect(state.repos).toEqual([{}, {}])
+	expect(state.repos).toEqual([{ pr: {} }, { pr: {} }])
 })

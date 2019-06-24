@@ -4,12 +4,15 @@ const git = require('@financial-times/git')
 const rmfr = require('rmfr')
 
 const { workspacePath } = require('../lib/constants')
+const logger = require('../lib/logger')
+const styles = require('../lib/styles')
 
 exports.handler = async (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
+			const repoLabel = `${repo.owner}/${repo.name}`
 			const cloneDirectory = path.join(workspacePath, repo.owner, repo.name)
-			const remoteUrl = `git@github.com:${repo.owner}/${repo.name}.git`
+			const remoteUrl = `git@github.com:${repoLabel}.git`
 
 			if (await fs.exists(cloneDirectory)) {
 				await git.checkoutBranch({
@@ -17,18 +20,21 @@ exports.handler = async (_, state) =>
 					workingDirectory: cloneDirectory,
 				})
 			} else {
-				await git.clone({
-					origin: 'origin',
-					repository: remoteUrl,
-					directory: cloneDirectory,
-				})
+				await logger.logPromise(
+					git.clone({
+						origin: 'origin',
+						repository: remoteUrl,
+						directory: cloneDirectory,
+					}),
+					`cloning ${styles.repo(repoLabel)}`,
+				)
 			}
 
 			repo.clone = cloneDirectory
 		}),
 	)
 
-exports.undo = (_, state) => {
+exports.undo = (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
 			// i say we take off and nuke the whole site from orbit. it's the only way to be sure
@@ -36,7 +42,6 @@ exports.undo = (_, state) => {
 			delete repo.clone
 		}),
 	)
-}
 
 exports.command = 'clone'
 exports.desc = 'clone repositories'

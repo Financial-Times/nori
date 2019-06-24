@@ -1,5 +1,7 @@
 const getOctokit = require('../lib/octokit')
 const toSentence = require('../lib/to-sentence')
+const logger = require('../lib/logger')
+const styles = require('../lib/styles')
 
 exports.command = 'create-project'
 exports.desc = 'create a Github project board'
@@ -29,8 +31,17 @@ exports.args = [
 
 exports.handler = async ({ projectData, githubAccessToken }, state) => {
 	const octokit = getOctokit(githubAccessToken)
+
+	logger.log('project', {
+		message: `creating project ${styles.branch(
+			projectData.name,
+		)} in ${styles.repo(projectData.org)}`,
+	})
 	const { data: project } = await octokit.projects.createForOrg(projectData)
 
+	logger.log('project', {
+		message: `creating columns for ${styles.branch(projectData.name)}`,
+	})
 	// do these in series so they're in the right order on the board
 	project.columns = [
 		await octokit.projects.createColumn({
@@ -47,14 +58,22 @@ exports.handler = async ({ projectData, githubAccessToken }, state) => {
 		}),
 	].map(column => column.data)
 
+	logger.log('project', {
+		status: 'done',
+		message: `created project ${styles.url(project.html_url)}`,
+	})
+
 	state.project = project
 }
 
 exports.undo = async ({ githubAccessToken }, state) => {
-	await getOctokit(githubAccessToken).projects.update({
-		project_id: state.project.id,
-		state: 'closed',
-	})
+	await logger.logPromise(
+		getOctokit(githubAccessToken).projects.update({
+			project_id: state.project.id,
+			state: 'closed',
+		}),
+		`closing project ${styles.url(state.project.html_url)}`,
+	)
 
 	delete state.project
 }

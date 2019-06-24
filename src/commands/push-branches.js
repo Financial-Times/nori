@@ -1,33 +1,47 @@
 const git = require('@financial-times/git')
+const logger = require('../lib/logger')
+const styles = require('../lib/styles')
 
 exports.handler = async (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
-			await git.push({
-				repository: 'origin',
-				refspec: repo.localBranch,
-				workingDirectory: repo.clone,
-			})
+			await logger.logPromise(
+				git.push({
+					repository: 'origin',
+					refspec: repo.localBranch,
+					workingDirectory: repo.clone,
+				}),
+				`pushing ${styles.branch(repo.localBranch)} to ${styles.repo(
+					`${repo.owner}/${repo.name}`,
+				)}`,
+			)
+
 			repo.remoteBranch = repo.localBranch
 		}),
 	)
 
-exports.undo = (_, state) => {
+exports.undo = (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
-			// the git push syntax is localbranch:remotebranch. without the colon,
-			// they're the same. with nothing before the colon, it's "push nothing
-			// to the remote branch", i.e. delete it.
-			await git.push({
-				workingDirectory: repo.clone,
-				repository: 'origin',
-				refspec: `:${repo.remoteBranch}`,
-			})
+			if (repo.remoteBranch) {
+				// the git push syntax is localbranch:remotebranch. without the colon,
+				// they're the same. with nothing before the colon, it's "push nothing
+				// to the remote branch", i.e. delete it.
+				await logger.logPromise(
+					git.push({
+						workingDirectory: repo.clone,
+						repository: 'origin',
+						refspec: `:${repo.remoteBranch}`,
+					}),
+					`deleting ${styles.branch(repo.remoteBranch)} on ${styles.repo(
+						`${repo.owner}/${repo.name}`,
+					)}`,
+				)
 
-			delete repo.remoteBranch
+				delete repo.remoteBranch
+			}
 		}),
 	)
-}
 
 exports.command = 'push-branches'
 exports.desc = 'push local branches to their remotes'
