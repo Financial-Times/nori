@@ -5,6 +5,7 @@ const { prompt } = require('enquirer')
 const toSentence = require('./to-sentence')
 const util = require('util')
 const mkdirp = util.promisify(require('mkdirp'))
+const colours = require('ansi-colors')
 const {
 	validateTakoHostname,
 	formatTakoHostname,
@@ -13,8 +14,9 @@ const {
 const configVars = [
 	{
 		name: 'githubAccessToken',
-		message:
-			'Github access token (https://github.com/settings/tokens/new?scopes=repo&description=Nori)',
+		message: `Github access token ${colours.grey.italic.underline(
+			'https://github.com/settings/tokens/new?scopes=repo&description=Nori',
+		)}`,
 		type: 'password',
 	},
 	{
@@ -26,7 +28,7 @@ const configVars = [
 		},
 		result: hostname => {
 			return formatTakoHostname(hostname)
-		},
+	},
 	},
 	{
 		name: 'takoToken',
@@ -45,7 +47,7 @@ function writeConfig(config) {
 	return fs.writeFile(configPath, JSON.stringify(config))
 }
 
-module.exports = async function getConfig() {
+module.exports = async function getConfig(...keys) {
 	let config = {}
 	await mkdirp(workspacePath)
 
@@ -53,13 +55,17 @@ module.exports = async function getConfig() {
 		config = await readConfig()
 	} catch (_) {}
 
-	const missingVars = configVars.filter(
+	const requestedVars = configVars.filter(configVar =>
+		keys.includes(configVar.name),
+	)
+
+	const missingVars = requestedVars.filter(
 		configVar => !(configVar.name in config),
 	)
 
 	if (missingVars.length) {
 		if (process.stdin.isTTY) {
-			const promptConfig = await prompt(configVars)
+			const promptConfig = await prompt(missingVars)
 			Object.assign(config, promptConfig)
 			await writeConfig(config)
 		} else {

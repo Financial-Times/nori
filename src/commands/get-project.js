@@ -1,6 +1,7 @@
 const getOctokit = require('../lib/octokit')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
+const getConfig = require('../lib/config')
 
 exports.command = 'get-project'
 exports.desc = 'get a Github project board'
@@ -26,9 +27,9 @@ exports.args = [
 	},
 ]
 
-exports.handler = async ({ projectUrl, githubAccessToken }, state) => {
+exports.handler = async ({ projectUrl }, state) => {
 	const [, org, number] = projectUrl.match(githubProjectURLRegex)
-
+	const { githubAccessToken } = await getConfig('githubAccessToken')
 	const octokit = getOctokit(githubAccessToken)
 
 	try {

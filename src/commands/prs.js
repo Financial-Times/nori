@@ -2,6 +2,7 @@ const octokit = require('../lib/octokit')
 const toSentence = require('../lib/to-sentence')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
+const getConfig = require('../lib/config')
 
 exports.command = 'prs'
 exports.desc = 'create Github pull requests for pushed branches'
@@ -30,10 +31,8 @@ exports.args = [
 	},
 ]
 
-exports.handler = async (
-	{ templates: { title, body }, githubAccessToken },
-	state,
-) => {
+exports.handler = async ({ templates: { title, body } }, state) => {
+	const { githubAccessToken } = await getConfig('githubAccessToken')
 	const titleTemplate = new Function(
 		'repo',
 		`return \`${title.replace(/`/g, '\\`')}\``,
@@ -64,8 +63,10 @@ exports.handler = async (
 	)
 }
 
-exports.undo = ({ githubAccessToken }, state) =>
-	Promise.all(
+exports.undo = async (_, state) => {
+	const { githubAccessToken } = await getConfig('githubAccessToken')
+
+	return Promise.all(
 		state.repos.map(async repo => {
 			if (repo.pr) {
 				logger.log(`undo pr ${repo.pr.html_url}`, {
@@ -95,3 +96,4 @@ exports.undo = ({ githubAccessToken }, state) =>
 			}
 		}),
 	)
+}
