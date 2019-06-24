@@ -40,6 +40,7 @@ const promptStateFile = ({ stateFiles }) =>
 			name: 'newStateFile',
 			message: 'create a session',
 			type: 'text',
+			validate: fileName => Boolean(fileName) || 'Please enter a session name',
 			result: fileName =>
 				fileName.endsWith(noriExtension) ? fileName : fileName + noriExtension,
 			skip() {
@@ -76,9 +77,25 @@ const promptStateFile = ({ stateFiles }) =>
 		},
 	])
 
+const welcomeMessage = `
+${c.bold('Welcome to Nori!')} You'll be guided
+through some steps to discover
+repositories and make changes on
+them. First, give your session a
+memorable name, so you can come
+back to it later.
+`
+
 async function getStateFile({ stateFile }) {
 	if (!stateFile) {
 		const stateFiles = await State.getSortedFiles()
+		const firstRun = stateFiles.length === 0
+
+		if (firstRun) {
+			// eslint-disable-next-line no-console
+			console.log(welcomeMessage)
+		}
+
 		const {
 			selectedStateFile,
 			newStateFile,
@@ -102,12 +119,17 @@ async function getStateFile({ stateFile }) {
 		return {
 			stateFile: path.join(workspacePath, stateFileName),
 			createStateFile: selectedStateFile === 'new',
+			firstRun,
 		}
 	}
 }
 
-exports.builder = yargs =>
-	yargs.middleware(getStateFile).middleware(State.middleware)
+exports.builder = yargs => {
+	// eslint-disable-next-line no-console
+	console.log(art.banner)
+
+	return yargs.middleware(getStateFile).middleware(State.middleware)
+}
 
 const promptOperation = ({ state }) =>
 	prompt({
@@ -149,9 +171,6 @@ exports.handler = async function({ state, ...argv }) {
 	// save the state file so it gets created if it's new
 	// or its last modified time gets updated if it's not
 	await state.save()
-
-	// eslint-disable-next-line no-console
-	console.log(art.banner)
 
 	while (true) {
 		const { choice } = await promptOperation({ state })
