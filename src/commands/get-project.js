@@ -69,6 +69,7 @@ exports.handler = async ({ projectUrl }, state) => {
 			message: `error loading ${styles.url(projectUrl)}`,
 			error,
 		})
+
 		throw error
 	}
 }

@@ -165,11 +165,17 @@ module.exports = class State {
 	async runStep(operation, args) {
 		// produce, from immer, lets handlers modify the state as a mutable
 		// object safely. the updated copy is then stored as the new state
-		this.state.data = await produce(this.state.data, async draft => {
-			await operation.handler(args, draft)
-		})
-		this.state.steps.push({ name: operation.command, args })
-		return this.save()
+		try {
+			this.state.data = await produce(this.state.data, async draft => {
+				await operation.handler(args, draft)
+			})
+			this.state.steps.push({ name: operation.command, args })
+			return this.save()
+		} catch (error) {
+			// save on error so the state file is definitely up to date
+			await this.save()
+			throw error
+		}
 	}
 
 	async undo(args) {
