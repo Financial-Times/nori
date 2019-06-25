@@ -3,6 +3,7 @@ const toSentence = require('../lib/to-sentence')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 const getConfig = require('../lib/config')
+const promiseAllErrors = require('../lib/promise-all-errors')
 
 exports.command = 'prs'
 exports.desc = 'create Github pull requests for pushed branches'
@@ -42,7 +43,7 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 		`return \`${body.replace(/`/g, '\\`')}\``,
 	)
 
-	await Promise.all(
+	await promiseAllErrors(
 		state.repos.map(async repo => {
 			if (repo.remoteBranch) {
 				repo.pr = await logger
@@ -66,7 +67,7 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 exports.undo = async (_, state) => {
 	const { githubAccessToken } = await getConfig('githubAccessToken')
 
-	return Promise.all(
+	return promiseAllErrors(
 		state.repos.map(async repo => {
 			if (repo.pr) {
 				logger.log(`undo pr ${repo.pr.html_url}`, {

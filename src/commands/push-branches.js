@@ -1,9 +1,10 @@
 const git = require('@financial-times/git')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
+const promiseAllErrors = require('../lib/promise-all-errors')
 
 exports.handler = async (_, state) =>
-	Promise.all(
+	promiseAllErrors(
 		state.repos.map(async repo => {
 			await logger.logPromise(
 				git.push({
@@ -21,7 +22,7 @@ exports.handler = async (_, state) =>
 	)
 
 exports.undo = (_, state) =>
-	Promise.all(
+	promiseAllErrors(
 		state.repos.map(async repo => {
 			if (repo.remoteBranch) {
 				// the git push syntax is localbranch:remotebranch. without the colon,

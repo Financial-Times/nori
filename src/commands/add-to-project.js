@@ -2,6 +2,7 @@ const getOctokit = require('../lib/octokit')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 const getConfig = require('../lib/config')
+const promiseAllErrors = require('../lib/promise-all-errors')
 
 exports.command = 'add-to-project'
 exports.desc = 'add pull requests to a Github project'
@@ -25,7 +26,7 @@ exports.handler = async ({ column }, state) => {
 
 	const octokit = getOctokit(githubAccessToken)
 
-	await Promise.all(
+	await promiseAllErrors(
 		state.repos.map(async repo => {
 			if (repo.pr) {
 				repo.card = await logger
@@ -46,7 +47,7 @@ exports.handler = async ({ column }, state) => {
 exports.undo = async (_, state) => {
 	const { githubAccessToken } = await getConfig('githubAccessToken')
 	const octokit = getOctokit(githubAccessToken)
-	await Promise.all(
+	await promiseAllErrors(
 		state.repos.map(async repo => {
 			if (repo.card) {
 				await logger.logPromise(
