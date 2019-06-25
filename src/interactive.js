@@ -191,7 +191,13 @@ exports.handler = async function({ state, ...argv }) {
 
 			const args = Object.assign({}, argv, await prompt(promptArgs))
 
-			await state.runStep(operation, args)
+			try {
+				await state.runStep(operation, args)
+			} catch (error) {
+				// print error and allow user to continue
+				// eslint-disable-next-line no-console
+				console.error(error.stack || error.message || error.toString())
+			}
 		} else if (choice === 'preview') {
 			for (const step of state.state.steps) {
 				const type = operations[step.name].output
