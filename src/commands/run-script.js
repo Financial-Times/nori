@@ -14,7 +14,6 @@ exports.args = [
 		verify: async script => {
 			const scriptPath = path.resolve(script)
 
-			// TODO move these to args verify
 			if (!(await fs.exists(scriptPath))) {
 				return `${script} does not exist`
 			}
@@ -41,6 +40,7 @@ exports.args = [
  */
 exports.handler = async ({ script, branch }, state) => {
 	const scriptPath = path.resolve(script)
+	const branchRegex = new RegExp(`^${branch}(?:-(\\d+))?$`)
 
 	// must be serial until https://github.com/Financial-Times/tooling-helpers/issues/74
 	// is resolved (or, add workingDirectory to all the options of the git methods)
@@ -49,13 +49,42 @@ exports.handler = async ({ script, branch }, state) => {
 		git.defaults({ workingDirectory: repository.clone })
 
 		try {
-			logger.log(repoLabel, {
-				message: `creating branch ${styles.branch(branch)} in ${styles.repo(
-					repoLabel,
-				)}`,
+			// if the branch we're trying to create already exists, create `branch-1`
+			// although actually a bunch of `branch-n` might already exist, so find
+			// all of them, get the highest, increment its number and use _that_
+			const branches = await git.listBranches({
+				workingDirectory: repository.clone,
 			})
-			await git.createBranch({ name: branch })
-			await git.checkoutBranch({ name: branch })
+			const matchingBranches = branches
+				.map(branchName => branchName.match(branchRegex))
+				.filter(Boolean)
+			const highestNumberedBranchMatch = matchingBranches.reduce(
+				(highest, branchMatch) =>
+					branchMatch[1] > highest[1] ? branchMatch : highest,
+				[null, false],
+			)
+			const highestBranchNumber = parseInt(
+				highestNumberedBranchMatch[1] || 0,
+				10,
+			)
+
+			const repoBranch =
+				matchingBranches.length > 0
+					? `${branch}-${highestBranchNumber + 1}`
+					: branch
+
+			logger.log(repoLabel, {
+				message: `creating branch ${styles.branch(repoBranch)} in ${styles.repo(
+					repoLabel,
+				)}${
+					branch !== repoBranch
+						? ` (${styles.branch(branch)} already exists)`
+						: ''
+				}`,
+			})
+
+			await git.createBranch({ name: repoBranch })
+			await git.checkoutBranch({ name: repoBranch })
 
 			const contextForScript = {
 				TRANSFORMATION_RUNNER_RUNNING: true,
@@ -87,7 +116,7 @@ exports.handler = async ({ script, branch }, state) => {
 			// eslint-disable-next-line no-console
 			console.warn(scriptOutput)
 
-			repository.localBranch = branch
+			repository.localBranch = repoBranch
 		} catch (error) {
 			logger.log(repoLabel, {
 				status: 'fail',
