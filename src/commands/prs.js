@@ -79,7 +79,8 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 								base: 'master',
 								title: titleTemplate(repo),
 								body: bodyTemplate(repo),
-							})`creating PR for ${styles.branch(
+							}),
+							`creating PR for ${styles.branch(
 								repo.remoteBranch,
 							)} on ${styles.repo(`${repo.owner}/${repo.name}`)}`,
 						)
