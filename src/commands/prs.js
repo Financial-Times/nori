@@ -1,4 +1,4 @@
-const octokit = require('../lib/octokit')
+const getOctokit = require('../lib/octokit')
 const toSentence = require('../lib/to-sentence')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
@@ -44,40 +44,46 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 		`return \`${body.replace(/`/g, '\\`')}\``,
 	)
 
+	const octokit = getOctokit(githubAccessToken)
+
 	await promiseAllErrors(
 		state.repos.map(async repo => {
 			if (repo.remoteBranch) {
-				repo.pr = await logger
-					.logPromise(
-						octokit(githubAccessToken)
-							.pulls.create({
+				const [existingPr] = await octokit.paginate(
+					octokit.pulls.list.endpoint.merge({
+						owner: repo.owner,
+						repo: repo.name,
+						head: `${repo.owner}:${repo.remoteBranch}`,
+					}),
+				)
+
+				if (existingPr) {
+					logger.log(`${repo.owner}/${repo.name} PR`, {
+						status: 'info',
+						message: `using existing PR ${styles.url(
+							existingPr.html_url,
+						)} for ${styles.branch(repo.remoteBranch)} on ${styles.repo(
+							`${repo.owner}/${repo.name}`,
+						)}`,
+					})
+				}
+
+				repo.pr =
+					existingPr ||
+					(await logger
+						.logPromise(
+							octokit.pulls.create({
 								owner: repo.owner,
 								repo: repo.name,
 								head: repo.remoteBranch,
 								base: 'master',
 								title: titleTemplate(repo),
 								body: bodyTemplate(repo),
-							})
-							.catch(error => {
-								switch (error.status) {
-									// Validation Failed. since we've made sure the data is valid
-									// what this actually means is that a PR exists for this branch.
-									case 422: {
-										const newError = new NoriError(
-											`a PR already exists for ${styles.branch(
-												repo.remoteBranch,
-											)} on ${styles.repo(`${repo.owner}/${repo.name}`)}`,
-										)
-										newError.originalError = error
-										throw newError
-									}
-								}
-
-								throw error
-							}),
-						`creating PR for ${styles.repo(`${repo.owner}/${repo.name}`)}`,
-					)
-					.then(response => response.data)
+							})`creating PR for ${styles.branch(
+								repo.remoteBranch,
+							)} on ${styles.repo(`${repo.owner}/${repo.name}`)}`,
+						)
+						.then(response => response.data))
 			}
 		}),
 	)
@@ -93,14 +99,14 @@ exports.undo = async (_, state) => {
 					message: `closing ${styles.url(repo.pr.html_url)}`,
 				})
 
-				await octokit(githubAccessToken).issues.createComment({
+				await getOctokit(githubAccessToken).issues.createComment({
 					owner: repo.pr.head.repo.owner.login,
 					repo: repo.pr.head.repo.name,
 					issue_number: repo.pr.number,
 					body: 'automatically closed 🤖', //TODO prompt for template?
 				})
 
-				await octokit(githubAccessToken).pulls.update({
+				await getOctokit(githubAccessToken).pulls.update({
 					owner: repo.pr.head.repo.owner.login,
 					repo: repo.pr.head.repo.name,
 					pull_number: repo.pr.number,
