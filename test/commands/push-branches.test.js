@@ -1,5 +1,5 @@
 const pushBranches = require('../../src/commands/push-branches')
-const git = require('@financial-times/git')
+const git = require('../../src/lib/git')
 
 describe('push branches', () => {
 	test('pushes the local branch to the remote', async () => {

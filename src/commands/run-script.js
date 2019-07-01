@@ -1,11 +1,7 @@
 const fs = require('mz/fs')
 const path = require('path')
-const git = require('@financial-times/git')
 
-const { GitProcess } = require('dugite')
-const constructDugiteExecArgs = require('@financial-times/git/src/helpers/construct-dugite-exec-args')
-const handleDugiteExecResult = require('@financial-times/git/src/helpers/handle-dugite-exec-result')
-
+const git = require('../lib/git')
 const runProcess = require('../lib/run-process')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
@@ -104,24 +100,6 @@ exports.handler = async ({ script, branch }, state) => {
 	}
 }
 
-//TODO: this should be part of @financial-times/git
-async function deleteBranch({ branch, workingDirectory }) {
-	const dugiteExecArgs = constructDugiteExecArgs({
-		command: 'branch',
-		options: {
-			'-D': true,
-		},
-		positional: [branch],
-	})
-
-	const dugiteExecResult = await GitProcess.exec(
-		dugiteExecArgs,
-		workingDirectory,
-	)
-
-	return handleDugiteExecResult({ dugiteExecResult, dugiteExecArgs })
-}
-
 exports.undo = (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
@@ -133,7 +111,7 @@ exports.undo = (_, state) =>
 				})
 
 				logger.logPromise(
-					await deleteBranch({
+					await git.deleteBranch({
 						branch: repo.localBranch,
 						workingDirectory: repo.clone,
 					}),

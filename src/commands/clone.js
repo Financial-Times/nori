@@ -1,6 +1,6 @@
 const fs = require('mz/fs')
 const path = require('path')
-const git = require('@financial-times/git')
+const git = require('../lib/git')
 const rmfr = require('rmfr')
 const promiseAllErrors = require('../lib/promise-all-errors')
 
