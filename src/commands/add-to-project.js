@@ -21,7 +21,7 @@ exports.args = state => [
 	},
 ]
 
-exports.handler = async ({ column }, state) => {
+exports.handler = async ({ column, project }, state) => {
 	const { githubAccessToken } = await getConfig('githubAccessToken')
 
 	const octokit = getOctokit(githubAccessToken)
@@ -31,11 +31,29 @@ exports.handler = async ({ column }, state) => {
 			if (repo.pr) {
 				repo.card = await logger
 					.logPromise(
-						octokit.projects.createCard({
-							column_id: column,
-							content_id: repo.pr.id,
-							content_type: 'PullRequest',
-						}),
+						octokit.projects
+							.createCard({
+								column_id: column,
+								content_id: repo.pr.id,
+								content_type: 'PullRequest',
+							})
+							.catch(error => {
+								switch (error.status) {
+									// Validation Failed. since we've made sure the data is valid
+									// what this actually means is that a card exists for this PR.
+									case 422: {
+										const newError = new Error(
+											`a card already exists for ${repo.owner}/${repo.name}#${
+												repo.pr.number
+											} in ${project.html_url}`,
+										)
+										newError.originalError = error
+										throw newError
+									}
+								}
+
+								throw error
+							}),
 						`creating card for ${styles.url(repo.pr.html_url)}`,
 					)
 					.then(response => response.data)

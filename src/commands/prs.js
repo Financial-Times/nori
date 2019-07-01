@@ -61,7 +61,7 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 								switch (error.status) {
 									// Validation Failed. since we've made sure the data is valid
 									// what this actually means is that a PR exists for this branch.
-									case 1422: {
+									case 422: {
 										const newError = new Error(
 											`a PR already exists for ${repo.remoteBranch} on ${
 												repo.owner
