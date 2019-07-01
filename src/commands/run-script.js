@@ -5,6 +5,7 @@ const git = require('../lib/git')
 const runProcess = require('../lib/run-process')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
+const incrementSuffix = require('../lib/increment-suffix')
 
 exports.args = [
 	{
@@ -40,7 +41,6 @@ exports.args = [
  */
 exports.handler = async ({ script, branch }, state) => {
 	const scriptPath = path.resolve(script)
-	const branchRegex = new RegExp(`^${branch}(?:-(\\d+))?$`)
 
 	// must be serial until https://github.com/Financial-Times/tooling-helpers/issues/74
 	// is resolved (or, add workingDirectory to all the options of the git methods)
@@ -55,23 +55,8 @@ exports.handler = async ({ script, branch }, state) => {
 			const branches = await git.listBranches({
 				workingDirectory: repository.clone,
 			})
-			const matchingBranches = branches
-				.map(branchName => branchName.match(branchRegex))
-				.filter(Boolean)
-			const highestNumberedBranchMatch = matchingBranches.reduce(
-				(highest, branchMatch) =>
-					branchMatch[1] > highest[1] ? branchMatch : highest,
-				[null, false],
-			)
-			const highestBranchNumber = parseInt(
-				highestNumberedBranchMatch[1] || 0,
-				10,
-			)
 
-			const repoBranch =
-				matchingBranches.length > 0
-					? `${branch}-${highestBranchNumber + 1}`
-					: branch
+			const repoBranch = incrementSuffix(branches, branch)
 
 			logger.log(repoLabel, {
 				message: `creating branch ${styles.branch(repoBranch)} in ${styles.repo(
