@@ -48,14 +48,32 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 			if (repo.remoteBranch) {
 				repo.pr = await logger
 					.logPromise(
-						octokit(githubAccessToken).pulls.create({
-							owner: repo.owner,
-							repo: repo.name,
-							head: repo.remoteBranch,
-							base: 'master',
-							title: titleTemplate(repo),
-							body: bodyTemplate(repo),
-						}),
+						octokit(githubAccessToken)
+							.pulls.create({
+								owner: repo.owner,
+								repo: repo.name,
+								head: repo.remoteBranch,
+								base: 'master',
+								title: titleTemplate(repo),
+								body: bodyTemplate(repo),
+							})
+							.catch(error => {
+								switch (error.status) {
+									// Validation Failed. since we've made sure the data is valid
+									// what this actually means is that a PR exists for this branch.
+									case 1422: {
+										const newError = new Error(
+											`a PR already exists for ${repo.remoteBranch} on ${
+												repo.owner
+											}/${repo.name}`,
+										)
+										newError.originalError = error
+										throw newError
+									}
+								}
+
+								throw error
+							}),
 						`creating PR for ${styles.repo(`${repo.owner}/${repo.name}`)}`,
 					)
 					.then(response => response.data)
