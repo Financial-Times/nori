@@ -4,6 +4,7 @@ const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 const getConfig = require('../lib/config')
 const promiseAllErrors = require('../lib/promise-all-errors')
+const NoriError = require('../lib/error')
 
 exports.command = 'prs'
 exports.desc = 'create Github pull requests for pushed branches'
@@ -62,10 +63,10 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 									// Validation Failed. since we've made sure the data is valid
 									// what this actually means is that a PR exists for this branch.
 									case 422: {
-										const newError = new Error(
-											`a PR already exists for ${repo.remoteBranch} on ${
-												repo.owner
-											}/${repo.name}`,
+										const newError = new NoriError(
+											`a PR already exists for ${styles.branch(
+												repo.remoteBranch,
+											)} on ${styles.repo(`${repo.owner}/${repo.name}`)}`,
 										)
 										newError.originalError = error
 										throw newError

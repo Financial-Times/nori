@@ -10,9 +10,9 @@ module.exports = promises =>
 			promise.catch(error => ({ [errorSymbol]: error })),
 		),
 	).then(results => {
-		const anyError = results.find(result =>
-			Boolean(result && result[errorSymbol]),
-		)
+		const anyError = results
+			.map(result => result && result[errorSymbol])
+			.find(Boolean)
 
 		if (anyError) {
 			// throw the first error, and attach the errors and successes to it as array properties

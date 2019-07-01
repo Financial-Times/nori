@@ -8,6 +8,7 @@ const { workspacePath, noriExtension } = require('./constants')
 const { prompt } = require('enquirer')
 const types = require('./types')
 const { produce } = require('immer')
+const NoriError = require('./error')
 
 /**
  * returns the last elements from the array that meet the predicate
@@ -55,7 +56,7 @@ module.exports = class State {
 			}
 
 			if (problems.length) {
-				throw new Error(
+				throw new NoriError(
 					`--state-file is incompatible with ${problems.join(' or ')}`,
 				)
 			}
@@ -82,7 +83,7 @@ module.exports = class State {
 			if (create) {
 				createStateFile = true
 			} else {
-				throw new Error(message)
+				throw new NoriError(message)
 			}
 		}
 
@@ -125,7 +126,7 @@ module.exports = class State {
 			try {
 				this.state = JSON.parse(content)
 			} catch (_) {
-				throw new Error(
+				throw new NoriError(
 					`${
 						process.stdin.isTTY ? this.fileName : 'Standard input'
 					} couldn't be parsed as JSON`,

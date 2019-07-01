@@ -195,8 +195,16 @@ exports.handler = async function({ state, ...argv }) {
 				await state.runStep(operation, args)
 			} catch (error) {
 				// print error and allow user to continue
-				// eslint-disable-next-line no-console
-				console.error(error.stack || error.message || error.toString())
+				if (Array.isArray(error.failures) && error.failures.length > 0) {
+					// eslint-disable-next-line no-console
+					console.log(`${c.gray('─────')}
+${c.red.bold(error.failures.length)} errors running ${c.cyan(operation.command)}
+${c.gray('─────')}
+`)
+				} else {
+					// eslint-disable-next-line no-console
+					console.error(error.stack || error.message || error.toString())
+				}
 			}
 		} else if (choice === 'preview') {
 			for (const step of state.state.steps) {

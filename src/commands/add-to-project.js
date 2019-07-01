@@ -3,6 +3,7 @@ const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 const getConfig = require('../lib/config')
 const promiseAllErrors = require('../lib/promise-all-errors')
+const NoriError = require('../lib/error')
 
 exports.command = 'add-to-project'
 exports.desc = 'add pull requests to a Github project'
@@ -21,7 +22,7 @@ exports.args = state => [
 	},
 ]
 
-exports.handler = async ({ column, project }, state) => {
+exports.handler = async ({ column }, state) => {
 	const { githubAccessToken } = await getConfig('githubAccessToken')
 
 	const octokit = getOctokit(githubAccessToken)
@@ -42,10 +43,12 @@ exports.handler = async ({ column, project }, state) => {
 									// Validation Failed. since we've made sure the data is valid
 									// what this actually means is that a card exists for this PR.
 									case 422: {
-										const newError = new Error(
-											`a card already exists for ${repo.owner}/${repo.name}#${
-												repo.pr.number
-											} in ${project.html_url}`,
+										const newError = new NoriError(
+											`a card already exists for ${styles.repo(
+												`${repo.owner}/${repo.name}`,
+											)}${styles.branch(`#${repo.pr.number}`)} in ${styles.url(
+												state.project.html_url,
+											)}`,
 										)
 										newError.originalError = error
 										throw newError

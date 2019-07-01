@@ -2,6 +2,7 @@ const getOctokit = require('../lib/octokit')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 const getConfig = require('../lib/config')
+const NoriError = require('../lib/error')
 
 exports.command = 'get-project'
 exports.desc = 'get a Github project board'
@@ -44,7 +45,7 @@ exports.handler = async ({ projectUrl }, state) => {
 		)
 
 		if (!project) {
-			throw new Error(
+			throw new NoriError(
 				`There's no project #${number} in ${org}. Check https://github.com/orgs/${org}/projects/${number}`,
 			)
 		}
