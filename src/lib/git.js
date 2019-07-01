@@ -39,7 +39,12 @@ async function listBranches({ workingDirectory, remote = false }) {
 
 	return dugiteExecResult.stdout
 		.split('\n')
-		.map(line => line.replace(/^\*/, '').trim())
+		.map(line =>
+			line
+				.replace(/^\*/, '')
+				.trim()
+				.replace(/^origin(?:\/HEAD -> origin)?\//, ''),
+		)
 		.filter(Boolean)
 }
 

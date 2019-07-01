@@ -2,22 +2,35 @@ const git = require('../lib/git')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 const promiseAllErrors = require('../lib/promise-all-errors')
+const incrementSuffix = require('../lib/increment-suffix')
 
 exports.handler = async (_, state) =>
 	promiseAllErrors(
 		state.repos.map(async repo => {
+			const branches = await git.listBranches({
+				workingDirectory: repo.clone,
+				remote: true,
+			})
+			const repoBranch = incrementSuffix(branches, repo.localBranch)
+
 			await logger.logPromise(
 				git.push({
 					repository: 'origin',
-					refspec: repo.localBranch,
+					refspec: `${repo.localBranch}:${repoBranch}`,
 					workingDirectory: repo.clone,
 				}),
 				`pushing ${styles.branch(repo.localBranch)} to ${styles.repo(
 					`${repo.owner}/${repo.name}`,
-				)}`,
+				)}${
+					repoBranch !== repo.localBranch
+						? ` (as ${styles.branch(repoBranch)} because ${styles.branch(
+								repo.localBranch,
+						  )} already exists)`
+						: ''
+				}`,
 			)
 
-			repo.remoteBranch = repo.localBranch
+			repo.remoteBranch = repoBranch
 		}),
 	)
 
