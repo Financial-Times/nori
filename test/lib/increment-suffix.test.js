@@ -15,7 +15,7 @@ test('should add a -1 to a single match', () => {
 test(`should increment if there's another numbered match`, () => {
 	expect(
 		incrementSuffix(['it', 'does', 'match', 'this', 'and', 'this-10'], 'this'),
-	).toBe('this-10')
+	).toBe('this-11')
 })
 
 test('should add another number if we asked for a number in the first place', () => {
