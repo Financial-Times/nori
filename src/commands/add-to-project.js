@@ -26,40 +26,49 @@ exports.handler = async ({ column }, state) => {
 	const { githubAccessToken } = await getConfig('githubAccessToken')
 
 	const octokit = getOctokit(githubAccessToken)
+	const allCards = (await logger.logPromise(
+		Promise.all(
+			state.project.columns.map(projectColumn =>
+				octokit.paginate(
+					octokit.projects.listCards.endpoint.merge({
+						column_id: projectColumn.id,
+					}),
+				),
+			),
+		),
+		`getting current cards in ${styles.url(state.project.html_url)}`,
+	)).reduce((a, b) => a.concat(b)) // flatten
 
 	await promiseAllErrors(
 		state.repos.map(async repo => {
 			if (repo.pr) {
-				repo.card = await logger
-					.logPromise(
-						octokit.projects
-							.createCard({
+				const existingCard = allCards.find(
+					card => card.content_url === repo.pr.issue_url,
+				)
+
+				if (existingCard) {
+					logger.log(`${repo.owner}/${repo.name} card`, {
+						status: 'info',
+						message: `using existing card in ${styles.url(
+							state.project.html_url,
+						)} for ${styles.repo(`${repo.owner}/${repo.name}`)}${styles.branch(
+							`#${repo.pr.number}`,
+						)}`,
+					})
+				}
+
+				repo.card =
+					existingCard ||
+					(await logger
+						.logPromise(
+							octokit.projects.createCard({
 								column_id: column,
 								content_id: repo.pr.id,
 								content_type: 'PullRequest',
-							})
-							.catch(error => {
-								switch (error.status) {
-									// Validation Failed. since we've made sure the data is valid
-									// what this actually means is that a card exists for this PR.
-									case 422: {
-										const newError = new NoriError(
-											`a card already exists for ${styles.repo(
-												`${repo.owner}/${repo.name}`,
-											)}${styles.branch(`#${repo.pr.number}`)} in ${styles.url(
-												state.project.html_url,
-											)}`,
-										)
-										newError.originalError = error
-										throw newError
-									}
-								}
-
-								throw error
 							}),
-						`creating card for ${styles.url(repo.pr.html_url)}`,
-					)
-					.then(response => response.data)
+							`creating card for ${styles.url(repo.pr.html_url)}`,
+						)
+						.then(response => response.data))
 			}
 		}),
 	)
