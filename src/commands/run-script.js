@@ -12,7 +12,7 @@ exports.args = [
 		type: 'text',
 		name: 'script',
 		message: 'path to a script',
-		verify: async script => {
+		validate: async script => {
 			const scriptPath = path.resolve(script)
 
 			if (!(await fs.exists(scriptPath))) {
