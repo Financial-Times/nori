@@ -1,21 +1,15 @@
-<table>
-  <tr></tr>
-  <tr>
-    <th>
-      <h1>
-        &nbsp;
-        🍙 nori
-        &nbsp;
-      </h1>
-    </th>
-    <td>
-      exploratory command-line tool to make changes across multiple repositories & track their progress<br>
-      <a href="https://circleci.com/gh/Financial-Times/nori">
-        <img alt="CircleCI" src="https://circleci.com/gh/Financial-Times/nori.svg?style=svg">
-      </a>
-    </td>
-  </tr>
-</table>
+<h1 align="center">
+  <img alt="nori" src="etc/logo.svg" width="240"><br>
+
+  <a href="https://npmjs.com/package/nori">
+    <img alt="npm" src="https://img.shields.io/npm/v/nori.svg?color=grey&label=%20&logo=npm">
+  </a>
+  <a href="https://circleci.com/gh/Financial-Times/nori">
+    <img alt="CircleCI" src="https://circleci.com/gh/Financial-Times/nori.svg?style=svg">
+  </a>
+</h1>
+
+_exploratory command-line tool to make changes across multiple repositories & track their progress_
 
 <blockquote><small><em>words defined by this readme are written in <strong>bold</strong></em></small></blockquote>
 
@@ -68,7 +62,9 @@ Every operation supports the `--json` flag, which outputs all data found formatt
 ```
 
 ## Operations
-### Tako 
+
+### Tako
+
 ##### `nori tako [--topic]`
 
 Get a list of repositories from a [Tako](https://github.com/financial-times/tako) instance.
@@ -99,6 +95,7 @@ Get a list of repositories from a [Tako](https://github.com/financial-times/tako
 </table>
 
 ### File
+
 ##### `nori file --file`
 
 Get a list of repositories from a text file, structured as line-separated `owner/name` strings (optionally with leading `https://github.com/`).
@@ -120,6 +117,7 @@ Get a list of repositories from a text file, structured as line-separated `owner
 </table>
 
 ### Filter repository name
+
 ##### `nori filter-repo-name --filter`
 
 Filter the list of repositories by their names.
@@ -141,6 +139,7 @@ Filter the list of repositories by their names.
 </table>
 
 ### Run Script
+
 ##### `nori run-script --script --branch`
 
 Clone each of the list of repositories, create a branch, run a script on that branch, then push the branch to the remote.
@@ -165,7 +164,7 @@ Clone each of the list of repositories, create a branch, run a script on that br
   </tr>
 </table>
 
-**NB** *this operation will be split into multiple operations. it's doing too much right now*
+**NB** _this operation will be split into multiple operations. it's doing too much right now_
 
 The script has the responsibility to:
 
@@ -184,6 +183,7 @@ The main benefit of this approach is that scripts do not _need_
 debugging and one-off runs of a script much simpler.
 
 ### Pull Requests
+
 ##### `nori prs --templates.title --templates.body`
 
 Create a Pull Request for each of the pushed branches.
@@ -216,6 +216,7 @@ Create a Pull Request for each of the pushed branches.
 </table>
 
 ### Project
+
 ##### `nori project --project-data.name --project-data.org`
 
 Create a Github Project, and add all created Pull Requests to it.
@@ -247,9 +248,9 @@ Create a Github Project, and add all created Pull Requests to it.
   </tr>
 </table>
 
-**NB** *we're considering what to do about repos from multiple orgs, see [#62](https://github.com/Financial-Times/nori/issue/62)*
+**NB** _we're considering what to do about repos from multiple orgs, see [#62](https://github.com/Financial-Times/nori/issue/62)_
 
-**NB** *the project will have `To Do`, `In Progress` and `Done` columns, but there's currently no way to set up automatic transitions using the Github API. you'll have to set that up manually if you want the project board to reflect the state of the PRs*
+**NB** _the project will have `To Do`, `In Progress` and `Done` columns, but there's currently no way to set up automatic transitions using the Github API. you'll have to set that up manually if you want the project board to reflect the state of the PRs_
 
 ## State Files
 
@@ -263,7 +264,7 @@ The `--state-file` option can also be used with the interactive prompt, which wi
 
 ## Piping
 
-State can also be passed between operations using shell pipes. This is equivalent to running them in sequence and reusing the same state file. 
+State can also be passed between operations using shell pipes. This is equivalent to running them in sequence and reusing the same state file.
 
 ```sh
 nori file --file repos.txt | nori run-script --script script.sh --branch change
