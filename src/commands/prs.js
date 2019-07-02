@@ -4,7 +4,6 @@ const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 const getConfig = require('../lib/config')
 const promiseAllErrors = require('../lib/promise-all-errors')
-const NoriError = require('../lib/error')
 
 exports.command = 'prs'
 exports.desc = 'create Github pull requests for pushed branches'

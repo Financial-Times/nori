@@ -1,1 +1,1 @@
-module.exports = jest.genMockFromModule('@financial-times/git');
+module.exports = jest.genMockFromModule('@financial-times/git')

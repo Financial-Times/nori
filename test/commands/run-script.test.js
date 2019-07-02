@@ -1,6 +1,7 @@
 const { fs, vol } = require('memfs')
 const util = require('util')
 const path = require('path')
+const git = require('@financial-times/git')
 
 const runScript = require('../../src/commands/run-script')
 
@@ -26,7 +27,7 @@ test('errors when `script` does not exist', async () => {
 	})
 	const scriptArg = runScript.args.find(arg => arg.name === 'script')
 
-	await expect(scriptArg.verify('somefile.js')).resolves.toMatch(
+	await expect(scriptArg.validate('somefile.js')).resolves.toMatch(
 		/somefile.js does not exist/i,
 	)
 })
@@ -48,12 +49,14 @@ test('errors when `script` is not executable', async () => {
 
 	const scriptArg = runScript.args.find(arg => arg.name === 'script')
 
-	await expect(scriptArg.verify('transformation.js')).resolves.toMatch(
+	await expect(scriptArg.validate('transformation.js')).resolves.toMatch(
 		/transformation.js is not executable/i,
 	)
 })
 
 test('runs script', async () => {
+	git.listBranches.mockResolvedValue([])
+
 	vol.fromJSON({
 		hello: {},
 		'transformation.js': 'Some transformation script',

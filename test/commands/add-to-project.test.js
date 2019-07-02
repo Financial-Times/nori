@@ -20,9 +20,9 @@ describe('adding to project', () => {
 					columns: [{ id: 1, name: 'To do' }],
 				},
 				repos: [
-					{ pr: { id: 'pull request 1' } },
-					{ pr: { id: 'pull request 2' } },
-					{ pr: { id: 'pull request 3' } },
+					{ pr: { id: 'pull request 1', issue_url: 'url' } },
+					{ pr: { id: 'pull request 2', issue_url: 'url' } },
+					{ pr: { id: 'pull request 3', issue_url: 'url' } },
 				],
 			},
 		),

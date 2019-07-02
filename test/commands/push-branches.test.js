@@ -1,8 +1,10 @@
 const pushBranches = require('../../src/commands/push-branches')
-const git = require('../../src/lib/git')
+const git = require('@financial-times/git')
 
 describe('push branches', () => {
 	test('pushes the local branch to the remote', async () => {
+		git.listBranches.mockResolvedValue([])
+
 		await pushBranches.handler(
 			{},
 			{
@@ -25,13 +27,13 @@ describe('push branches', () => {
 
 		expect(git.push).toHaveBeenCalledWith({
 			repository: 'origin',
-			refspec: 'branch1',
+			refspec: 'branch1:branch1',
 			workingDirectory: 'path/to/repo1',
 		})
 
 		expect(git.push).toHaveBeenCalledWith({
 			repository: 'origin',
-			refspec: 'branch2',
+			refspec: 'branch2:branch2',
 			workingDirectory: 'path/to/repo2',
 		})
 	})

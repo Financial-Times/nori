@@ -1,6 +1,6 @@
 const clone = require('../../src/commands/clone')
 const { workspacePath } = require('../../src/lib/constants')
-const git = require('../../src/lib/git')
+const git = require('@financial-times/git')
 const path = require('path')
 const { vol } = require('memfs')
 const fs = require('mz/fs')

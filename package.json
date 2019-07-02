@@ -23,7 +23,6 @@
 		"@octokit/rest": "^16.25.1",
 		"ansi-colors": "^3.2.4",
 		"array-to-sentence": "^2.0.0",
-		"dugite": "^1.88.0-beta.0",
 		"enquirer": "^2.3.0",
 		"error-subclass": "^2.2.0",
 		"get-stdin": "^6.0.0",

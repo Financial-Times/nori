@@ -1,4 +1,4 @@
-const git = require('../lib/git')
+const git = require('@financial-times/git')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 const promiseAllErrors = require('../lib/promise-all-errors')

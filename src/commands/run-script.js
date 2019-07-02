@@ -1,7 +1,7 @@
 const fs = require('mz/fs')
 const path = require('path')
 
-const git = require('../lib/git')
+const git = require('@financial-times/git')
 const runProcess = require('../lib/run-process')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
