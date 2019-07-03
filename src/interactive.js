@@ -10,6 +10,7 @@ const operations = require('./operations')
 const { workspacePath, noriExtension } = require('./lib/constants')
 const toSentence = require('./lib/to-sentence')
 const c = require('ansi-colors')
+const art = require('./lib/art')
 
 const promptStateFile = ({ stateFiles }) =>
 	prompt([
@@ -39,6 +40,13 @@ const promptStateFile = ({ stateFiles }) =>
 			name: 'newStateFile',
 			message: 'create a session',
 			type: 'text',
+			validate(fileName) {
+				if (this.skipped || fileName) {
+					return true
+				}
+
+				return 'Please enter a session name'
+			},
 			result: fileName =>
 				fileName.endsWith(noriExtension) ? fileName : fileName + noriExtension,
 			skip() {
@@ -75,9 +83,25 @@ const promptStateFile = ({ stateFiles }) =>
 		},
 	])
 
+const welcomeMessage = `
+${c.bold('Welcome to Nori!')} You'll be guided
+through some steps to discover
+repositories and make changes on
+them. First, give your session a
+memorable name, so you can come
+back to it later.
+`
+
 async function getStateFile({ stateFile }) {
 	if (!stateFile) {
 		const stateFiles = await State.getSortedFiles()
+		const firstRun = stateFiles.length === 0
+
+		if (firstRun) {
+			// eslint-disable-next-line no-console
+			console.log(welcomeMessage)
+		}
+
 		const {
 			selectedStateFile,
 			newStateFile,
@@ -98,15 +122,21 @@ async function getStateFile({ stateFile }) {
 
 		const stateFileName =
 			selectedStateFile === 'new' ? newStateFile : selectedStateFile
+
 		return {
 			stateFile: path.join(workspacePath, stateFileName),
 			createStateFile: selectedStateFile === 'new',
+			firstRun,
 		}
 	}
 }
 
-exports.builder = yargs =>
-	yargs.middleware(getStateFile).middleware(State.middleware)
+exports.builder = yargs => {
+	// eslint-disable-next-line no-console
+	console.log(art.banner)
+
+	return yargs.middleware(getStateFile).middleware(State.middleware)
+}
 
 const promptOperation = ({ state }) =>
 	prompt({
@@ -161,7 +191,21 @@ exports.handler = async function({ state, ...argv }) {
 
 			const args = Object.assign({}, argv, await prompt(promptArgs))
 
-			await state.runStep(operation, args)
+			try {
+				await state.runStep(operation, args)
+			} catch (error) {
+				// print error and allow user to continue
+				if (Array.isArray(error.failures) && error.failures.length > 0) {
+					// eslint-disable-next-line no-console
+					console.log(`${c.gray('─────')}
+${c.red.bold(error.failures.length)} errors running ${c.cyan(operation.command)}
+${c.gray('─────')}
+`)
+				} else {
+					// eslint-disable-next-line no-console
+					console.error(error.stack || error.message || error.toString())
+				}
+			}
 		} else if (choice === 'preview') {
 			for (const step of state.state.steps) {
 				const type = operations[step.name].output

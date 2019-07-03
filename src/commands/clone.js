@@ -2,13 +2,14 @@ const fs = require('mz/fs')
 const path = require('path')
 const git = require('@financial-times/git')
 const rmfr = require('rmfr')
+const promiseAllErrors = require('../lib/promise-all-errors')
 
 const { workspacePath } = require('../lib/constants')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 
 exports.handler = async (_, state) =>
-	Promise.all(
+	promiseAllErrors(
 		state.repos.map(async repo => {
 			const repoLabel = `${repo.owner}/${repo.name}`
 			const cloneDirectory = path.join(workspacePath, repo.owner, repo.name)
@@ -35,7 +36,7 @@ exports.handler = async (_, state) =>
 	)
 
 exports.undo = (_, state) =>
-	Promise.all(
+	promiseAllErrors(
 		state.repos.map(async repo => {
 			// i say we take off and nuke the whole site from orbit. it's the only way to be sure
 			await rmfr(repo.clone)

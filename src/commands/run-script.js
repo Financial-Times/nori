@@ -1,18 +1,33 @@
-const assert = require('assert')
 const fs = require('mz/fs')
 const path = require('path')
+
 const git = require('@financial-times/git')
-
-const { GitProcess } = require('dugite')
-const constructDugiteExecArgs = require('@financial-times/git/src/helpers/construct-dugite-exec-args')
-const handleDugiteExecResult = require('@financial-times/git/src/helpers/handle-dugite-exec-result')
-
 const runProcess = require('../lib/run-process')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
+const incrementSuffix = require('../lib/increment-suffix')
 
 exports.args = [
-	{ type: 'text', name: 'script', message: 'path to a script' },
+	{
+		type: 'text',
+		name: 'script',
+		message: 'path to a script',
+		validate: async script => {
+			const scriptPath = path.resolve(script)
+
+			if (!(await fs.exists(scriptPath))) {
+				return `${script} does not exist`
+			}
+
+			try {
+				await fs.access(scriptPath, fs.constants.X_OK)
+			} catch (_) {
+				return `${script} is not executable (try \`chmod +x\`)`
+			}
+
+			return true
+		},
+	},
 	{ type: 'text', name: 'branch', message: 'branch to create' },
 ]
 
@@ -27,17 +42,6 @@ exports.args = [
 exports.handler = async ({ script, branch }, state) => {
 	const scriptPath = path.resolve(script)
 
-	// TODO move these to args verify
-	if (!(await fs.exists(scriptPath))) {
-		assert(false, `Script does not exist: ${scriptPath}`)
-	}
-
-	try {
-		await fs.access(scriptPath, fs.constants.X_OK)
-	} catch (_) {
-		assert(false, `Script is not executable (try \`chmod +x\`): ${scriptPath}`)
-	}
-
 	// must be serial until https://github.com/Financial-Times/tooling-helpers/issues/74
 	// is resolved (or, add workingDirectory to all the options of the git methods)
 	for (const repository of state.repos) {
@@ -45,13 +49,27 @@ exports.handler = async ({ script, branch }, state) => {
 		git.defaults({ workingDirectory: repository.clone })
 
 		try {
-			logger.log(repoLabel, {
-				message: `creating branch ${styles.branch(branch)} in ${styles.repo(
-					repoLabel,
-				)}`,
+			// if the branch we're trying to create already exists, create `branch-1`
+			// although actually a bunch of `branch-n` might already exist, so find
+			// all of them, get the highest, increment its number and use _that_
+			const branches = await git.listBranches({
+				workingDirectory: repository.clone,
 			})
-			await git.createBranch({ name: branch })
-			await git.checkoutBranch({ name: branch })
+
+			const repoBranch = incrementSuffix(branches, branch)
+
+			logger.log(repoLabel, {
+				message: `creating branch ${styles.branch(repoBranch)} in ${styles.repo(
+					repoLabel,
+				)}${
+					branch !== repoBranch
+						? ` (${styles.branch(branch)} already exists)`
+						: ''
+				}`,
+			})
+
+			await git.createBranch({ name: repoBranch })
+			await git.checkoutBranch({ name: repoBranch })
 
 			const contextForScript = {
 				TRANSFORMATION_RUNNER_RUNNING: true,
@@ -83,7 +101,7 @@ exports.handler = async ({ script, branch }, state) => {
 			// eslint-disable-next-line no-console
 			console.warn(scriptOutput)
 
-			repository.localBranch = branch
+			repository.localBranch = repoBranch
 		} catch (error) {
 			logger.log(repoLabel, {
 				status: 'fail',
@@ -94,24 +112,6 @@ exports.handler = async ({ script, branch }, state) => {
 			throw error
 		}
 	}
-}
-
-//TODO: this should be part of @financial-times/git
-async function deleteBranch({ branch, workingDirectory }) {
-	const dugiteExecArgs = constructDugiteExecArgs({
-		command: 'branch',
-		options: {
-			'-D': true,
-		},
-		positional: [branch],
-	})
-
-	const dugiteExecResult = await GitProcess.exec(
-		dugiteExecArgs,
-		workingDirectory,
-	)
-
-	return handleDugiteExecResult({ dugiteExecResult, dugiteExecArgs })
 }
 
 exports.undo = (_, state) =>
@@ -125,7 +125,7 @@ exports.undo = (_, state) =>
 				})
 
 				logger.logPromise(
-					await deleteBranch({
+					await git.deleteBranch({
 						branch: repo.localBranch,
 						workingDirectory: repo.clone,
 					}),

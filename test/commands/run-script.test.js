@@ -1,6 +1,7 @@
 const { fs, vol } = require('memfs')
 const util = require('util')
 const path = require('path')
+const git = require('@financial-times/git')
 
 const runScript = require('../../src/commands/run-script')
 
@@ -20,37 +21,15 @@ afterEach(() => {
 	jest.clearAllMocks()
 })
 
-test('errors when `script` is empty', async () => {
-	vol.fromJSON({
-		hello: {},
-	})
-	await expect(
-		runScript.handler(
-			{
-				workspace: 'hello',
-			},
-			{
-				repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
-			},
-		),
-	).rejects.toThrowError(/undefined/i)
-})
-
 test('errors when `script` does not exist', async () => {
 	vol.fromJSON({
 		hello: {},
 	})
-	await expect(
-		runScript.handler(
-			{
-				workspace: 'hello',
-				script: 'somefile.js',
-			},
-			{
-				repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
-			},
-		),
-	).rejects.toThrowError(/script does not exist/i)
+	const scriptArg = runScript.args.find(arg => arg.name === 'script')
+
+	await expect(scriptArg.validate('somefile.js')).resolves.toMatch(
+		/somefile.js does not exist/i,
+	)
 })
 
 test('errors when `script` is not executable', async () => {
@@ -68,20 +47,16 @@ test('errors when `script` is not executable', async () => {
 		}),
 	)
 
-	await expect(
-		runScript.handler(
-			{
-				workspace: 'hello',
-				script: 'transformation.js',
-			},
-			{
-				repos: [{ owner: 'Financial-Times', name: 'next-search-page' }],
-			},
-		),
-	).rejects.toThrowError(/script is not executable/i)
+	const scriptArg = runScript.args.find(arg => arg.name === 'script')
+
+	await expect(scriptArg.validate('transformation.js')).resolves.toMatch(
+		/transformation.js is not executable/i,
+	)
 })
 
 test('runs script', async () => {
+	git.listBranches.mockResolvedValue([])
+
 	vol.fromJSON({
 		hello: {},
 		'transformation.js': 'Some transformation script',

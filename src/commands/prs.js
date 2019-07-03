@@ -1,8 +1,9 @@
-const octokit = require('../lib/octokit')
+const getOctokit = require('../lib/octokit')
 const toSentence = require('../lib/to-sentence')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 const getConfig = require('../lib/config')
+const promiseAllErrors = require('../lib/promise-all-errors')
 
 exports.command = 'prs'
 exports.desc = 'create Github pull requests for pushed branches'
@@ -42,22 +43,47 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 		`return \`${body.replace(/`/g, '\\`')}\``,
 	)
 
-	await Promise.all(
+	const octokit = getOctokit(githubAccessToken)
+
+	await promiseAllErrors(
 		state.repos.map(async repo => {
 			if (repo.remoteBranch) {
-				repo.pr = await logger
-					.logPromise(
-						octokit(githubAccessToken).pulls.create({
-							owner: repo.owner,
-							repo: repo.name,
-							head: repo.remoteBranch,
-							base: 'master',
-							title: titleTemplate(repo),
-							body: bodyTemplate(repo),
-						}),
-						`creating PR for ${styles.repo(`${repo.owner}/${repo.name}`)}`,
-					)
-					.then(response => response.data)
+				const [existingPr] = await octokit.paginate(
+					octokit.pulls.list.endpoint.merge({
+						owner: repo.owner,
+						repo: repo.name,
+						head: `${repo.owner}:${repo.remoteBranch}`,
+					}),
+				)
+
+				if (existingPr) {
+					logger.log(`${repo.owner}/${repo.name} PR`, {
+						status: 'info',
+						message: `using existing PR ${styles.url(
+							existingPr.html_url,
+						)} for ${styles.branch(repo.remoteBranch)} on ${styles.repo(
+							`${repo.owner}/${repo.name}`,
+						)}`,
+					})
+				}
+
+				repo.pr =
+					existingPr ||
+					(await logger
+						.logPromise(
+							octokit.pulls.create({
+								owner: repo.owner,
+								repo: repo.name,
+								head: repo.remoteBranch,
+								base: 'master',
+								title: titleTemplate(repo),
+								body: bodyTemplate(repo),
+							}),
+							`creating PR for ${styles.branch(
+								repo.remoteBranch,
+							)} on ${styles.repo(`${repo.owner}/${repo.name}`)}`,
+						)
+						.then(response => response.data))
 			}
 		}),
 	)
@@ -66,21 +92,21 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 exports.undo = async (_, state) => {
 	const { githubAccessToken } = await getConfig('githubAccessToken')
 
-	return Promise.all(
+	return promiseAllErrors(
 		state.repos.map(async repo => {
 			if (repo.pr) {
 				logger.log(`undo pr ${repo.pr.html_url}`, {
 					message: `closing ${styles.url(repo.pr.html_url)}`,
 				})
 
-				await octokit(githubAccessToken).issues.createComment({
+				await getOctokit(githubAccessToken).issues.createComment({
 					owner: repo.pr.head.repo.owner.login,
 					repo: repo.pr.head.repo.name,
 					issue_number: repo.pr.number,
 					body: 'automatically closed 🤖', //TODO prompt for template?
 				})
 
-				await octokit(githubAccessToken).pulls.update({
+				await getOctokit(githubAccessToken).pulls.update({
 					owner: repo.pr.head.repo.owner.login,
 					repo: repo.pr.head.repo.name,
 					pull_number: repo.pr.number,

@@ -8,6 +8,7 @@ const { workspacePath, noriExtension } = require('./constants')
 const { prompt } = require('enquirer')
 const types = require('./types')
 const { produce } = require('immer')
+const NoriError = require('./error')
 
 /**
  * returns the last elements from the array that meet the predicate
@@ -55,7 +56,7 @@ module.exports = class State {
 			}
 
 			if (problems.length) {
-				throw new Error(
+				throw new NoriError(
 					`--state-file is incompatible with ${problems.join(' or ')}`,
 				)
 			}
@@ -82,7 +83,7 @@ module.exports = class State {
 			if (create) {
 				createStateFile = true
 			} else {
-				throw new Error(message)
+				throw new NoriError(message)
 			}
 		}
 
@@ -125,7 +126,7 @@ module.exports = class State {
 			try {
 				this.state = JSON.parse(content)
 			} catch (_) {
-				throw new Error(
+				throw new NoriError(
 					`${
 						process.stdin.isTTY ? this.fileName : 'Standard input'
 					} couldn't be parsed as JSON`,
@@ -165,11 +166,17 @@ module.exports = class State {
 	async runStep(operation, args) {
 		// produce, from immer, lets handlers modify the state as a mutable
 		// object safely. the updated copy is then stored as the new state
-		this.state.data = await produce(this.state.data, async draft => {
-			await operation.handler(args, draft)
-		})
-		this.state.steps.push({ name: operation.command, args })
-		return this.save()
+		try {
+			this.state.data = await produce(this.state.data, async draft => {
+				await operation.handler(args, draft)
+			})
+			this.state.steps.push({ name: operation.command, args })
+			return this.save()
+		} catch (error) {
+			// save on error so the state file is definitely up to date
+			await this.save()
+			throw error
+		}
 	}
 
 	async undo(args) {

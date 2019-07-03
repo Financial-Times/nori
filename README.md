@@ -1,21 +1,15 @@
-<table>
-  <tr></tr>
-  <tr>
-    <th>
-      <h1>
-        &nbsp;
-        🍙 nori
-        &nbsp;
-      </h1>
-    </th>
-    <td>
-      exploratory command-line tool to make changes across multiple repositories & track their progress<br>
-      <a href="https://circleci.com/gh/Financial-Times/nori">
-        <img alt="CircleCI" src="https://circleci.com/gh/Financial-Times/nori.svg?style=svg">
-      </a>
-    </td>
-  </tr>
-</table>
+<h1 align="center">
+  <img alt="nori" src="etc/logo.svg" width="240"><br>
+
+  <a href="https://npmjs.com/package/nori">
+    <img alt="npm" src="https://img.shields.io/npm/v/nori.svg?color=grey&label=%20&logo=npm">
+  </a>
+  <a href="https://circleci.com/gh/Financial-Times/nori">
+    <img alt="CircleCI" src="https://circleci.com/gh/Financial-Times/nori.svg?style=svg">
+  </a>
+</h1>
+
+_exploratory command-line tool to make changes across multiple repositories & track their progress_
 
 <blockquote><small><em>words defined by this readme are written in <strong>bold</strong></em></small></blockquote>
 
@@ -68,7 +62,9 @@ Every operation supports the `--json` flag, which outputs all data found formatt
 ```
 
 ## Operations
-### Tako 
+
+### Tako
+
 ##### `nori tako [--topic]`
 
 Get a list of repositories from a [Tako](https://github.com/financial-times/tako) instance.
@@ -99,6 +95,7 @@ Get a list of repositories from a [Tako](https://github.com/financial-times/tako
 </table>
 
 ### File
+
 ##### `nori file --file`
 
 Get a list of repositories from a text file, structured as line-separated `owner/name` strings (optionally with leading `https://github.com/`).
@@ -120,6 +117,7 @@ Get a list of repositories from a text file, structured as line-separated `owner
 </table>
 
 ### Filter repository name
+
 ##### `nori filter-repo-name --filter`
 
 Filter the list of repositories by their names.
@@ -140,10 +138,32 @@ Filter the list of repositories by their names.
   </tr>
 </table>
 
+### Clone
+
+##### `nori clone`
+
+Clone each of the list of repositories
+
+<table>
+  <tr>
+    <th align="right">Arguments</th>
+    <td colspan="2"><em>none</em></td>
+  </tr>
+  <tr>
+    <th align="right">Inputs</th>
+    <td colspan="2"><code>repos</code></td>
+  </tr>
+  <tr>
+    <th align="right">Output</th>
+    <td colspan="2"><code>clones</code></td>
+  </tr>
+</table>
+
 ### Run Script
+
 ##### `nori run-script --script --branch`
 
-Clone each of the list of repositories, create a branch, run a script on that branch, then push the branch to the remote.
+Create a branch and run a script on it. If the provided branch name already exists, Nori will append a number to it (e.g. `branch` → `branch-1`).
 
 <table>
   <tr>
@@ -157,15 +177,13 @@ Clone each of the list of repositories, create a branch, run a script on that br
   </tr>
   <tr>
     <th align="right">Inputs</th>
-    <td colspan="2"><code>repos</code></td>
+    <td colspan="2"><code>clones</code></td>
   </tr>
   <tr>
     <th align="right">Output</th>
-    <td colspan="2"><code>branches</code></td>
+    <td colspan="2"><code>localBranches</code></td>
   </tr>
 </table>
-
-**NB** *this operation will be split into multiple operations. it's doing too much right now*
 
 The script has the responsibility to:
 
@@ -173,17 +191,34 @@ The script has the responsibility to:
 - Add those changes to git
 - Commit those changes to git
 
-Nori will take care of:
-
-- Cloning the repos
-- Creating branches
-- Pushing branches
-
-The main benefit of this approach is that scripts do not _need_
+Nori will take care of creating branches. The main benefit
+of this approach is that scripts do not _need_
 `nori` for you to be able to run them. This makes development,
 debugging and one-off runs of a script much simpler.
 
+### Push Branches
+
+##### `nori push-branches`
+
+Push each repository's local branch to the remote. If a branch already exists on the remote with the same name as the local branch, Nori will append a number to it (e.g. `branch` → `branch-1`).
+
+<table>
+  <tr>
+    <th align="right">Arguments</th>
+    <td colspan="2"><em>none</em></td>
+  </tr>
+  <tr>
+    <th align="right">Inputs</th>
+    <td colspan="2"><code>clones</code>, <code>localBranches</code></td>
+  </tr>
+  <tr>
+    <th align="right">Output</th>
+    <td colspan="2"><code>remoteBranches</code></td>
+  </tr>
+</table>
+
 ### Pull Requests
+
 ##### `nori prs --templates.title --templates.body`
 
 Create a Pull Request for each of the pushed branches.
@@ -215,10 +250,11 @@ Create a Pull Request for each of the pushed branches.
   </tr>
 </table>
 
-### Project
-##### `nori project --project-data.name --project-data.org`
+### Create Project
 
-Create a Github Project, and add all created Pull Requests to it.
+##### `nori create-project --project-data.name --project-data.org`
+
+Create a Github Project.
 
 <table>
   <tr>
@@ -239,7 +275,7 @@ Create a Github Project, and add all created Pull Requests to it.
   </tr>
   <tr>
     <th align="right">Inputs</th>
-    <td colspan="2"><code>prs</code></td>
+    <td colspan="2"><em>none</em></td>
   </tr>
   <tr>
     <th align="right">Output</th>
@@ -247,9 +283,66 @@ Create a Github Project, and add all created Pull Requests to it.
   </tr>
 </table>
 
-**NB** *we're considering what to do about repos from multiple orgs, see [#62](https://github.com/Financial-Times/nori/issue/62)*
+**NB** _we're considering what to do about repos from multiple orgs, see [#62](https://github.com/Financial-Times/nori/issue/62)_
 
-**NB** *the project will have `To Do`, `In Progress` and `Done` columns, but there's currently no way to set up automatic transitions using the Github API. you'll have to set that up manually if you want the project board to reflect the state of the PRs*
+**NB** _the project will have `To Do`, `In Progress` and `Done` columns, but there's currently no way to set up automatic transitions using the Github API. you'll have to set that up manually if you want the project board to reflect the state of the PRs_
+
+### Get Project
+
+##### `nori get-project --project-url`
+
+Get a project from Github.
+
+<table>
+  <tr>
+    <th align="right">Arguments</th>
+    <td><code>projectUrl</code></td>
+    <td>URL of the Github project page</td>
+  </tr>
+  <tr>
+    <th align="right">Configuration</th>
+    <td><code>githubAccessToken</code></td>
+    <td>
+      Github <a href="https://github.com/settings/tokens/new?scopes=repo&description=Nori" target="_blank">personal access token with <code>repo</code> scope</a>
+    </td>
+  </tr>
+  <tr>
+    <th align="right">Inputs</th>
+    <td colspan="2"><em>none</em></td>
+  </tr>
+  <tr>
+    <th align="right">Output</th>
+    <td colspan="2"><code>project</code></td>
+  </tr>
+</table>
+
+### Add to Project
+
+##### `nori add-to-project`
+
+Add the [PRs](#pull-requests) to the project.
+
+<table>
+  <tr>
+    <th align="right">Arguments</th>
+    <td colspan="2"><em>noned</em></td>
+  </tr>
+  <tr>
+    <th align="right">Configuration</th>
+    <td><code>githubAccessToken</code></td>
+    <td>
+      Github <a href="https://github.com/settings/tokens/new?scopes=repo&description=Nori" target="_blank">personal access token with <code>repo</code> scope</a>
+    </td>
+  </tr>
+  <tr>
+    <th align="right">Inputs</th>
+    <td colspan="2"><code>prs</code>, <code>project</code></td>
+  </tr>
+  <tr>
+    <th align="right">Output</th>
+    <td colspan="2"><code>cards</code></td>
+  </tr>
+</table>
 
 ## State Files
 
@@ -263,7 +356,7 @@ The `--state-file` option can also be used with the interactive prompt, which wi
 
 ## Piping
 
-State can also be passed between operations using shell pipes. This is equivalent to running them in sequence and reusing the same state file. 
+State can also be passed between operations using shell pipes. This is equivalent to running them in sequence and reusing the same state file.
 
 ```sh
 nori file --file repos.txt | nori run-script --script script.sh --branch change
