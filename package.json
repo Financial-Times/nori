@@ -30,6 +30,7 @@
 		"komatsu": "^1.3.0",
 		"mkdirp": "^0.5.1",
 		"mz": "^2.7.0",
+		"promise.allsettled": "^1.0.1",
 		"rmfr": "^2.0.0",
 		"tiny-relative-date": "^1.3.0",
 		"yargs": "^13.2.2"
