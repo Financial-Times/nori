@@ -44,74 +44,81 @@ exports.handler = async ({ script, branch }, state) => {
 
 	// must be serial until https://github.com/Financial-Times/tooling-helpers/issues/74
 	// is resolved (or, add workingDirectory to all the options of the git methods)
-	for (const repository of state.repos) {
-		const repoLabel = `${repository.owner}/${repository.name}`
-		git.defaults({ workingDirectory: repository.clone })
+	return Promise.all(
+		state.repos.map(async repository => {
+			const repoLabel = `${repository.owner}/${repository.name}`
 
-		try {
-			// if the branch we're trying to create already exists, create `branch-1`
-			// although actually a bunch of `branch-n` might already exist, so find
-			// all of them, get the highest, increment its number and use _that_
-			const branches = await git.listBranches({
-				workingDirectory: repository.clone,
-			})
+			try {
+				// if the branch we're trying to create already exists, create `branch-1`
+				// although actually a bunch of `branch-n` might already exist, so find
+				// all of them, get the highest, increment its number and use _that_
+				const branches = await git.listBranches({
+					workingDirectory: repository.clone,
+				})
 
-			const repoBranch = incrementSuffix(branches, branch)
+				const repoBranch = incrementSuffix(branches, branch)
 
-			logger.log(repoLabel, {
-				message: `creating branch ${styles.branch(repoBranch)} in ${styles.repo(
-					repoLabel,
-				)}${
-					branch !== repoBranch
-						? ` (${styles.branch(branch)} already exists)`
-						: ''
-				}`,
-			})
+				logger.log(repoLabel, {
+					message: `creating branch ${styles.branch(
+						repoBranch,
+					)} in ${styles.repo(repoLabel)}${
+						branch !== repoBranch
+							? ` (${styles.branch(branch)} already exists)`
+							: ''
+					}`,
+				})
 
-			await git.createBranch({ name: repoBranch })
-			await git.checkoutBranch({ name: repoBranch })
+				await git.createBranch({
+					name: repoBranch,
+					workingDirectory: repository.clone,
+				})
+				await git.checkoutBranch({
+					name: repoBranch,
+					workingDirectory: repository.clone,
+				})
 
-			const contextForScript = {
-				TRANSFORMATION_RUNNER_RUNNING: true,
-				// TRANSFORMATION_RUNNER_TARGET: remoteUrl, // TODO do we need this? and the other variables?
-				TRANSFORMATION_RUNNER_TARGET_NAME: repository.name,
+				const contextForScript = {
+					TRANSFORMATION_RUNNER_RUNNING: true,
+					// TRANSFORMATION_RUNNER_TARGET: remoteUrl, // TODO do we need this? and the other variables?
+					TRANSFORMATION_RUNNER_TARGET_NAME: repository.name,
+				}
+
+				const scriptEnv = {
+					...process.env,
+					...contextForScript,
+				}
+
+				logger.log(repoLabel, {
+					message: `running ${styles.url(scriptPath)} in ${styles.repo(
+						repoLabel,
+					)}`,
+				})
+
+				const scriptOutput = await runProcess(scriptPath, {
+					cwd: repository.clone,
+					env: scriptEnv,
+				})
+
+				logger.log(repoLabel, {
+					status: 'done',
+					message: `run script in ${styles.repo(repoLabel)}:`,
+				})
+
+				// eslint-disable-next-line no-console
+				console.warn(scriptOutput)
+
+				repository.localBranch = repoBranch
+			} catch (error) {
+				logger.log(repoLabel, {
+					status: 'fail',
+					message: `error running script for ${styles.repo(repoLabel)}`,
+					error,
+				})
+
+				throw error
 			}
-
-			const scriptEnv = {
-				...process.env,
-				...contextForScript,
-			}
-
-			logger.log(repoLabel, {
-				message: `running ${styles.url(scriptPath)} in ${styles.repo(
-					repoLabel,
-				)}`,
-			})
-
-			const scriptOutput = await runProcess(scriptPath, {
-				cwd: repository.clone,
-				env: scriptEnv,
-			})
-
-			logger.log(repoLabel, {
-				status: 'done',
-				message: `run script in ${styles.repo(repoLabel)}:`,
-			})
-
-			// eslint-disable-next-line no-console
-			console.warn(scriptOutput)
-
-			repository.localBranch = repoBranch
-		} catch (error) {
-			logger.log(repoLabel, {
-				status: 'fail',
-				message: `error running script for ${styles.repo(repoLabel)}`,
-				error,
-			})
-
-			throw error
-		}
-	}
+		}),
+	)
 }
 
 exports.undo = (_, state) =>
