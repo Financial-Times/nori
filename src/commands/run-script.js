@@ -42,8 +42,6 @@ exports.args = [
 exports.handler = async ({ script, branch }, state) => {
 	const scriptPath = path.resolve(script)
 
-	// must be serial until https://github.com/Financial-Times/tooling-helpers/issues/74
-	// is resolved (or, add workingDirectory to all the options of the git methods)
 	return Promise.all(
 		state.repos.map(async repository => {
 			const repoLabel = `${repository.owner}/${repository.name}`
