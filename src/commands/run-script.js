@@ -6,6 +6,7 @@ const runProcess = require('../lib/run-process')
 const logger = require('../lib/logger')
 const styles = require('../lib/styles')
 const incrementSuffix = require('../lib/increment-suffix')
+const promiseAllErrors = require('../lib/promise-all-errors')
 
 exports.args = [
 	{
@@ -42,7 +43,7 @@ exports.args = [
 exports.handler = async ({ script, branch }, state) => {
 	const scriptPath = path.resolve(script)
 
-	return Promise.all(
+	return promiseAllErrors(
 		state.repos.map(async repository => {
 			const repoLabel = `${repository.owner}/${repository.name}`
 
