@@ -1,5 +1,4 @@
 module.exports = {
-	tako: require('./commands/tako'),
 	file: require('./commands/file'),
 	'filter-repo-name': require('./commands/filter-repo-name'),
 	clone: require('./commands/clone'),

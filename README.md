@@ -63,37 +63,6 @@ Every operation supports the `--json` flag, which outputs all data found formatt
 
 ## Operations
 
-### Tako
-
-##### `nori tako [--topic]`
-
-Get a list of repositories from a [Tako](https://github.com/financial-times/tako) instance.
-
-<table>
-  <tr>
-    <th align="right">Arguments</th>
-    <td><code>topic</code></td>
-    <td>(optional) Github topic to filter the repositories by</td>
-  </tr>
-  <tr>
-    <th align="right" rowspan="2">Configuration</th>
-    <td><code>takoHost</code></td>
-    <td>hostname of the Tako instance</td>
-  </tr>
-  <tr>
-    <td><code>takoToken</code></td>
-    <td>bearer token header to send to your Tako instance</td>
-  </tr>
-  <tr>
-    <th align="right">Inputs</th>
-    <td colspan="2"><em>none</em></td>
-  </tr>
-  <tr>
-    <th align="right">Output</th>
-    <td colspan="2"><code>repos</code></td>
-  </tr>
-</table>
-
 ### File
 
 ##### `nori file --file`
