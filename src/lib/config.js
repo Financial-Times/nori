@@ -6,10 +6,6 @@ const toSentence = require('./to-sentence')
 const util = require('util')
 const mkdirp = util.promisify(require('mkdirp'))
 const colours = require('ansi-colors')
-const {
-	validateTakoHostname,
-	formatTakoHostname,
-} = require('./is-tako-hostname')
 
 const configVars = [
 	{
@@ -18,23 +14,7 @@ const configVars = [
 			'https://github.com/settings/tokens/new?scopes=repo&description=Nori',
 		)}`,
 		type: 'password',
-	},
-	{
-		name: 'takoHost',
-		message: 'Tako hostname',
-		type: 'text',
-		validate: hostname => {
-			return validateTakoHostname(hostname)
-		},
-		result: hostname => {
-			return formatTakoHostname(hostname)
-	},
-	},
-	{
-		name: 'takoToken',
-		message: 'Tako access token',
-		type: 'password',
-	},
+	}
 ]
 
 const configPath = path.join(workspacePath, 'config.json')
