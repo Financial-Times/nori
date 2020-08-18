@@ -23,7 +23,7 @@ exports.args = [
 			try {
 				await fs.access(scriptPath, fs.constants.X_OK)
 			} catch (_) {
-				return `${script} is not executable (try \`chmod +x\`)`
+				return `${script} is not executable. run \`chmod +x ${script}\` in your shell to make it executable`
 			}
 
 			return true
