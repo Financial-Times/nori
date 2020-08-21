@@ -160,6 +160,8 @@ The script has the responsibility to:
 - Add those changes to git
 - Commit those changes to git
 
+Example scripts can be found in [next-transformations](https://github.com/Financial-Times/next-transformations).
+
 Nori will take care of creating branches. The main benefit
 of this approach is that scripts do not _need_
 `nori` for you to be able to run them. This makes development,
