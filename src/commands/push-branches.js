@@ -13,24 +13,36 @@ exports.handler = async (_, state) =>
 			})
 			const repoBranch = incrementSuffix(branches, repo.localBranch)
 
-			await logger.logPromise(
-				git.push({
-					repository: 'origin',
-					refspec: `${repo.localBranch}:${repoBranch}`,
-					workingDirectory: repo.clone,
-				}),
-				`pushing ${styles.branch(repo.localBranch)} to ${styles.repo(
-					`${repo.owner}/${repo.name}`,
-				)}${
-					repoBranch !== repo.localBranch
-						? ` (as ${styles.branch(repoBranch)} because ${styles.branch(
-								repo.localBranch,
-						  )} already exists)`
-						: ''
-				}`,
-			)
+			const newCommits = await git.cherry({
+				workingDirectory: repo.clone,
+				origin: 'origin',
+				branch: repo.localBranch,
+			})
 
-			repo.remoteBranch = repoBranch
+			if (newCommits.length > 0) {
+				await logger.logPromise(
+					git.push({
+						repository: 'origin',
+						refspec: `${repo.localBranch}:${repoBranch}`,
+						workingDirectory: repo.clone,
+					}),
+					`pushing ${styles.branch(repo.localBranch)} to ${styles.repo(
+						`${repo.owner}/${repo.name}`,
+					)}${
+						repoBranch !== repo.localBranch
+							? ` (as ${styles.branch(repoBranch)} because ${styles.branch(
+									repo.localBranch,
+							  )} already exists)`
+							: ''
+					}`,
+				)
+				repo.remoteBranch = repoBranch
+			} else {
+				logger.log('Skipping branch push', {
+					status: 'info',
+					message: `No commits have been made on the '${repoBranch}' branch, so pushing it has been skipped.`,
+				})
+			}
 		}),
 	)
 
