@@ -15,8 +15,8 @@ exports.handler = async (_, state) =>
 
 			const newCommits = await git.cherry({
 				workingDirectory: repo.clone,
-				origin: 'origin',
-				branch: repo.localBranch,
+				upstream: 'origin',
+				head: repo.localBranch,
 			})
 
 			if (newCommits.length > 0) {
