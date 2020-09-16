@@ -40,7 +40,11 @@ exports.handler = async (_, state) =>
 			} else {
 				logger.log('Skipping branch push', {
 					status: 'info',
-					message: `No commits have been made on the '${repoBranch}' branch, so pushing it has been skipped.`,
+					message: `No commits have been made to ${styles.branch(
+						repoBranch,
+					)} on ${styles.repo(
+						`${repo.owner}/${repo.name}`,
+					)}, so pushing it has been skipped.`,
 				})
 			}
 		}),
