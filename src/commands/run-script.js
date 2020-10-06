@@ -46,6 +46,7 @@ exports.handler = async ({ script, branch }, state) => {
 	return promiseAllErrors(
 		state.repos.map(async repository => {
 			const repoLabel = `${repository.owner}/${repository.name}`
+			const prefixedBranch = `nori/${branch}`
 
 			try {
 				// if the branch we're trying to create already exists, create `branch-1`
@@ -55,14 +56,14 @@ exports.handler = async ({ script, branch }, state) => {
 					workingDirectory: repository.clone,
 				})
 
-				const repoBranch = incrementSuffix(branches, branch)
+				const repoBranch = incrementSuffix(branches, prefixedBranch)
 
 				logger.log(repoLabel, {
 					message: `creating branch ${styles.branch(
 						repoBranch,
 					)} in ${styles.repo(repoLabel)}${
-						branch !== repoBranch
-							? ` (${styles.branch(branch)} already exists)`
+						prefixedBranch !== repoBranch
+							? ` (${styles.branch(prefixedBranch)} already exists)`
 							: ''
 					}`,
 				})
