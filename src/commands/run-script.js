@@ -8,7 +8,7 @@ const styles = require('../lib/styles')
 const incrementSuffix = require('../lib/increment-suffix')
 const promiseAllErrors = require('../lib/promise-all-errors')
 
-const branchFormat = v => `nori/${v}`
+const formatBranch = v => `nori/${v}`
 
 exports.args = [
 	{
@@ -34,8 +34,8 @@ exports.args = [
 	{
 		type: 'text',
 		name: 'branch',
-		format: branchFormat,
-		result: branchFormat,
+		format: formatBranch,
+		result: formatBranch,
 		message: 'branch to create',
 	},
 ]
