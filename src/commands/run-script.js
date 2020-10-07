@@ -8,6 +8,8 @@ const styles = require('../lib/styles')
 const incrementSuffix = require('../lib/increment-suffix')
 const promiseAllErrors = require('../lib/promise-all-errors')
 
+const branchFormat = v => `nori/${v}`
+
 exports.args = [
 	{
 		type: 'text',
@@ -29,7 +31,13 @@ exports.args = [
 			return true
 		},
 	},
-	{ type: 'text', name: 'branch', message: 'branch to create' },
+	{
+		type: 'text',
+		name: 'branch',
+		format: branchFormat,
+		result: branchFormat,
+		message: 'branch to create',
+	},
 ]
 
 /**
@@ -46,7 +54,6 @@ exports.handler = async ({ script, branch }, state) => {
 	return promiseAllErrors(
 		state.repos.map(async repository => {
 			const repoLabel = `${repository.owner}/${repository.name}`
-			const prefixedBranch = `nori/${branch}`
 
 			try {
 				// if the branch we're trying to create already exists, create `branch-1`
@@ -56,14 +63,14 @@ exports.handler = async ({ script, branch }, state) => {
 					workingDirectory: repository.clone,
 				})
 
-				const repoBranch = incrementSuffix(branches, prefixedBranch)
+				const repoBranch = incrementSuffix(branches, branch)
 
 				logger.log(repoLabel, {
 					message: `creating branch ${styles.branch(
 						repoBranch,
 					)} in ${styles.repo(repoLabel)}${
-						prefixedBranch !== repoBranch
-							? ` (${styles.branch(prefixedBranch)} already exists)`
+						branch !== repoBranch
+							? ` (${styles.branch(branch)} already exists)`
 							: ''
 					}`,
 				})
