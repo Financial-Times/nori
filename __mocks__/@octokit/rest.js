@@ -1,4 +1,4 @@
-module.exports = function Octokit() {
+exports.Octokit = function Octokit() {
 	return {
 		paginate: jest.fn().mockImplementation(async args => {
 			switch (args) {
@@ -66,4 +66,4 @@ module.exports = function Octokit() {
 }
 
 // Return the Octokit instance for calls to plugin.
-module.exports.plugin = () => module.exports
+exports.Octokit.plugin = () => exports.Octokit
