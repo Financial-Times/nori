@@ -1,7 +1,7 @@
 const { Octokit } = require('@octokit/rest')
 const { throttling } = require('@octokit/plugin-throttling')
 const { retry } = require('@octokit/plugin-retry')
-const OctokitInstance = Octokit.plugin([throttling, retry])
+const OctokitInstance = Octokit.plugin(throttling, retry)
 
 let client
 
