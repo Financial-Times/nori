@@ -1,12 +1,13 @@
-const Octokit = require('@octokit/rest')
-	.plugin(require('@octokit/plugin-throttling'))
-	.plugin(require('@octokit/plugin-retry'))
+const { Octokit } = require('@octokit/rest')
+const { throttling } = require('@octokit/plugin-throttling')
+const { retry } = require('@octokit/plugin-retry')
+const OctokitInstance = Octokit.plugin(throttling, retry)
 
 let client
 
 module.exports = token => {
 	if (!client) {
-		client = new Octokit({
+		client = new OctokitInstance({
 			previews: ['inertia-preview'],
 			auth: `token ${token}`,
 			throttle: {
