@@ -66,7 +66,6 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 						)}`,
 					})
 				}
-
 				repo.pr =
 					existingPr ||
 					(await logger
@@ -75,7 +74,7 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 								owner: repo.owner,
 								repo: repo.name,
 								head: repo.remoteBranch,
-								base: 'master',
+								base: repo.centralBranch,
 								title: titleTemplate(repo),
 								body: bodyTemplate(repo),
 							}),

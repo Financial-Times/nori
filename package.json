@@ -22,7 +22,7 @@
 		"@octokit/plugin-throttling": "^3.3.4",
 		"@octokit/rest": "^18.0.9",
 		"ansi-colors": "^3.2.4",
-		"enquirer": "2.3.0",
+		"enquirer": "^2.3.0",
 		"error-subclass": "^2.2.0",
 		"get-stdin": "^6.0.0",
 		"got": "^9.6.0",

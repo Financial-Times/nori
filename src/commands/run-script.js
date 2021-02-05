@@ -132,9 +132,9 @@ exports.undo = (_, state) =>
 	Promise.all(
 		state.repos.map(async repo => {
 			if (repo.localBranch) {
-				// checkout master first because you can't delete the branch you're on
+				// checkout central branch first because you can't delete the branch you're on
 				await git.checkoutBranch({
-					name: 'master',
+					name: repo.centralBranch,
 					workingDirectory: repo.clone,
 				})
 

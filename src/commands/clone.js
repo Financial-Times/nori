@@ -14,10 +14,11 @@ exports.handler = async (_, state) =>
 			const repoLabel = `${repo.owner}/${repo.name}`
 			const cloneDirectory = path.join(workspacePath, repo.owner, repo.name)
 			const remoteUrl = `git@github.com:${repoLabel}.git`
+			repo.centralBranch = await git.getCentralBranch({ remoteUrl })
 
 			if (await fs.exists(cloneDirectory)) {
 				await git.checkoutBranch({
-					name: 'master',
+					name: repo.centralBranch,
 					workingDirectory: cloneDirectory,
 				})
 			} else {
