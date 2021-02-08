@@ -34,8 +34,18 @@ describe('creating pull requests', () => {
 			},
 			{
 				repos: [
-					{ owner: 'org', name: 'repo1', remoteBranch: 'branch1' },
-					{ owner: 'org', name: 'repo2', remoteBranch: 'branch2' },
+					{
+						owner: 'org',
+						name: 'repo1',
+						remoteBranch: 'branch1',
+						centralBranch: 'main',
+					},
+					{
+						owner: 'org',
+						name: 'repo2',
+						remoteBranch: 'branch2',
+						centralBranch: 'main',
+					},
 				],
 			},
 		)
@@ -44,7 +54,7 @@ describe('creating pull requests', () => {
 			owner: 'org',
 			repo: 'repo1',
 			head: 'branch1',
-			base: 'master',
+			base: 'main',
 			title: 'pull request title repo1',
 			body: 'pull request body repo1',
 		})
@@ -53,7 +63,7 @@ describe('creating pull requests', () => {
 			owner: 'org',
 			repo: 'repo2',
 			head: 'branch2',
-			base: 'master',
+			base: 'main',
 			title: 'pull request title repo2',
 			body: 'pull request body repo2',
 		})
