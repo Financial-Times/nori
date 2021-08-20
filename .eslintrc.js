@@ -2,12 +2,11 @@ const config = {
 	env: {
 		es6: true,
 		node: true,
-		jest: true
+		jest: true,
 	},
 	parserOptions: {
-		ecmaVersion: 2017,
 		sourceType: 'module',
-		ecmaVersion: 2018
+		ecmaVersion: 2019,
 	},
 	rules: {
 		eqeqeq: 2,
@@ -22,7 +21,7 @@ const config = {
 		'no-underscore-dangle': 0,
 		'no-unused-vars': 2,
 		'no-var': 2,
-		'one-var': [2, 'never']
+		'one-var': [2, 'never'],
 	},
 	globals: {},
 	plugins: ['no-only-tests'],
@@ -31,11 +30,11 @@ const config = {
 		{
 			files: ['test/**/*.js'],
 			rules: {
-				'no-only-tests/no-only-tests': 2
-			}
-		}
+				'no-only-tests/no-only-tests': 2,
+			},
+		},
 	],
-	settings: {}
-};
+	settings: {},
+}
 
-module.exports = config;
+module.exports = config
