@@ -5,19 +5,21 @@ const OctokitInstance = Octokit.plugin(throttling, retry)
 
 let client
 
+const retryLimitOnce = (_retryAfter, options) => {
+	// Only retry once.
+	if (options.request.retryCount === 0) {
+		return true
+	}
+}
+
 module.exports = token => {
 	if (!client) {
 		client = new OctokitInstance({
 			previews: ['inertia-preview'],
 			auth: `token ${token}`,
 			throttle: {
-				onRateLimit: (retryAfter, options) => {
-					// Only retry once.
-					if (options.request.retryCount === 0) {
-						return true
-					}
-				},
-				onAbuseLimit: () => {},
+				onRateLimit: retryLimitOnce,
+				onAbuseLimit: retryLimitOnce,
 			},
 		})
 	}
