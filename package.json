@@ -9,7 +9,7 @@
     "lint": "eslint src/ test/",
     "lint-fix": "eslint --fix src/ test/",
     "eslint-check": "eslint --print-config . | eslint-config-prettier-check",
-    "preinstall": "[[ \"$INIT_CWD\" != \"$PWD\" ]] || npm_config_yes=true npx check-engine"
+    "preinstall": "[ \"$INIT_CWD\" != \"$PWD\" ] || npm_config_yes=true npx check-engine"
   },
   "repository": {
     "type": "git",
