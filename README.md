@@ -187,6 +187,7 @@ Push each repository's local branch to the remote. If a branch already exists on
 </table>
 
 ### Pull Requests
+If you are planning to raise PRs, please add your github personal access token to the githubAccessToken object in `~/.config/nori-workspace/config.json`. Authenticating increases the [secondary rate limit](https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits) of GitHub API, which increases your chance to raise multiple PRs without being blocked by the limit.
 
 ##### `nori prs --templates.title --templates.body`
 
