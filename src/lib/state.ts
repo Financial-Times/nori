@@ -195,6 +195,22 @@ module.exports = class StateClass {
 		}
 	}
 
+	retryMessage() {
+		if (!this.didFailLastStep()) {
+			return 'last step successfully completed'
+		}
+
+		const lastStep = this.state.steps[this.state.steps.length - 1]
+		const lastOperation = operations[lastStep.name]
+		const failureCount =
+			(this.state.data.repos?.length ?? 0) -
+			(types[lastOperation.output].getInRepos(this.state.data)?.length ?? 0)
+
+		return `retry "${lastOperation.desc}" on ${failureCount} failed ${
+			failureCount === 1 ? 'repo' : 'repos'
+		}`
+	}
+
 	async retry() {
 		const step = this.state.steps[this.state.steps.length - 1]
 		const operation = operations[step.name]

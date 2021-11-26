@@ -151,7 +151,7 @@ const promptOperation = ({ state }) =>
 				{ name: 'preview' },
 				{
 					name: 'retry',
-					message: 'retry failed repos from last step',
+					message: state.retryMessage(),
 					disabled: state.didFailLastStep() ? false : '',
 				},
 				{
