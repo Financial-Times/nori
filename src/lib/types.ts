@@ -8,84 +8,87 @@ interface OperationType<T> {
 
 const operationTypes = {
 	repos: {
-		getFromState: state => state.repos,
-		getInRepos: state => state.repos,
-		exists: repos => repos && repos.length > 0,
-		format: repos =>
+		getFromState: (state) => state.repos,
+		getInRepos: (state) => state.repos,
+		exists: (repos) => repos && repos.length > 0,
+		format: (repos) =>
 			repos
-				.map(repo => `https://github.com/${repo.owner}/${repo.name}`)
+				.map((repo) => `https://github.com/${repo.owner}/${repo.name}`)
 				.join('\n'),
-		shortPreview: repos =>
+		shortPreview: (repos) =>
 			`${repos.length} repositor${repos.length > 1 ? 'ies' : 'y'}`,
 	} as OperationType<Repository[]>,
 
 	remoteBranches: {
-		getFromState: state =>
-			state.repos && state.repos.map(repo => repo.remoteBranch).filter(Boolean),
-		getInRepos: state => state.repos?.filter(repo => repo.remoteBranch),
-		exists: remoteBranches => remoteBranches && remoteBranches.length > 0,
-		format: remoteBranches => remoteBranches.join('\n'),
-		shortPreview: remoteBranches =>
+		getFromState: (state) =>
+			state.repos &&
+			state.repos.map((repo) => repo.remoteBranch).filter(Boolean),
+		getInRepos: (state) => state.repos?.filter((repo) => repo.remoteBranch),
+		exists: (remoteBranches) => remoteBranches && remoteBranches.length > 0,
+		format: (remoteBranches) => remoteBranches.join('\n'),
+		shortPreview: (remoteBranches) =>
 			`${remoteBranches.length} remote branch${
 				remoteBranches.length > 1 ? 'es' : ''
 			}`,
 	} as OperationType<Repository['remoteBranch'][]>,
 
 	localBranches: {
-		getFromState: state =>
-			state.repos && state.repos.map(repo => repo.localBranch).filter(Boolean),
-		getInRepos: state => state.repos?.filter(repo => repo.localBranch),
-		exists: localBranches => localBranches && localBranches.length > 0,
-		format: localBranches => localBranches.join('\n'),
-		shortPreview: localBranches =>
+		getFromState: (state) =>
+			state.repos &&
+			state.repos.map((repo) => repo.localBranch).filter(Boolean),
+		getInRepos: (state) => state.repos?.filter((repo) => repo.localBranch),
+		exists: (localBranches) => localBranches && localBranches.length > 0,
+		format: (localBranches) => localBranches.join('\n'),
+		shortPreview: (localBranches) =>
 			`${localBranches.length} local branch${
 				localBranches.length > 1 ? 'es' : ''
 			}`,
 	} as OperationType<Repository['localBranch'][]>,
 
 	clones: {
-		getFromState: state =>
-			state.repos && state.repos.map(repo => repo.clone).filter(Boolean),
-		getInRepos: state => state.repos?.filter(repo => repo.clone),
-		exists: clones => clones && clones.length > 0,
-		format: clones => clones.join('\n'),
-		shortPreview: clones =>
+		getFromState: (state) =>
+			state.repos && state.repos.map((repo) => repo.clone).filter(Boolean),
+		getInRepos: (state) => state.repos?.filter((repo) => repo.clone),
+		exists: (clones) => clones && clones.length > 0,
+		format: (clones) => clones.join('\n'),
+		shortPreview: (clones) =>
 			`${clones.length} cloned repo${clones.length > 1 ? 's' : ''}`,
 	} as OperationType<Repository['clone'][]>,
 
 	prs: {
-		getFromState: state =>
-			state.repos && state.repos.map(repo => repo.pr).filter(Boolean),
-		getInRepos: state => state.repos?.filter(repo => repo.pr),
-		exists: prs => prs && prs.length > 0,
-		format: prs => prs.map(pr => pr.html_url).join('\n'),
-		shortPreview: prs =>
+		getFromState: (state) =>
+			state.repos && state.repos.map((repo) => repo.pr).filter(Boolean),
+		getInRepos: (state) => state.repos?.filter((repo) => repo.pr),
+		exists: (prs) => prs && prs.length > 0,
+		format: (prs) => prs.map((pr) => pr.html_url).join('\n'),
+		shortPreview: (prs) =>
 			`${prs.length} pull request${prs.length > 1 ? 's' : ''}`,
 	} as OperationType<Repository['pr'][]>,
 
 	project: {
-		getFromState: state => state.project,
+		getFromState: (state) => state.project,
 		getInRepos: () => [],
-		exists: project => Boolean(project),
-		format: project => project.html_url,
-		shortPreview: project => project.html_url,
+		exists: (project) => Boolean(project),
+		format: (project) => project.html_url,
+		shortPreview: (project) => project.html_url,
 	} as OperationType<StateData['project']>,
 
 	projectCards: {
-		getFromState: state =>
-			state.repos && state.repos.map(repo => repo.card).filter(Boolean),
-		getInRepos: state => state.repos?.filter(repo => repo.card),
-		exists: cards => cards && cards.length > 0,
-		format: cards =>
+		getFromState: (state) =>
+			state.repos && state.repos.map((repo) => repo.card).filter(Boolean),
+		getInRepos: (state) => state.repos?.filter((repo) => repo.card),
+		exists: (cards) => cards && cards.length > 0,
+		format: (cards) =>
 			cards
 				.map(
-					card =>
+					(card) =>
 						`${card.project_url.replace('api.github.com', 'github.com')}#card-${
 							card.id
 						}`,
 				)
 				.join('\n'),
-		shortPreview: cards => `${cards.length} card${cards.length > 1 ? 's' : ''}`,
+		shortPreview: (cards) =>
+			`${cards.length} card${cards.length > 1 ? 's' : ''}`,
 	} as OperationType<Repository['card'][]>,
 }
 

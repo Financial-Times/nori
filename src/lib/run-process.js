@@ -9,17 +9,17 @@ module.exports = function runProcess(processToRun, options = {}) {
 
 		let output = ''
 
-		sh.stdout.on('data', data => {
+		sh.stdout.on('data', (data) => {
 			output += data
 		})
 
-		sh.stderr.on('data', data => {
+		sh.stderr.on('data', (data) => {
 			output += data
 		})
 
 		sh.on('error', reject)
 
-		sh.on('close', code => {
+		sh.on('close', (code) => {
 			if (code === 0) {
 				resolve(output)
 			} else {

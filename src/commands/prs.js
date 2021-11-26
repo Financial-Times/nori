@@ -19,7 +19,7 @@ exports.args = [
 		name: 'templates',
 		message: 'Pull Request details',
 		choices: [{ name: 'title' }, { name: 'body' }],
-		validate: templates => {
+		validate: (templates) => {
 			const { title, body } = templates
 			const messages = [
 				!title && 'a Pull Request title',
@@ -94,7 +94,7 @@ exports.undo = async (_, state) => {
 	const { githubAccessToken } = await getConfig('githubAccessToken')
 
 	return promiseAllErrors(
-		state.repos.map(async repo => {
+		state.repos.map(async (repo) => {
 			if (repo.pr) {
 				logger.log(`undo pr ${repo.pr.html_url}`, {
 					message: `closing ${styles.url(repo.pr.html_url)}`,

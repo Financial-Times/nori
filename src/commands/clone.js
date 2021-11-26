@@ -10,7 +10,7 @@ const styles = require('../lib/styles')
 
 exports.handler = async (_, state) =>
 	promiseAllErrors(
-		state.repos.map(async repo => {
+		state.repos.map(async (repo) => {
 			const repoLabel = `${repo.owner}/${repo.name}`
 			const cloneDirectory = path.join(workspacePath, repo.owner, repo.name)
 			const remoteUrl = `git@github.com:${repoLabel}.git`
@@ -38,7 +38,7 @@ exports.handler = async (_, state) =>
 
 exports.undo = (_, state) =>
 	promiseAllErrors(
-		state.repos.map(async repo => {
+		state.repos.map(async (repo) => {
 			// i say we take off and nuke the whole site from orbit. it's the only way to be sure
 			if (repo.clone) {
 				await rmfr(repo.clone)

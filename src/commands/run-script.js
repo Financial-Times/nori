@@ -8,14 +8,14 @@ const styles = require('../lib/styles')
 const incrementSuffix = require('../lib/increment-suffix')
 const promiseAllErrors = require('../lib/promise-all-errors')
 
-const formatBranch = v => `nori/${v}`
+const formatBranch = (v) => `nori/${v}`
 
 exports.args = [
 	{
 		type: 'text',
 		name: 'script',
 		message: 'path to a script',
-		validate: async script => {
+		validate: async (script) => {
 			const scriptPath = path.resolve(script)
 
 			if (!(await fs.exists(scriptPath))) {
@@ -52,7 +52,7 @@ exports.handler = async ({ script, branch }, state) => {
 	const scriptPath = path.resolve(script)
 
 	return promiseAllErrors(
-		state.repos.map(async repository => {
+		state.repos.map(async (repository) => {
 			const repoLabel = `${repository.owner}/${repository.name}`
 
 			try {
@@ -130,7 +130,7 @@ exports.handler = async ({ script, branch }, state) => {
 
 exports.undo = (_, state) =>
 	Promise.all(
-		state.repos.map(async repo => {
+		state.repos.map(async (repo) => {
 			if (repo.localBranch) {
 				// checkout central branch first because you can't delete the branch you're on
 				await git.checkoutBranch({

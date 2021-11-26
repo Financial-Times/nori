@@ -3,7 +3,7 @@ const types = require('./types')
 const toSentence = require('./to-sentence')
 const operations = require('../operations')
 
-const enquirerToYargs = yargs => arg => {
+const enquirerToYargs = (yargs) => (arg) => {
 	const option = {
 		// alias: arg.name[0], how can we make sure this is unique?
 		describe: arg.message,
@@ -28,7 +28,7 @@ const enquirerToYargs = yargs => arg => {
 				// return immediately as arg.choices will be executed later in promptMissingArgs
 				return
 			}
-			option.choices = arg.choices.map(choice => choice.name || choice)
+			option.choices = arg.choices.map((choice) => choice.name || choice)
 			break
 		}
 	}
@@ -38,13 +38,13 @@ const enquirerToYargs = yargs => arg => {
 	if (arg.result) {
 		// we could use `yargs.coerce` here if we didn't have to support
 		// async functions like enquirer's `result`
-		yargs.middleware(async argv => ({
+		yargs.middleware(async (argv) => ({
 			[arg.name]: await arg.result(argv[arg.name]),
 		}))
 	}
 
 	if (arg.validate) {
-		yargs.middleware(async argv => {
+		yargs.middleware(async (argv) => {
 			const maybeMessage = await arg.validate(argv[arg.name])
 
 			// if an enquirer `validate` function returns a string,
@@ -60,14 +60,16 @@ const enquirerToYargs = yargs => arg => {
 	return yargs
 }
 
-const errorOnInvalidOperation = operation => argv => {
+const errorOnInvalidOperation = (operation) => (argv) => {
 	if (argv.state.fileName && !argv.state.isValidOperation(operation)) {
-		const validCommands = Object.keys(operations).filter(key =>
+		const validCommands = Object.keys(operations).filter((key) =>
 			argv.state.isValidOperation(operations[key]),
 		)
 
 		const validMessage = validCommands.length
-			? `Valid commands are ${toSentence(validCommands.map(cmd => `'${cmd}'`))}`
+			? `Valid commands are ${toSentence(
+					validCommands.map((cmd) => `'${cmd}'`),
+			  )}`
 			: ''
 		const message = `'${operation.command}' isn't valid for the provided state. ${validMessage}`
 
@@ -75,11 +77,11 @@ const errorOnInvalidOperation = operation => argv => {
 	}
 }
 
-const checkMissingState = operation => async argv => {
+const checkMissingState = (operation) => async (argv) => {
 	const missingState = operation.input
-		.map(name => ({ ...types[name], name }))
+		.map((name) => ({ ...types[name], name }))
 		.filter(
-			type =>
+			(type) =>
 				!type.exists(
 					// check if this type is in the state we have
 					type.getFromState(argv.state.state.data),
@@ -89,8 +91,8 @@ const checkMissingState = operation => async argv => {
 	return { missingState }
 }
 
-const promptMissingArgs = operation => async argv => {
-	const missingArgs = operation.args.filter(arg => !(arg.name in argv))
+const promptMissingArgs = (operation) => async (argv) => {
+	const missingArgs = operation.args.filter((arg) => !(arg.name in argv))
 
 	if (missingArgs.length) {
 		if (process.stdin.isTTY) {
@@ -103,14 +105,14 @@ const promptMissingArgs = operation => async argv => {
 	return {}
 }
 
-const errorOnMissing = operation => argv => {
+const errorOnMissing = (operation) => (argv) => {
 	let messages = [
 		argv.missingArgs &&
 			argv.missingArgs.length &&
-			`arguments ${toSentence(argv.missingArgs.map(arg => `'${arg.name}'`))}`,
+			`arguments ${toSentence(argv.missingArgs.map((arg) => `'${arg.name}'`))}`,
 		argv.missingState &&
 			argv.missingState.length &&
-			`state ${toSentence(argv.missingState.map(arg => `'${arg.name}'`))}`,
+			`state ${toSentence(argv.missingState.map((arg) => `'${arg.name}'`))}`,
 	].filter(Boolean)
 
 	if (messages.length) {
@@ -122,7 +124,7 @@ const errorOnMissing = operation => argv => {
 	return {}
 }
 
-const operationToYargsCommand = operation =>
+const operationToYargsCommand = (operation) =>
 	Object.assign({}, operation, {
 		builder(yargs) {
 			if (operation.input) {

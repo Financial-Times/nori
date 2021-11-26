@@ -16,7 +16,7 @@ exports.args = [
 		message: 'GitHub project details',
 		type: 'form',
 		choices: [{ name: 'name' }, { name: 'org' }],
-		validate: projectData => {
+		validate: (projectData) => {
 			const messages = [
 				!projectData.name && 'a project name',
 				!projectData.org && 'a GitHub organisation to create the project in',
@@ -58,7 +58,7 @@ exports.handler = async ({ projectData }, state) => {
 			project_id: project.id,
 			name: 'Done',
 		}),
-	].map(column => column.data)
+	].map((column) => column.data)
 
 	logger.log('project', {
 		status: 'done',

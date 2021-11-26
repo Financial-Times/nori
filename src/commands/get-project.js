@@ -10,7 +10,8 @@ exports.desc = 'get a Github project board'
 exports.input = []
 exports.output = 'project'
 
-const githubProjectURLRegex = /^https:\/\/github.com\/orgs\/([^\/]+)\/projects\/(\d+)$/
+const githubProjectURLRegex =
+	/^https:\/\/github.com\/orgs\/([^\/]+)\/projects\/(\d+)$/
 
 exports.args = [
 	{
@@ -18,7 +19,7 @@ exports.args = [
 		message: 'GitHub organisation project URL',
 		type: 'text',
 		choices: [{ name: 'name' }, { name: 'org' }],
-		validate: url => {
+		validate: (url) => {
 			if (url.match(githubProjectURLRegex)) {
 				return true
 			}
@@ -41,7 +42,7 @@ exports.handler = async ({ projectUrl }, state) => {
 			octokit.projects.listForOrg.endpoint.merge({ org }),
 		)
 		const project = projects.find(
-			project => project.number === parseInt(number, 10),
+			(project) => project.number === parseInt(number, 10),
 		)
 
 		if (!project) {
@@ -54,9 +55,11 @@ exports.handler = async ({ projectUrl }, state) => {
 			message: `loading columns for ${styles.url(projectUrl)}`,
 		})
 
-		project.columns = (await octokit.projects.listColumns({
-			project_id: project.id,
-		})).data
+		project.columns = (
+			await octokit.projects.listColumns({
+				project_id: project.id,
+			})
+		).data
 
 		logger.log(projectUrl, {
 			status: 'done',

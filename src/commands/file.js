@@ -11,7 +11,7 @@ exports.args = [
 		name: 'file',
 		type: 'text',
 		message: 'path to a text file of repositories',
-		validate: state =>
+		validate: (state) =>
 			validateFile(
 				state,
 				['.txt'],
@@ -25,7 +25,7 @@ exports.handler = async ({ file }, state) => {
 
 	state.repos = contents
 		.split('\n')
-		.map(line => {
+		.map((line) => {
 			if (!line) return
 
 			if (line.startsWith('https://github.com')) {

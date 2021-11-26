@@ -112,10 +112,9 @@ module.exports = class StateClass {
 			file.endsWith(noriExtension),
 		)
 
-		return (
-			await Promise.all(
-				stateFiles.map(async (stateFile) => {
-					const { mtime } = await fs.stat(path.join(workspacePath, stateFile))
+		return (await Promise.all(
+			stateFiles.map(async (stateFile) => {
+				const { mtime } = await fs.stat(path.join(workspacePath, stateFile))
 
 					return {
 						stateFile,
@@ -200,7 +199,7 @@ module.exports = class StateClass {
 		const step = this.state.steps[this.state.steps.length - 1]
 		const operation = operations[step.name]
 		const successful = [...types[operation.output].getInRepos(this.state.data)]
-		this.state = await produce(this.state, async draft => {
+		this.state = await produce(this.state, async (draft) => {
 			pullAllBy(draft.data.repos!, successful, 'name')
 
 			try {

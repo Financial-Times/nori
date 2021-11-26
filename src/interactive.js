@@ -47,7 +47,7 @@ const promptStateFile = ({ stateFiles }) =>
 
 				return 'Please enter a session name'
 			},
-			result: fileName =>
+			result: (fileName) =>
 				fileName.endsWith(noriExtension) ? fileName : fileName + noriExtension,
 			skip() {
 				// this.state.answers should be first argument to skip
@@ -102,17 +102,13 @@ async function getStateFile({ stateFile }) {
 			console.log(welcomeMessage)
 		}
 
-		const {
-			selectedStateFile,
-			newStateFile,
-			toDelete,
-			confirmDelete,
-		} = await promptStateFile({ stateFiles })
+		const { selectedStateFile, newStateFile, toDelete, confirmDelete } =
+			await promptStateFile({ stateFiles })
 
 		if (selectedStateFile === 'edit') {
 			if (confirmDelete) {
 				await Promise.all(
-					toDelete.map(file => fs.unlink(path.join(workspacePath, file))),
+					toDelete.map((file) => fs.unlink(path.join(workspacePath, file))),
 				)
 			}
 
@@ -131,7 +127,7 @@ async function getStateFile({ stateFile }) {
 	}
 }
 
-exports.builder = yargs => {
+exports.builder = (yargs) => {
 	// eslint-disable-next-line no-console
 	console.log(art.banner)
 
@@ -145,7 +141,7 @@ const promptOperation = ({ state }) =>
 		type: 'select',
 		header: state.shortPreview(),
 		choices: Object.values(operations)
-			.map(operation => ({
+			.map((operation) => ({
 				name: operation.command,
 				message: operation.desc,
 				disabled: state.isValidOperation(operation) ? false : '', // empty string to hide "(disabled)" message
@@ -179,7 +175,7 @@ const promptOperation = ({ state }) =>
  * @param {string} argv.targets
  * @param {string} argv.branch
  */
-exports.handler = async function({ state, ...argv }) {
+exports.handler = async function ({ state, ...argv }) {
 	// save the state file so it gets created if it's new
 	// or its last modified time gets updated if it's not
 	await state.save()

@@ -14,7 +14,7 @@ const configVars = [
 			'https://github.com/settings/tokens/new?scopes=repo&description=Nori',
 		)}`,
 		type: 'password',
-	}
+	},
 ]
 
 const configPath = path.join(workspacePath, 'config.json')
@@ -35,12 +35,12 @@ module.exports = async function getConfig(...keys) {
 		config = await readConfig()
 	} catch (_) {}
 
-	const requestedVars = configVars.filter(configVar =>
+	const requestedVars = configVars.filter((configVar) =>
 		keys.includes(configVar.name),
 	)
 
 	const missingVars = requestedVars.filter(
-		configVar => !(configVar.name in config),
+		(configVar) => !(configVar.name in config),
 	)
 
 	if (missingVars.length) {
@@ -51,7 +51,7 @@ module.exports = async function getConfig(...keys) {
 		} else {
 			throw new Error(
 				`Config vars ${toSentence(
-					missingVars.map(missing => missing.name),
+					missingVars.map((missing) => missing.name),
 				)} missing`,
 			)
 		}

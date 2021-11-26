@@ -6,7 +6,7 @@ const incrementSuffix = require('../lib/increment-suffix')
 
 exports.handler = async (_, state) =>
 	promiseAllErrors(
-		state.repos.map(async repo => {
+		state.repos.map(async (repo) => {
 			const branches = await git.listBranches({
 				workingDirectory: repo.clone,
 				remote: true,
@@ -52,7 +52,7 @@ exports.handler = async (_, state) =>
 
 exports.undo = (_, state) =>
 	promiseAllErrors(
-		state.repos.map(async repo => {
+		state.repos.map(async (repo) => {
 			if (repo.remoteBranch) {
 				// the git push syntax is localbranch:remotebranch. without the colon,
 				// they're the same. with nothing before the colon, it's "push nothing

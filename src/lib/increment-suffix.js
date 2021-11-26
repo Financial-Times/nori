@@ -2,7 +2,7 @@ module.exports = (existing, wanted) => {
 	const wantedRegex = new RegExp(`^${wanted}(?:-(\\d+))?$`)
 
 	const matching = existing
-		.map(wantedName => wantedName.match(wantedRegex))
+		.map((wantedName) => wantedName.match(wantedRegex))
 		.filter(Boolean)
 
 	const highestNumberedMatch = matching.reduce(

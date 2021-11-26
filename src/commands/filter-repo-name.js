@@ -12,5 +12,7 @@ exports.args = [
 ]
 
 exports.handler = ({ filter }, state) => {
-	state.repos = state.repos.filter(repo => repo.name.match(new RegExp(filter)))
+	state.repos = state.repos.filter((repo) =>
+		repo.name.match(new RegExp(filter)),
+	)
 }
