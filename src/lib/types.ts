@@ -1,5 +1,6 @@
 interface OperationType<T> {
 	getFromState: (state: StateData) => T
+	getInRepos: (state: StateData) => Repository[]
 	exists: (op: T) => boolean
 	format: (op: T) => string
 	shortPreview: (op: T) => string
@@ -8,6 +9,7 @@ interface OperationType<T> {
 const operationTypes = {
 	repos: {
 		getFromState: state => state.repos,
+		getInRepos: state => state.repos,
 		exists: repos => repos && repos.length > 0,
 		format: repos =>
 			repos
@@ -20,6 +22,7 @@ const operationTypes = {
 	remoteBranches: {
 		getFromState: state =>
 			state.repos && state.repos.map(repo => repo.remoteBranch).filter(Boolean),
+		getInRepos: state => state.repos?.filter(repo => repo.remoteBranch),
 		exists: remoteBranches => remoteBranches && remoteBranches.length > 0,
 		format: remoteBranches => remoteBranches.join('\n'),
 		shortPreview: remoteBranches =>
@@ -31,6 +34,7 @@ const operationTypes = {
 	localBranches: {
 		getFromState: state =>
 			state.repos && state.repos.map(repo => repo.localBranch).filter(Boolean),
+		getInRepos: state => state.repos?.filter(repo => repo.localBranch),
 		exists: localBranches => localBranches && localBranches.length > 0,
 		format: localBranches => localBranches.join('\n'),
 		shortPreview: localBranches =>
@@ -42,6 +46,7 @@ const operationTypes = {
 	clones: {
 		getFromState: state =>
 			state.repos && state.repos.map(repo => repo.clone).filter(Boolean),
+		getInRepos: state => state.repos?.filter(repo => repo.clone),
 		exists: clones => clones && clones.length > 0,
 		format: clones => clones.join('\n'),
 		shortPreview: clones =>
@@ -51,6 +56,7 @@ const operationTypes = {
 	prs: {
 		getFromState: state =>
 			state.repos && state.repos.map(repo => repo.pr).filter(Boolean),
+		getInRepos: state => state.repos?.filter(repo => repo.pr),
 		exists: prs => prs && prs.length > 0,
 		format: prs => prs.map(pr => pr.html_url).join('\n'),
 		shortPreview: prs =>
@@ -59,6 +65,7 @@ const operationTypes = {
 
 	project: {
 		getFromState: state => state.project,
+		getInRepos: () => [],
 		exists: project => Boolean(project),
 		format: project => project.html_url,
 		shortPreview: project => project.html_url,
@@ -67,6 +74,7 @@ const operationTypes = {
 	projectCards: {
 		getFromState: state =>
 			state.repos && state.repos.map(repo => repo.card).filter(Boolean),
+		getInRepos: state => state.repos?.filter(repo => repo.card),
 		exists: cards => cards && cards.length > 0,
 		format: cards =>
 			cards
@@ -97,7 +105,7 @@ export type ArgumentResults = {
 
 export interface Step {
 	name: string
-	args: any
+	args: ArgumentResults
 }
 
 import type { GetResponseDataTypeFromEndpointMethod } from '@octokit/types'

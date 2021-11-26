@@ -40,7 +40,9 @@ exports.undo = (_, state) =>
 	promiseAllErrors(
 		state.repos.map(async repo => {
 			// i say we take off and nuke the whole site from orbit. it's the only way to be sure
-			await rmfr(repo.clone)
+			if (repo.clone) {
+				await rmfr(repo.clone)
+			}
 			delete repo.clone
 		}),
 	)

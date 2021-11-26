@@ -4,9 +4,9 @@ const { prompt } = require('enquirer')
 const fs = require('mz/fs')
 const path = require('path')
 const relativeDate = require('tiny-relative-date')
-const types = require('./lib/types')
+const types = require('./lib/types').default
 const State = require('./lib/state')
-const operations = require('./operations')
+const operations = require('./operations').default
 const { workspacePath, noriExtension } = require('./lib/constants')
 const toSentence = require('./lib/to-sentence')
 const c = require('ansi-colors')
@@ -154,6 +154,11 @@ const promptOperation = ({ state }) =>
 				{ role: 'separator' },
 				{ name: 'preview' },
 				{
+					name: 'retry',
+					message: 'retry failed repos from last step',
+					disabled: state.didFailLastStep() ? false : '',
+				},
+				{
 					name: 'undo',
 					message: 'undo last step',
 					disabled: state.state.steps.length > 0 ? false : '',
@@ -216,6 +221,8 @@ ${c.gray('─────')}
 				)
 			}
 			console.log(c.gray('─────')) // eslint-disable-line no-console
+		} else if (choice === 'retry') {
+			await state.retry()
 		} else if (choice === 'undo') {
 			await state.undo(argv)
 		} else if (choice === 'done') {

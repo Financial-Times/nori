@@ -9,6 +9,7 @@ import { prompt } from 'enquirer'
 import types, { State, Operation, ArgumentResults, StateData } from './types'
 import { produce } from 'immer'
 import NoriError from './error'
+import pullAllBy from 'lodash.pullallby'
 
 /**
  * returns the last elements from the array that meet the predicate
@@ -195,6 +196,22 @@ module.exports = class StateClass {
 		}
 	}
 
+	async retry() {
+		const step = this.state.steps[this.state.steps.length - 1]
+		const operation = operations[step.name]
+		const successful = [...types[operation.output].getInRepos(this.state.data)]
+		this.state = await produce(this.state, async draft => {
+			pullAllBy(draft.data.repos!, successful, 'name')
+
+			try {
+				await operation.handler(step.args, draft.data)
+			} catch {}
+
+			draft.data.repos?.push(...successful)
+		})
+		await this.save()
+	}
+
 	async undo(args: ArgumentResults) {
 		const undoneStep = this.state.steps[this.state.steps.length - 1]
 		const stepsToUndo = takeWhileLast(
@@ -246,6 +263,20 @@ module.exports = class StateClass {
 		const doesntHaveOutput = !previousOutputs.has(operation.output)
 
 		return hasAllInputs && (isFilter || doesntHaveOutput)
+	}
+
+	didFailLastStep() {
+		if (this.state.steps.length === 0) {
+			// this is the first step
+			return false
+		} else {
+			const lastStep = this.state.steps[this.state.steps.length - 1]
+			const lastOperation = operations[lastStep.name]
+			return (
+				types[lastOperation.output].getInRepos(this.state.data)?.length !==
+				this.state.data.repos?.length
+			)
+		}
 	}
 
 	shortPreview() {
