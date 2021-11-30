@@ -5,6 +5,8 @@ const styles = require('../lib/styles')
 const getConfig = require('../lib/config')
 const promiseAllErrors = require('../lib/promise-all-errors')
 
+const PR_CREATION_TIMEOUT_MS = 2000
+
 exports.command = 'prs'
 exports.desc = 'create Github pull requests for pushed branches'
 
@@ -45,47 +47,46 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 
 	const octokit = getOctokit(githubAccessToken)
 
-	await promiseAllErrors(
-		state.repos.map(async repo => {
-			if (repo.remoteBranch) {
-				const [existingPr] = await octokit.paginate(
-					octokit.pulls.list.endpoint.merge({
-						owner: repo.owner,
-						repo: repo.name,
-						head: `${repo.owner}:${repo.remoteBranch}`,
-					}),
-				)
+	for (const repo of state.repos) {
+		if (repo.remoteBranch) {
+			const [existingPr] = await octokit.paginate(
+				octokit.pulls.list.endpoint.merge({
+					owner: repo.owner,
+					repo: repo.name,
+					head: `${repo.owner}:${repo.remoteBranch}`,
+				}),
+			)
 
-				if (existingPr) {
-					logger.log(`${repo.owner}/${repo.name} PR`, {
-						status: 'info',
-						message: `using existing PR ${styles.url(
-							existingPr.html_url,
-						)} for ${styles.branch(repo.remoteBranch)} on ${styles.repo(
-							`${repo.owner}/${repo.name}`,
-						)}`,
-					})
-				}
-				repo.pr =
-					existingPr ||
-					(await logger
-						.logPromise(
-							octokit.pulls.create({
-								owner: repo.owner,
-								repo: repo.name,
-								head: repo.remoteBranch,
-								base: repo.centralBranch,
-								title: titleTemplate(repo),
-								body: bodyTemplate(repo),
-							}),
-							`creating PR for ${styles.branch(
-								repo.remoteBranch,
-							)} on ${styles.repo(`${repo.owner}/${repo.name}`)}`,
-						)
-						.then(response => response.data))
+			if (existingPr) {
+				logger.log(`${repo.owner}/${repo.name} PR`, {
+					status: 'info',
+					message: `using existing PR ${styles.url(
+						existingPr.html_url,
+					)} for ${styles.branch(repo.remoteBranch)} on ${styles.repo(
+						`${repo.owner}/${repo.name}`,
+					)}`,
+				})
 			}
-		}),
-	)
+			repo.pr =
+				existingPr ||
+				(await logger
+					.logPromise(
+						octokit.pulls.create({
+							owner: repo.owner,
+							repo: repo.name,
+							head: repo.remoteBranch,
+							base: repo.centralBranch,
+							title: titleTemplate(repo),
+							body: bodyTemplate(repo),
+						}),
+						`creating PR for ${styles.branch(
+							repo.remoteBranch,
+						)} on ${styles.repo(`${repo.owner}/${repo.name}`)}`,
+					)
+					.then(response => response.data))
+			await new Promise(r => setTimeout(r, PR_CREATION_TIMEOUT_MS))
+		}
+	}
 }
 
 exports.undo = async (_, state) => {
