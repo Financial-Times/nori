@@ -87,6 +87,7 @@ exports.handler = async ({ templates: { title, body } }, state) => {
 			await new Promise(r => setTimeout(r, PR_CREATION_TIMEOUT_MS))
 		}
 	}
+	getOctokit.clearPendingMessages()
 }
 
 exports.undo = async (_, state) => {
