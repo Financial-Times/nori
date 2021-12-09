@@ -10,8 +10,16 @@ let client
 
 const labels = new Set()
 
+const clearPendingMessages = (status = 'done') => {
+	labels.forEach(label => {
+		logger.log(label, { status: status })
+	})
+	labels.clear()
+}
+
 const retryWrapper = (retryAfter, options, message) => {
 	if (options.request.retryCount === RETRY_LIMIT) {
+		clearPendingMessages('fail')
 		return
 	}
 	const label = `${message}-${options.request.retryCount}`
@@ -44,9 +52,4 @@ module.exports = token => {
 	return client
 }
 
-module.exports.clearPendingMessages = () => {
-	labels.forEach(label => {
-		logger.log(label, { status: 'done' })
-	})
-	labels.clear()
-}
+module.exports.clearPendingMessages = clearPendingMessages
