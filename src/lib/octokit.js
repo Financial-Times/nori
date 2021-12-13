@@ -8,11 +8,23 @@ const RETRY_LIMIT = 5
 
 let client
 
+const labels = new Set()
+
+const clearPendingMessages = (status = 'done') => {
+	labels.forEach(label => {
+		logger.log(label, { status: status })
+	})
+	labels.clear()
+}
+
 const retryWrapper = (retryAfter, options, message) => {
 	if (options.request.retryCount === RETRY_LIMIT) {
+		clearPendingMessages('fail')
 		return
 	}
-	logger.log(`${message}, retrying after ${retryAfter}s`, {
+	const label = `${message}-${options.request.retryCount}`
+	labels.add(label)
+	logger.log(label, {
 		status: 'pending',
 		message: `${message}, retrying after ${retryAfter}s`,
 	})
@@ -39,3 +51,5 @@ module.exports = token => {
 
 	return client
 }
+
+module.exports.clearPendingMessages = clearPendingMessages
