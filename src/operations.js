@@ -1,5 +1,6 @@
 module.exports = {
 	file: require('./commands/file'),
+	'team-repos': require('./commands/team-repos'),
 	'filter-repo-name': require('./commands/filter-repo-name'),
 	clone: require('./commands/clone'),
 	'run-script': require('./commands/run-script'),

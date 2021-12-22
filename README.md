@@ -63,6 +63,11 @@ Every operation supports the `--json` flag, which outputs all data found formatt
 
 ## Operations
 
+##### `nori team-repos`
+Before executing this command, either through `npx nori` interactive mode, or `nori team-repos`, make sure you set the env variable BIZ_OPS_API_KEY. To get the key, run /bifrost in any slack channel, which will create the key in https://developer.ft.com/portal/member.
+
+Shows a list of teams in customer products (obtained from Bizops) that you can then select. After you have selected the team(s), the operation will get all the selected teams' repos from bizops. 
+
 ### File
 
 ##### `nori file --file`

@@ -24,6 +24,10 @@ const enquirerToYargs = yargs => arg => {
 		}
 		case 'select': {
 			option.type = 'string'
+			if (typeof arg.choices === 'function') {
+				// return immediately as arg.choices will be executed later in promptMissingArgs
+				return
+			}
 			option.choices = arg.choices.map(choice => choice.name || choice)
 			break
 		}
@@ -65,9 +69,7 @@ const errorOnInvalidOperation = operation => argv => {
 		const validMessage = validCommands.length
 			? `Valid commands are ${toSentence(validCommands.map(cmd => `'${cmd}'`))}`
 			: ''
-		const message = `'${
-			operation.command
-		}' isn't valid for the provided state. ${validMessage}`
+		const message = `'${operation.command}' isn't valid for the provided state. ${validMessage}`
 
 		throw new Error(message)
 	}
