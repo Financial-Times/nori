@@ -44,7 +44,7 @@ exports.handler = async ({ teams }, state) => {
 	const query = `{
         Teams(filter: { isActive: true, code_in: ${JSON.stringify(teams)} }) {
             repositories {
-              name
+                name
             }
         }
     }`
@@ -61,4 +61,8 @@ exports.handler = async ({ teams }, state) => {
 			}),
 		)
 	}, [])
+}
+
+exports.undo = (_, state) => {
+	delete state.repos
 }
