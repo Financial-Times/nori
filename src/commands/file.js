@@ -29,6 +29,11 @@ exports.handler = async ({ file }, state) => {
 			if (!line) return
 
 			const [owner, name] = line.split('/')
+
+			if (!owner || !name) {
+				throw new Error('file contents are in an incorrect format')
+			}
+
 			return { owner, name }
 		})
 		.filter(Boolean)

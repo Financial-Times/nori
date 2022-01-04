@@ -28,6 +28,7 @@ function getRepositoryObject(data) {
 
 	// recursively traverses the nested object with JSON.stringify
 	JSON.stringify(data, (_, nestedObject) => {
+		let obj
 		if (
 			nestedObject &&
 			(obj = nestedObject['repositories'] || nestedObject['Repositories'])
@@ -64,7 +65,7 @@ function getRepositoryObject(data) {
 	}
 
 	const repos = []
-	for (repo of foundObject) {
+	for (const repo of foundObject) {
 		const name = repo.name
 		if (!name) {
 			throw Error(
