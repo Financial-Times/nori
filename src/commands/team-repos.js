@@ -1,15 +1,10 @@
-const { BizOpsClient } = require('@financial-times/biz-ops-client')
+const { bizOps } = require('../lib/bizops')
 const logger = require('../lib/logger')
 
 exports.command = 'team-repos'
 exports.desc = 'get all the repos that the specified team(s) owns'
 exports.input = []
 exports.output = 'repos'
-
-const bizOps = new BizOpsClient({
-	apiKey: process.env.BIZ_OPS_API_KEY,
-	systemCode: 'check-repos',
-})
 
 async function getCodeNames() {
 	const message = 'Fetching Teams from Bizops'

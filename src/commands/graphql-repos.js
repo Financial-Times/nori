@@ -1,5 +1,5 @@
 const fs = require('mz/fs')
-const { BizOpsClient } = require('@financial-times/biz-ops-client')
+const { bizOps } = require('../lib/bizops')
 const logger = require('../lib/logger')
 const { validateFile } = require('../lib/file-validation')
 
@@ -12,11 +12,13 @@ exports.args = [
 	{
 		name: 'file',
 		type: 'text',
-		message: 'path to a .graphql | .txt file',
+		message:
+			'path to a .graphql | .txt file containing graphql query for repositories',
 		validate: state =>
 			validateFile(
 				state,
-				'Please enter a path to a file containing graphql query for repositories',
+				['.graphql', '.txt'],
+				'Please enter a path to a .graphql | .txt file containing graphql query for repositories',
 			),
 	},
 ]
@@ -79,12 +81,6 @@ function getRepositoryObject(data) {
 }
 
 exports.handler = async ({ file }, state) => {
-	//TODO: refactor to be instantiated in common area
-	const bizOps = new BizOpsClient({
-		apiKey: process.env.BIZ_OPS_API_KEY,
-		systemCode: 'check-repos',
-	})
-
 	const query = await fs.readFile(file, 'utf8')
 	const message = 'Executing graphQL query on bizops: \n' + query
 

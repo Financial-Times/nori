@@ -14,6 +14,7 @@ exports.args = [
 		validate: state =>
 			validateFile(
 				state,
+				['.txt'],
 				'Please enter a path to a text file containing a line-separated list of repositories',
 			),
 	},

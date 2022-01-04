@@ -1,11 +1,11 @@
 const path = require('path')
 const fs = require('mz/fs')
 
-exports.validateFile = async (input, errMessage) => {
+exports.validateFile = async (input, fileExtension, errMessage) => {
 	try {
 		const stat = await fs.lstat(path.resolve(input))
 
-		if (!stat.isFile()) {
+		if (!stat.isFile() || !fileExtension.includes(path.extname(input))) {
 			return errMessage
 		}
 	} catch (error) {
