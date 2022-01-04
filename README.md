@@ -63,11 +63,6 @@ Every operation supports the `--json` flag, which outputs all data found formatt
 
 ## Operations
 
-##### `nori team-repos`
-Before executing this command, either through `npx nori` interactive mode, or `nori team-repos`, make sure you set the env variable BIZ_OPS_API_KEY. To get the key, run /bifrost in any slack channel, which will create the key in https://developer.ft.com/portal/member.
-
-Shows a list of teams in customer products (obtained from Bizops) that you can then select. After you have selected the team(s), the operation will get all the selected teams' repos from bizops. 
-
 ### File
 
 ##### `nori file --file`
@@ -79,6 +74,48 @@ Get a list of repositories from a text file, structured as line-separated `owner
     <th align="right">Arguments</th>
     <td><code>file</code></td>
     <td>path to the text file to read, relative to the current working directory</td>
+  </tr>
+  <tr>
+    <th align="right">Inputs</th>
+    <td colspan="2"><em>none</em></td>
+  </tr>
+  <tr>
+    <th align="right">Output</th>
+    <td colspan="2"><code>repos</code></td>
+  </tr>
+</table>
+
+### Get repositories through Bizops
+Before executing any of the two commands below, either through `npx nori` interactive mode, or directly through the command line, make sure you set the env variable BIZ_OPS_API_KEY. To get the key, run /bifrost in any slack channel, which will create the key in https://developer.ft.com/portal/member.
+
+##### `nori team-repos`
+This operation gets all the repositories from the team you have selected.
+It shows a list of teams in customer products (obtained from Bizops) which you can select. 
+
+<table>
+  <tr>
+    <th align="right">Arguments</th>
+    <td>None</td>
+    <td><em>Teams to be selected when command is run</em></td>
+  </tr>
+  <tr>
+    <th align="right">Inputs</th>
+    <td colspan="2"><code>none</code></td>
+  </tr>
+  <tr>
+    <th align="right">Output</th>
+    <td colspan="2"><code>repos</code></td>
+  </tr>
+</table>
+
+##### `nori graphql-repos --file`
+This operation gets repositories by executing the file that you pass in containing your own graphql query. 
+
+<table>
+  <tr>
+    <th align="right">Arguments</th>
+    <td><code>file</code></td>
+    <td>path to a .graphql | .txt file containing graphql query for repositories</td>
   </tr>
   <tr>
     <th align="right">Inputs</th>
