@@ -1,4 +1,4 @@
-const { bizOps } = require('../lib/bizops')
+const { bizOps, bizOpsErrorHandler } = require('../lib/bizops')
 const logger = require('../lib/logger')
 
 exports.command = 'team-repos'
@@ -20,7 +20,7 @@ async function getCodeNames() {
 		logger.log(message, { status: 'done', message })
 		return codeNames
 	} catch (error) {
-		throw Error(`BIZ_OPS_QUERY_FAILED ${error}`)
+		return bizOpsErrorHandler(error, message)
 	}
 }
 

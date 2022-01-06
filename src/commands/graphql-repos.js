@@ -1,5 +1,5 @@
 const fs = require('mz/fs')
-const { bizOps } = require('../lib/bizops')
+const { bizOps, bizOpsErrorHandler } = require('../lib/bizops')
 const logger = require('../lib/logger')
 const { validateFile } = require('../lib/file-validation')
 
@@ -86,10 +86,14 @@ exports.handler = async ({ file }, state) => {
 	const message = 'Executing graphQL query on bizops: \n' + query
 
 	logger.log(message, { status: 'pending', message })
-	const result = await bizOps.graphQL.get(query)
-	logger.log(message, { status: 'done', message })
 
-	state.repos = getRepositoryObject(result)
+	try {
+		const result = await bizOps.graphQL.get(query)
+		logger.log(message, { status: 'done', message })
+		state.repos = getRepositoryObject(result)
+	} catch (error) {
+		return bizOpsErrorHandler(error, message)
+	}
 }
 
 exports.undo = (_, state) => {
