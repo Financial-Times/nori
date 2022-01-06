@@ -9,7 +9,7 @@ exports.validateFile = async (input, fileExtension, errMessage) => {
 			return errMessage
 		}
 	} catch (error) {
-		return errMessage
+		return error.message
 	}
 
 	return true
