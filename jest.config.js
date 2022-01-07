@@ -1,18 +1,17 @@
 module.exports = {
-	testEnvironment: "node",
+	testEnvironment: 'node',
 	collectCoverage: true,
-	collectCoverageFrom: [
-		"**/src/**"
-	],
-	coverageDirectory: "test-results/coverage/",
+	collectCoverageFrom: ['**/src/**'],
+	coverageDirectory: 'test-results/coverage/',
 	reporters: [
-		"default",
+		'default',
 		[
-			"jest-junit",
+			'jest-junit',
 			{
-				outputDirectory: "test-results/jest/",
-				outputName: "results.xml"
-			}
-		]
+				outputDirectory: 'test-results/jest/',
+				outputName: 'results.xml',
+			},
+		],
 	],
-};
+	globalSetup: './test/setup.js',
+}

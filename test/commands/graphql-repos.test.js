@@ -1,24 +1,28 @@
-const { fs, vol } = require('memfs')
+const fs = require('mz/fs')
 const { bizOps } = require('../../src/lib/bizops')
 
 const graphql = require('../../src/commands/graphql-repos')
 
 beforeAll(() => {
-	fs.readFile = jest.fn()
-	fs.access = jest.fn()
+	fs.readFile = jest.fn().mockReturnValue('')
 })
 
 afterAll(() => {
-	vol.reset()
 	jest.clearAllMocks()
 })
 
 test('`graphql-repos` command correctly throws an error if the file extension is not .txt', async () => {
-	vol.fromJSON({
-		'existent.json': 'owner',
-	})
+	fs.lstat = jest
+		.fn()
+		.mockRejectedValue(
+			new Error(
+				`Please enter a path to a .graphql | .txt file containing graphql query for repositories`,
+			),
+		)
 	const result = await graphql.args[0].validate('existent.json')
-	expect(result).toContain('ENOENT')
+	expect(result).toContain(
+		'Please enter a path to a .graphql | .txt file containing graphql query for repositories',
+	)
 })
 
 test('getRepositoryObject gets the correct data from nested repositories object', async () => {
@@ -30,18 +34,9 @@ test('getRepositoryObject gets the correct data from nested repositories object'
 	bizOps.graphQL = {
 		get: jest.fn().mockReturnValue(data),
 	}
-	vol.fromJSON({
-		'repos.graphql': `{
-            Team(filter: { isActive: true, code: "platforms-customer-products" }) {
-                repositories {
-                    name
-                }
-            }
-          }`,
-	})
-
 	const state = {}
-	await graphql.handler({ file: 'repos.graphql' }, state)
+
+	await graphql.handler({ file: 'reposgraphql.txt' }, state)
 	expect(state.repos).toEqual([
 		{ owner: 'Financial-Times', name: 'platform-scripts' },
 	])
@@ -61,17 +56,10 @@ test('getRepositoryObject correctly throws an error if repositories are not foun
 	bizOps.graphQL = {
 		get: jest.fn().mockReturnValue(data),
 	}
-	vol.fromJSON({
-		'repos.graphql': `{
-            Teams {
-              techLeads {
-                name
-              }
-            }
-        }`,
-	})
 
-	await expect(graphql.handler({ file: 'repos.graphql' }, {})).rejects.toThrow(
+	await expect(
+		graphql.handler({ file: 'reposgraphql.txt' }, {}),
+	).rejects.toThrow(
 		new RegExp(`Please query for 'Repositories' or 'repositories'`),
 	)
 })
@@ -83,15 +71,10 @@ test('getRepositoryObject correctly throws an error if the repositories property
 	bizOps.graphQL = {
 		get: jest.fn().mockReturnValue(data),
 	}
-	vol.fromJSON({
-		'repos.graphql': `{
-            Repositories(filter: {code_contains: "notexist"}) {
-                name
-            }
-        }`,
-	})
 
-	await expect(graphql.handler({ file: 'repos.graphql' }, {})).rejects.toThrow(
+	await expect(
+		graphql.handler({ file: 'reposgraphql.txt' }, {}),
+	).rejects.toThrow(
 		'Your query returned 0 repositories, please try with another query',
 	)
 })
@@ -106,17 +89,9 @@ test('getRepositoryObject correctly throws an error if repositories are found bu
 		get: jest.fn().mockReturnValue(data),
 	}
 
-	vol.fromJSON({
-		'repos.graphql': `{
-            Team(filter: { isActive: true, code: "platforms-customer-products" }) {
-                repositories {
-                    code
-                }
-            }
-          }`,
-	})
-
-	await expect(graphql.handler({ file: 'repos.graphql' }, {})).rejects.toThrow(
+	await expect(
+		graphql.handler({ file: 'reposgraphql.graphql' }, {}),
+	).rejects.toThrow(
 		new RegExp(
 			'Your query returned 1 repository but did not return any repository name',
 		),
