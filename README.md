@@ -65,7 +65,7 @@ Every operation supports the `--json` flag, which outputs all data found formatt
 
 ### File
 
-##### `nori file --file`
+##### `nori file --file <file path>`
 
 Get a list of repositories from a text file, structured as line-separated `owner/name` strings (optionally with leading `https://github.com/`).
 
@@ -85,9 +85,51 @@ Get a list of repositories from a text file, structured as line-separated `owner
   </tr>
 </table>
 
+### Get repositories through Bizops
+Before executing any of the two commands below, either through `npx nori` interactive mode, or directly through the command line, make sure you set the env variable BIZ_OPS_API_KEY. To get the key, run /bifrost in any slack channel, which will create the key in https://developer.ft.com/portal/member.
+
+##### `nori team-repos`
+This operation gets all the repositories from the team you have selected.
+It shows a list of teams in customer products (obtained from Bizops) which you can select. 
+
+<table>
+  <tr>
+    <th align="right">Arguments</th>
+    <td>None</td>
+    <td><em>Teams to be selected when command is run</em></td>
+  </tr>
+  <tr>
+    <th align="right">Inputs</th>
+    <td colspan="2"><code>none</code></td>
+  </tr>
+  <tr>
+    <th align="right">Output</th>
+    <td colspan="2"><code>repos</code></td>
+  </tr>
+</table>
+
+##### `nori graphql-repos --file <file path>`
+This operation gets repositories by executing the file that you pass in containing your own graphql query. 
+
+<table>
+  <tr>
+    <th align="right">Arguments</th>
+    <td><code>file</code></td>
+    <td>path to a .graphql | .txt file containing graphql query for repositories</td>
+  </tr>
+  <tr>
+    <th align="right">Inputs</th>
+    <td colspan="2"><em>none</em></td>
+  </tr>
+  <tr>
+    <th align="right">Output</th>
+    <td colspan="2"><code>repos</code></td>
+  </tr>
+</table>
+
 ### Filter repository name
 
-##### `nori filter-repo-name --filter`
+##### `nori filter-repo-name --filter <repo name>`
 
 Filter the list of repositories by their names.
 
@@ -130,7 +172,7 @@ Clone each of the list of repositories
 
 ### Run Script
 
-##### `nori run-script --script --branch`
+##### `nori run-script --script <file path> --branch <branch name>`
 
 Create a branch and run a script on it. If the provided branch name already exists, Nori will append a number to it (e.g. `branch` → `branch-1`).
 
@@ -189,7 +231,7 @@ Push each repository's local branch to the remote. If a branch already exists on
 ### Pull Requests
 If you are planning to raise PRs, please add your github personal access token to the githubAccessToken object in `~/.config/nori-workspace/config.json`. Authenticating increases the [secondary rate limit](https://docs.github.com/en/rest/guides/best-practices-for-integrators#dealing-with-secondary-rate-limits) of GitHub API, which increases your chance to raise multiple PRs without being blocked by the limit.
 
-##### `nori prs --templates.title --templates.body`
+##### `nori prs --templates.title <PR title> --templates.body <PR body>`
 
 Create a Pull Request for each of the pushed branches.
 
@@ -222,7 +264,7 @@ Create a Pull Request for each of the pushed branches.
 
 ### Create Project
 
-##### `nori create-project --project-data.name --project-data.org`
+##### `nori create-project --project-data.name <name> --project-data.org <org>`
 
 Create a Github Project.
 
@@ -259,7 +301,7 @@ Create a Github Project.
 
 ### Get Project
 
-##### `nori get-project --project-url`
+##### `nori get-project --project-url <projectURL>`
 
 Get a project from Github.
 
