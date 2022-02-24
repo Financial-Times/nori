@@ -3,7 +3,7 @@ const logger = require('../lib/logger')
 
 exports.bizOps = new BizOpsClient({
 	apiKey: process.env.BIZ_OPS_API_KEY,
-	systemCode: 'check-repos',
+	systemCode: 'nori',
 })
 
 exports.bizOpsErrorHandler = function(error, message) {
