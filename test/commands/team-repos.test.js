@@ -12,7 +12,7 @@ afterAll(() => {
 
 test('`team-repos` command correctly sets state.repos with the data from bizops', async () => {
 	const data = {
-		Teams: [
+		teams: [
 			{
 				repositories: [{ name: 'n-messaging-client' }],
 			},
@@ -36,7 +36,7 @@ test('`team-repos` command correctly sets state.repos with the data from bizops'
 
 test('getCodeNames correctly gets the code names of teams', async () => {
 	const data = {
-		Teams: [{ code: 'platforms' }, { code: 'apps' }],
+		teams: [{ code: 'platforms' }, { code: 'apps' }],
 	}
 	bizOps.graphQL = {
 		get: jest.fn().mockReturnValue(data),

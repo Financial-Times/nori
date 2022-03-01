@@ -9,14 +9,14 @@ exports.output = 'repos'
 async function getCodeNames() {
 	const message = 'Fetching Teams from Bizops'
 	const query = `{
-        Teams(filter: { isActive: true, group: { code: "customerproducts" } }) {
+        teams(where: { isActive: true, group: { code: "customerproducts" } }) {
             code,
         }
     }`
 	logger.log(message, { status: 'pending', message })
 	try {
 		const result = await bizOps.graphQL.get(query)
-		const codeNames = result.Teams.map(team => team.code)
+		const codeNames = result.teams.map(team => team.code)
 		logger.log(message, { status: 'done', message })
 		return codeNames
 	} catch (error) {
@@ -37,7 +37,7 @@ exports.args = [
 exports.handler = async ({ teams }, state) => {
 	const message = `Fetching repos of ${teams} from Bizops`
 	const query = `{
-        Teams(filter: { isActive: true, code_in: ${JSON.stringify(teams)} }) {
+        teams(where: { isActive: true, code_IN: ${JSON.stringify(teams)} }) {
             repositories {
                 name
             }
@@ -49,7 +49,7 @@ exports.handler = async ({ teams }, state) => {
 
 	logger.log(message, { status: 'done', message })
 
-	state.repos = result.Teams.reduce((prevArray, team) => {
+	state.repos = result.teams.reduce((prevArray, team) => {
 		return prevArray.concat(
 			team.repositories.map(repo => {
 				return { owner: 'Financial-Times', name: repo.name }

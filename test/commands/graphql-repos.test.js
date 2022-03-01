@@ -27,7 +27,7 @@ test('`graphql-repos` command correctly throws an error if the file extension is
 
 test('getRepositoryObject gets the correct data from nested repositories object', async () => {
 	const data = {
-		Team: {
+		team: {
 			repositories: [{ name: 'platform-scripts' }],
 		},
 	}
@@ -44,7 +44,7 @@ test('getRepositoryObject gets the correct data from nested repositories object'
 
 test('getRepositoryObject correctly throws an error if repositories are not found', async () => {
 	const data = {
-		Teams: [
+		teams: [
 			{
 				techLeads: [],
 			},
@@ -59,9 +59,7 @@ test('getRepositoryObject correctly throws an error if repositories are not foun
 
 	await expect(
 		graphql.handler({ file: 'reposgraphql.txt' }, {}),
-	).rejects.toThrow(
-		new RegExp(`Please query for 'Repositories' or 'repositories'`),
-	)
+	).rejects.toThrow(new RegExp(`Please query for 'repositories'`))
 })
 
 test('getRepositoryObject correctly throws an error if the repositories property is found but has a falsy value', async () => {
@@ -81,7 +79,7 @@ test('getRepositoryObject correctly throws an error if the repositories property
 
 test('getRepositoryObject correctly throws an error if repositories are found but they do not contain names', async () => {
 	const data = {
-		Team: {
+		team: {
 			repositories: [{ code: 'platform-scripts' }],
 		},
 	}

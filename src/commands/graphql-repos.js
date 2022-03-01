@@ -41,15 +41,15 @@ function getRepositoryObject(data) {
 
 	if (foundObject === undefined) {
 		throw Error(
-			`Please query for 'Repositories' or 'repositories', for example:
+			`Please query for 'repositories', for example:
             {
-                Repositories(filter: {code_contains: "customer"}) {
+                repositories(where: {code_CONTAINS: "customer"}) {
                     name
                 }
             } 
             another example:
             {
-                Team(filter: { isActive: true, code: "platforms-customer-products" }) {
+                teams(where: { isActive: true, code: "platforms-customer-products" }) {
                     repositories {
                         name
                     }
