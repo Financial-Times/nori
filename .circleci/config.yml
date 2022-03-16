@@ -1,53 +1,66 @@
 references:
 
-  container_config_node: &container_config_node
+  container_config_node:
+    &container_config_node
     working_directory: ~/project/build
     docker:
-      - image: cimg/node:12.22
+      - image: cimg/node:<< parameters.node-version >>
+    parameters:
+      node-version:
+        default: "16.14"
+        type: string
 
-  workspace_root: &workspace_root
-    ~/project
+  workspace_root: &workspace_root ~/project
 
-  attach_workspace: &attach_workspace
+  attach_workspace:
+    &attach_workspace
     attach_workspace:
       at: *workspace_root
 
-  npm_cache_keys: &npm_cache_keys
+  npm_cache_keys:
+    &npm_cache_keys
     keys:
       - node-v10-{{ arch }}-{{ checksum "package-lock.json" }}
       - node-v10-{{ arch }}-
       - node-v10- # used if checksum fails
 
-  cache_npm_cache: &cache_npm_cache
+  cache_npm_cache:
+    &cache_npm_cache
     save_cache:
-        key: node-v10-{{ arch }}-{{ checksum "package-lock.json" }}
-        paths:
+      key: node-v10-{{ arch }}-{{ checksum "package-lock.json" }}
+      paths:
         - ./node_modules/
 
-  restore_npm_cache: &restore_npm_cache
+  restore_npm_cache:
+    &restore_npm_cache
     restore_cache:
-        <<: *npm_cache_keys
+      <<: *npm_cache_keys
 
-  filters_only_main: &filters_only_main
+  filters_only_main:
+    &filters_only_main
     branches:
       only: main
 
-  filters_ignore_tags: &filters_ignore_tags
+  filters_ignore_tags:
+    &filters_ignore_tags
     tags:
       ignore: /.*/
 
-  filters_version_tag: &filters_version_tag
+  filters_version_tag:
+    &filters_version_tag
     tags:
       only:
         - /^v?\d+\.\d+\.\d+(?:-beta\.\d+)?$/
     branches:
       ignore: /.*/
 
-  filters_only_renovate_nori: &filters_only_renovate_nori
+  filters_only_renovate_nori:
+    &filters_only_renovate_nori
     branches:
       only: /(^renovate-.*|^nori/.*)/
 
-  filters_ignore_tags_renovate_nori: &filters_ignore_tags_renovate_nori
+  filters_ignore_tags_renovate_nori:
+    &filters_ignore_tags_renovate_nori
     tags:
       ignore: /.*/
     branches:
@@ -66,7 +79,9 @@ jobs:
       - checkout
       - run:
           name: Checkout next-ci-shared-helpers
-          command: git clone --depth 1 git@github.com:Financial-Times/next-ci-shared-helpers.git .circleci/shared-helpers
+          command: git clone --depth 1
+            git@github.com:Financial-Times/next-ci-shared-helpers.git
+            .circleci/shared-helpers
       - *restore_npm_cache
       - node/install-npm:
           version: "7"
@@ -122,39 +137,67 @@ workflows:
       - build:
           filters:
             <<: *filters_ignore_tags_renovate_nori
+          name: build-v<< matrix.node-version >>
+          matrix:
+            parameters:
+              node-version: [ "16.14", "14.19" ]
       - test:
           requires:
-            - build
+            - build-v<< matrix.node-version >>
+          name: test-v<< matrix.node-version >>
+          matrix:
+            parameters:
+              node-version: [ "16.14", "14.19" ]
 
   build-test-publish:
     jobs:
       - build:
           filters:
             <<: *filters_version_tag
+          name: build-v<< matrix.node-version >>
+          matrix:
+            parameters:
+              node-version: [ "16.14", "14.19" ]
       - test:
           filters:
             <<: *filters_version_tag
           requires:
-            - build
+            - build-v<< matrix.node-version >>
+          name: test-v<< matrix.node-version >>
+          matrix:
+            parameters:
+              node-version: [ "16.14", "14.19" ]
       - publish:
           context: npm-publish-token
           filters:
             <<: *filters_version_tag
           requires:
-            - test
+            - test-v<< matrix.node-version >>
+          name: publish-v<< matrix.node-version >>
+          matrix:
+            parameters:
+              node-version: [ "16.14", "14.19" ]
 
   renovate-nori-build-test:
     jobs:
       - waiting-for-approval:
           type: approval
           filters:
-              <<: *filters_only_renovate_nori
+            <<: *filters_only_renovate_nori
       - build:
           requires:
-              - waiting-for-approval
+            - waiting-for-approval
+          name: build-v<< matrix.node-version >>
+          matrix:
+            parameters:
+              node-version: [ "16.14", "14.19" ]
       - test:
           requires:
-              - build
+            - build-v<< matrix.node-version >>
+          name: test-v<< matrix.node-version >>
+          matrix:
+            parameters:
+              node-version: [ "16.14", "14.19" ]
 
   nightly:
     triggers:
@@ -165,10 +208,18 @@ workflows:
     jobs:
       - build:
           context: next-nightly-build
+          name: build-v<< matrix.node-version >>
+          matrix:
+            parameters:
+              node-version: [ "16.14", "14.19" ]
       - test:
           requires:
-            - build
+            - build-v<< matrix.node-version >>
           context: next-nightly-build
+          name: test-v<< matrix.node-version >>
+          matrix:
+            parameters:
+              node-version: [ "16.14", "14.19" ]
 
 notify:
   webhooks:
