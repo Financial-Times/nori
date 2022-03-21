@@ -1,4 +1,3 @@
-const { bizOps, bizOpsErrorHandler } = require('../lib/bizops')
 const logger = require('../lib/logger')
 
 exports.command = 'team-repos'
@@ -7,6 +6,7 @@ exports.input = []
 exports.output = 'repos'
 
 async function getCodeNames() {
+	const { bizOps, bizOpsErrorHandler } = require('../lib/bizops')
 	const message = 'Fetching Teams from Bizops'
 	const query = `{
         teams(where: { isActive: true, group: { code: "customerproducts" } }) {
@@ -35,6 +35,7 @@ exports.args = [
 ]
 
 exports.handler = async ({ teams }, state) => {
+	const { bizOps } = require('../lib/bizops')
 	const message = `Fetching repos of ${teams} from Bizops`
 	const query = `{
         teams(where: { isActive: true, code_IN: ${JSON.stringify(teams)} }) {
