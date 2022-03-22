@@ -1,5 +1,4 @@
 const fs = require('mz/fs')
-const { bizOps, bizOpsErrorHandler } = require('../lib/bizops')
 const logger = require('../lib/logger')
 const { validateFile } = require('../lib/file-validation')
 
@@ -82,6 +81,7 @@ function getRepositoryObject(data) {
 }
 
 exports.handler = async ({ file }, state) => {
+	const { bizOps, bizOpsErrorHandler } = require('../lib/bizops')
 	const query = await fs.readFile(file, 'utf8')
 	const message = 'Executing graphQL query on bizops: \n' + query
 
