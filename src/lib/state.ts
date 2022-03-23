@@ -1,25 +1,20 @@
-const fs = require('mz/fs')
-const path = require('path')
-const operations = require('../operations')
-const getStdin = require('get-stdin')
-const util = require('util')
+import fs from 'mz/fs'
+import path from 'path'
+import operations from '../operations'
+import getStdin from 'get-stdin'
+import util from 'util'
 const mkdirp = util.promisify(require('mkdirp'))
-const { workspacePath, noriExtension } = require('./constants')
-const { prompt } = require('enquirer')
-const types = require('./types')
-const { produce } = require('immer')
-const NoriError = require('./error')
+import { workspacePath, noriExtension } from './constants'
+import { prompt } from 'enquirer'
+import types, { State, Operation, ArgumentResults, StateData } from './types'
+import { produce } from 'immer'
+import NoriError from './error'
 
 /**
  * returns the last elements from the array that meet the predicate
  * e.g. takeWhileLast([1, 2, 3, 2, 3, 4, 5], n => n > 2) returns [3, 4, 5]
- *
- * @template T
- * @param {Array<T>} array
- * @param {function(T): Boolean} predicate
- * @returns {Array<T>}
  */
-const takeWhileLast = (array, predicate) =>
+const takeWhileLast = <T>(array: T[], predicate: (x: T) => boolean): T[] =>
 	array.length && predicate(array[array.length - 1]) // if the function returns true on the last item
 		? takeWhileLast(
 				// keep looking back in the array
@@ -32,17 +27,28 @@ const takeWhileLast = (array, predicate) =>
 		: [] // otherwise, stop looking and discard the last item
 
 // read from standard input if it's a pipe, or the provided filename if not
-const read = file =>
+const read = (file: number | fs.PathLike) =>
 	process.stdin.isTTY ? fs.readFile(file, 'utf8') : getStdin()
 
 // format JSON for humans (interactive terminals) or machines
-const serialise = state => {
-	const spacing = process.stdout.isTTY ? 2 : null
+const serialise = (state: State) => {
+	const spacing = process.stdout.isTTY ? 2 : undefined
 	return JSON.stringify(state, null, spacing)
 }
 
-module.exports = class State {
-	static async middleware({ stateFile, state, createStateFile = false }) {
+module.exports = class StateClass {
+	state: State
+	fileName: string
+
+	static async middleware({
+		stateFile,
+		state,
+		createStateFile = false,
+	}: {
+		stateFile: string
+		state: StateClass
+		createStateFile: boolean
+	}) {
 		await mkdirp(workspacePath)
 
 		if (stateFile) {
@@ -63,7 +69,7 @@ module.exports = class State {
 		}
 
 		const stateContainer =
-			state && state.fileName ? state : new State({ fileName: stateFile })
+			state && state.fileName ? state : new StateClass({ fileName: stateFile })
 
 		if (
 			!createStateFile &&
@@ -73,11 +79,13 @@ module.exports = class State {
 			const message = `state file '${stateContainer.fileName}' doesn't exist`
 
 			const create = process.stdin.isTTY
-				? (await prompt({
-						name: 'create',
-						message: `${message}. create it?`,
-						type: 'confirm',
-				  })).create
+				? (
+						await prompt<{ create: boolean }>({
+							name: 'create',
+							message: `${message}. create it?`,
+							type: 'confirm',
+						})
+				  ).create
 				: false
 
 			if (create) {
@@ -99,23 +107,31 @@ module.exports = class State {
 	static async getSortedFiles() {
 		await mkdirp(workspacePath)
 
-		const stateFiles = (await fs.readdir(workspacePath)).filter(file =>
+		const stateFiles = (await fs.readdir(workspacePath)).filter((file) =>
 			file.endsWith(noriExtension),
 		)
 
-		return (await Promise.all(
-			stateFiles.map(async stateFile => {
-				const { mtime } = await fs.stat(path.join(workspacePath, stateFile))
+		return (
+			await Promise.all(
+				stateFiles.map(async (stateFile) => {
+					const { mtime } = await fs.stat(path.join(workspacePath, stateFile))
 
-				return {
-					stateFile,
-					mtime, // time the file was last modified as a javascript Date
-				}
-			}),
-		)).sort(({ mtime: a }, { mtime: b }) => b - a)
+					return {
+						stateFile,
+						mtime, // time the file was last modified as a javascript Date
+					}
+				}),
+			)
+		).sort(({ mtime: a }, { mtime: b }) => b.getTime() - a.getTime())
 	}
 
-	constructor({ fileName, state = { data: {}, steps: [] } }) {
+	constructor({
+		fileName,
+		state = { data: {}, steps: [] },
+	}: {
+		fileName: string
+		state?: State
+	}) {
 		this.state = state
 		this.fileName = fileName
 	}
@@ -145,11 +161,11 @@ module.exports = class State {
 		return serialised
 	}
 
-	addData(data) {
+	addData(data: StateData) {
 		Object.assign(this.state.data, data)
 	}
 
-	async runSingleOperation(operation, args) {
+	async runSingleOperation(operation: Operation, args: ArgumentResults) {
 		const formatter = args.json ? serialise : types[operation.output].format
 		const serialisedState = await this.runStep(operation, args)
 		const data = types[operation.output].getFromState(this.state.data)
@@ -163,11 +179,11 @@ module.exports = class State {
 		}
 	}
 
-	async runStep(operation, args) {
+	async runStep(operation: Operation, args: ArgumentResults) {
 		// produce, from immer, lets handlers modify the state as a mutable
 		// object safely. the updated copy is then stored as the new state
 		try {
-			this.state.data = await produce(this.state.data, async draft => {
+			this.state.data = await produce(this.state.data, async (draft) => {
 				await operation.handler(args, draft)
 			})
 			this.state.steps.push({ name: operation.command, args })
@@ -179,15 +195,15 @@ module.exports = class State {
 		}
 	}
 
-	async undo(args) {
+	async undo(args: ArgumentResults) {
 		const undoneStep = this.state.steps[this.state.steps.length - 1]
 		const stepsToUndo = takeWhileLast(
 			this.state.steps,
-			step =>
+			(step) =>
 				operations[step.name].output === operations[undoneStep.name].output,
 		)
 
-		this.state.data = await produce(this.state.data, async draft => {
+		this.state.data = await produce(this.state.data, async (draft) => {
 			for (const step of stepsToUndo.slice().reverse()) {
 				const operation = operations[step.name]
 				if (operation.undo) {
@@ -209,7 +225,7 @@ module.exports = class State {
 		}
 	}
 
-	isValidOperation(operation) {
+	isValidOperation(operation: Operation) {
 		/*
 		an operation should only be available if we have the right data for it, i.e.
 		if all of its inputs are the output of a previous operation.
@@ -220,10 +236,10 @@ module.exports = class State {
 		*/
 
 		const previousOutputs = new Set(
-			this.state.steps.map(step => operations[step.name].output),
+			this.state.steps.map((step) => operations[step.name].output),
 		)
 
-		const hasAllInputs = operation.input.every(type =>
+		const hasAllInputs = operation.input.every((type) =>
 			previousOutputs.has(type),
 		)
 		const isFilter = operation.input.includes(operation.output)
@@ -234,11 +250,11 @@ module.exports = class State {
 
 	shortPreview() {
 		const stepOutputs = [
-			...new Set(this.state.steps.map(step => operations[step.name].output)),
+			...new Set(this.state.steps.map((step) => operations[step.name].output)),
 		]
 
 		const outputPreviews = stepOutputs
-			.map(type => {
+			.map((type) => {
 				const data = types[type].getFromState(this.state.data)
 				return types[type].shortPreview(data)
 			})

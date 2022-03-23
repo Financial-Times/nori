@@ -82,3 +82,5 @@ typings/
 # Generated files
 test-results/
 .env
+/tsconfig.tsbuildinfo
+/lib/

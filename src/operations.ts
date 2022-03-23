@@ -1,4 +1,6 @@
-module.exports = {
+import { Operation } from './lib/types'
+
+export default {
 	file: require('./commands/file'),
 	'team-repos': require('./commands/team-repos'),
 	'graphql-repos': require('./commands/graphql-repos'),
@@ -10,4 +12,4 @@ module.exports = {
 	'get-project': require('./commands/get-project'),
 	'create-project': require('./commands/create-project'),
 	'add-to-project': require('./commands/add-to-project'),
-}
+} as Record<string, Operation>

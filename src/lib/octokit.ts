@@ -1,23 +1,23 @@
-const { Octokit } = require('@octokit/rest')
-const { throttling } = require('@octokit/plugin-throttling')
-const { retry } = require('@octokit/plugin-retry')
+import { Octokit } from '@octokit/rest'
+import { throttling } from '@octokit/plugin-throttling'
+import { retry } from '@octokit/plugin-retry'
 const OctokitInstance = Octokit.plugin(throttling, retry)
 const logger = require('../lib/logger')
 
 const RETRY_LIMIT = 5
 
-let client
+let client: Octokit
 
 const labels = new Set()
 
 const clearPendingMessages = (status = 'done') => {
-	labels.forEach(label => {
+	labels.forEach((label) => {
 		logger.log(label, { status: status })
 	})
 	labels.clear()
 }
 
-const retryWrapper = (retryAfter, options, message) => {
+const retryWrapper = (retryAfter: number, options: any, message: string) => {
 	if (options.request.retryCount === RETRY_LIMIT) {
 		clearPendingMessages('fail')
 		return
@@ -31,15 +31,15 @@ const retryWrapper = (retryAfter, options, message) => {
 	return true
 }
 
-module.exports = token => {
+module.exports = (token: string) => {
 	if (!client) {
 		client = new OctokitInstance({
 			previews: ['inertia-preview'],
 			auth: token,
 			throttle: {
-				onRateLimit: (retryAfter, options) =>
+				onRateLimit: (retryAfter: number, options: any) =>
 					retryWrapper(retryAfter, options, 'Hit GitHub API rate limit'),
-				onAbuseLimit: (retryAfter, options) =>
+				onAbuseLimit: (retryAfter: number, options: any) =>
 					retryWrapper(
 						retryAfter,
 						options,
