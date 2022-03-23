@@ -32,6 +32,17 @@ test('`file` command returns the correct data', async () => {
 	expect(state.repos).toEqual([{ owner: 'owner', name: 'repo' }])
 })
 
+test('`file` command strips leading GitHub domain', async () => {
+	vol.fromJSON({
+		'repositories.txt': 'https://github.com/owner/repo',
+	})
+
+	const state = {}
+	await file.handler({ file: 'repositories.txt' }, state)
+
+	expect(state.repos).toEqual([{ owner: 'owner', name: 'repo' }])
+})
+
 test('`file` command correctly throws an error if the file extension is not .txt', async () => {
 	vol.fromJSON({
 		'existent.json': 'owner/repo',

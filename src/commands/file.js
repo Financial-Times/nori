@@ -28,6 +28,10 @@ exports.handler = async ({ file }, state) => {
 		.map(line => {
 			if (!line) return
 
+			if (line.startsWith('https://github.com')) {
+				line = line.substring(19)
+			}
+
 			const [owner, name] = line.split('/')
 
 			if (!owner || !name) {
