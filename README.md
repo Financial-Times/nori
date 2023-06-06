@@ -86,7 +86,7 @@ Get a list of repositories from a text file, structured as line-separated `owner
 </table>
 
 ### Get repositories through Bizops
-Before executing any of the two commands below, either through `npx nori` interactive mode, or directly through the command line, make sure you set the env variable BIZ_OPS_API_KEY. To get the key, run /bifrost in any slack channel, which will create the key in https://developer.ft.com/portal/member.
+Before executing any of the two commands below, either through `npx nori` interactive mode, or directly through the command line, make sure you set the env variable `BIZ_OPS_API_KEY`. To get the key, request a key with a Biz Ops API policy from https://apigateway.in.ft.com/key-form/developer.
 
 ##### `nori team-repos`
 This operation gets all the repositories from the team you have selected.
