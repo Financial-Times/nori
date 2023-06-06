@@ -73,11 +73,13 @@ module.exports = class State {
 			const message = `state file '${stateContainer.fileName}' doesn't exist`
 
 			const create = process.stdin.isTTY
-				? (await prompt({
-						name: 'create',
-						message: `${message}. create it?`,
-						type: 'confirm',
-				  })).create
+				? (
+						await prompt({
+							name: 'create',
+							message: `${message}. create it?`,
+							type: 'confirm',
+						})
+				  ).create
 				: false
 
 			if (create) {
@@ -103,16 +105,18 @@ module.exports = class State {
 			file.endsWith(noriExtension),
 		)
 
-		return (await Promise.all(
-			stateFiles.map(async stateFile => {
-				const { mtime } = await fs.stat(path.join(workspacePath, stateFile))
+		return (
+			await Promise.all(
+				stateFiles.map(async stateFile => {
+					const { mtime } = await fs.stat(path.join(workspacePath, stateFile))
 
-				return {
-					stateFile,
-					mtime, // time the file was last modified as a javascript Date
-				}
-			}),
-		)).sort(({ mtime: a }, { mtime: b }) => b - a)
+					return {
+						stateFile,
+						mtime, // time the file was last modified as a javascript Date
+					}
+				}),
+			)
+		).sort(({ mtime: a }, { mtime: b }) => b - a)
 	}
 
 	constructor({ fileName, state = { data: {}, steps: [] } }) {
@@ -166,17 +170,14 @@ module.exports = class State {
 	async runStep(operation, args) {
 		// produce, from immer, lets handlers modify the state as a mutable
 		// object safely. the updated copy is then stored as the new state
-		try {
-			this.state.data = await produce(this.state.data, async draft => {
-				await operation.handler(args, draft)
-			})
-			this.state.steps.push({ name: operation.command, args })
-			return this.save()
-		} catch (error) {
-			// save on error so the state file is definitely up to date
-			await this.save()
-			throw error
-		}
+		this.state = await produce(this.state, async draft => {
+			try {
+				await operation.handler(args, draft.data)
+			} catch {}
+
+			draft.steps.push({ name: operation.command, args })
+		})
+		return await this.save()
 	}
 
 	async undo(args) {
@@ -187,19 +188,18 @@ module.exports = class State {
 				operations[step.name].output === operations[undoneStep.name].output,
 		)
 
-		this.state.data = await produce(this.state.data, async draft => {
+		this.state = await produce(this.state, async draft => {
 			for (const step of stepsToUndo.slice().reverse()) {
 				const operation = operations[step.name]
 				if (operation.undo) {
-					await operation.undo(Object.assign({}, step.args, args), draft)
+					await operation.undo(Object.assign({}, step.args, args), draft.data)
 				}
 			}
+			draft.steps.splice(
+				this.state.steps.length - stepsToUndo.length,
+				stepsToUndo.length,
+			)
 		})
-
-		this.state.steps.splice(
-			this.state.steps.length - stepsToUndo.length,
-			stepsToUndo.length,
-		)
 
 		await this.save()
 
