@@ -21,7 +21,7 @@
 		"@financial-times/git": "^2.1.0",
 		"@octokit/plugin-retry": "^3.0.5",
 		"@octokit/plugin-throttling": "^3.3.4",
-		"@octokit/rest": "^18.0.9",
+		"@octokit/rest": "^18.12.0",
 		"ansi-colors": "^3.2.4",
 		"enquirer": "2.3.0",
 		"error-subclass": "^2.2.0",
